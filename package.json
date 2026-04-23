@@ -1,0 +1,16 @@
+{
+  "name": "noxt",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "htm": "^3.1.1",
+    "preact": "^10.29.1",
+    "preact-render-to-string": "^6.6.7"
+  }
+}
