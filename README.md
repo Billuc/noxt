@@ -10,6 +10,15 @@ A high-performance web server built with [Bun](https://bun.com), a fast all-in-o
 - **Fast Execution**: Native performance with near-instant startup times
 - **Small bundle size**: Small bundle sizes and client-side JS execution times thanks to prerendering
 
+## Documentation
+
+Full documentation is available in the [docs/](docs/) directory:
+
+- [Getting Started](docs/01-getting-started.md) - Installation and basic usage
+- [How It Works](docs/02-how-it-works.md) - Architecture and rendering pipeline
+- [Islands](docs/03-islands.md) - Interactive components with client-side hydration
+- [Prerendering](docs/04-prerendering.md) - Static site generation
+
 ## Getting Started
 
 ### Prerequisites
