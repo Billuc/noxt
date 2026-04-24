@@ -73,7 +73,7 @@ export default async function HomePage() {
     <div>
       <h1>Welcome to Noxt!</h1>
       <p>This is server-rendered content.</p>
-      <${InteractiveCounter} initialCount="{5}" />
+      <${InteractiveCounter} initialCount="${5}" />
     </div>
   `;
 }
@@ -124,6 +124,34 @@ ASSETS_DIR=src/assets
 | `MODE`       | `development` | Run mode (`development` or `production`) |
 | `PAGES_DIR`  | `src/pages`   | Directory containing page components     |
 | `ASSETS_DIR` | `src/assets`  | Directory for static assets              |
+
+## Using Assets
+
+Place your static assets (images, CSS, fonts, config files, etc.) in your configured `ASSETS_DIR` (default: `src/assets`). Use the `getAssetPath()` function to get the full filesystem path for an asset:
+
+```tsx
+// src/pages/index.ts
+import { html } from "htm/preact";
+import { getAssetPath } from "noxt";
+
+// Get the full path to an asset
+export default async function HomePage() {
+  // Read an asset using Bun.file()
+  const configPath = getAssetPath("data/config.json");
+  const config = await Bun.file(configPath).json();
+
+  // Or for serving assets
+  return html`
+    <div>
+      <img src=${getAssetPath("images/logo.png")} />
+      <h1>Welcome to Noxt!</h1>
+      <p>Config loaded: ${config.version}</p>
+    </div>
+  `;
+}
+```
+
+The `getAssetPath()` function returns the absolute filesystem path, working correctly on both Unix and Windows systems.
 
 ## Available Scripts
 

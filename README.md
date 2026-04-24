@@ -109,6 +109,25 @@ Supported environment variables:
 - `PAGES_DIR`: The directory in which pages are defined
 - `ASSETS_DIR`: The directory in which assets are located
 
+## Loading Assets
+
+Use the `getAssetPath()` function to get the full filesystem path for assets in your `ASSETS_DIR`:
+
+```tsx
+import { getAssetPath } from "noxt";
+
+// Get the filesystem path for an asset
+const logoPath = getAssetPath("images/logo.png");
+// or
+html`<img src=${getAssetPath("images/logo.png")} />`;
+// Returns: /path/to/project/src/assets/images/logo.png (or Windows equivalent)
+
+// Use with Bun.file() to read assets
+const content = await Bun.file(getAssetPath("data/config.json")).text();
+```
+
+The `getAssetPath()` function takes a path relative to your `ASSETS_DIR` and returns the absolute filesystem path. It works correctly on both Unix and Windows systems.
+
 ## Commands
 
 - `bun install` — Install dependencies.

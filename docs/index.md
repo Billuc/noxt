@@ -20,15 +20,15 @@ Understand how Noxt works:
 
 ## Quick Links
 
-| Topic | Description |
-|-------|-------------|
-| [Installation](01-getting-started.md#installation) | Set up Noxt in your project |
-| [Pages](01-getting-started.md#creating-pages) | File-based routing |
-| [Islands](04-islands.md) | Create interactive components |
-| [Prerendering](05-prerendering.md) | Static site generation |
-| [SSR](06-ssr.md) | Dynamic server-side rendering |
-| [Configuration](01-getting-started.md#configuration) | Environment variables |
-| [Deployment](05-prerendering.md#deploying-prerendered-sites) | Hosting options |
+| Topic                                                        | Description                   |
+| ------------------------------------------------------------ | ----------------------------- |
+| [Installation](01-getting-started.md#installation)           | Set up Noxt in your project   |
+| [Pages](01-getting-started.md#creating-pages)                | File-based routing            |
+| [Islands](04-islands.md)                                     | Create interactive components |
+| [Prerendering](05-prerendering.md)                           | Static site generation        |
+| [SSR](06-ssr.md)                                             | Dynamic server-side rendering |
+| [Configuration](01-getting-started.md#configuration)         | Environment variables         |
+| [Deployment](05-prerendering.md#deploying-prerendered-sites) | Hosting options               |
 
 ## API Reference
 
@@ -42,27 +42,39 @@ import {
   serverRender,
   ServerComponent,
   prepareImportMap,
-  
+
   // Build utilities
   build,
   prerender,
+
+  // Asset utilities
+  getAssetPath,
 } from "noxt";
 
 // Types
 type { BuildOptions, PrerenderOptions, IslandComponent };
 ```
 
+### Asset Utilities
+
+```ts
+// Get the full filesystem path for an asset
+function getAssetPath(assetPath: string): string;
+```
+
+The `getAssetPath()` function returns the absolute filesystem path for an asset. It takes a path relative to your `ASSETS_DIR` and returns the full path, working correctly on both Unix and Windows systems.
+
 ### Build Options
 
 ```ts
 interface BuildOptions {
-  entrypoints?: string[];      // Entry point files
-  outdir?: string;             // Output directory
-  target?: "bun" | "browser" | "node" | "deno" | "jsc";
-  clearCache?: boolean;        // Clear cache before build
-  clearDist?: boolean;         // Clear dist before build
-  splitting?: boolean;         // Enable code splitting
-  minify?: boolean;            // Minify output
+  entrypoints?: string[]; // Entry point files
+  outdir?: string; // Output directory
+  target?: Bun.Target;
+  clearCache?: boolean; // Clear cache before build
+  clearDist?: boolean; // Clear dist before build
+  splitting?: boolean; // Enable code splitting
+  minify?: boolean; // Minify output
 }
 ```
 
@@ -70,13 +82,13 @@ interface BuildOptions {
 
 ```ts
 interface PrerenderOptions {
-  outdir?: string;             // Output directory
-  target?: "bun" | "browser" | "node" | "deno" | "jsc";
-  clearCache?: boolean;        // Clear cache before prerender
-  clearDist?: boolean;         // Clear dist before prerender
-  logManifest?: boolean;       // Log the generated manifest
-  splitting?: boolean;         // Enable code splitting
-  minify?: boolean;            // Minify output
+  outdir?: string; // Output directory
+  target?: Bun.Target;
+  clearCache?: boolean; // Clear cache before prerender
+  clearDist?: boolean; // Clear dist before prerender
+  logManifest?: boolean; // Log the generated manifest
+  splitting?: boolean; // Enable code splitting
+  minify?: boolean; // Minify output
 }
 ```
 
@@ -96,6 +108,7 @@ noxt-project/
 │   ├── pages/               # Page components (routes)
 │   ├── components/          # Reusable components
 │   ├── assets/              # Static assets
+│   ├── assets.ts            # Asset path utilities
 │   ├── build.ts             # SSR build function
 │   ├── prerender.ts         # Static build function
 │   ├── env.ts               # Environment configuration
@@ -123,15 +136,15 @@ Noxt is designed with the following principles:
 
 ## Comparison
 
-| Feature | Noxt | Next.js | Astro | Vue/Nuxt |
-|---------|------|---------|-------|----------|
-| Bun Native | ✅ | ❌ | ❌ | ❌ |
-| Islands | ✅ | ❌ | ✅ | ❌ |
-| SSR | ✅ | ✅ | ✅ | ✅ |
-| Static Site Generation | ✅ | ✅ | ✅ | ✅ |
-| File-based Routing | ✅ | ✅ | ⚠️ | ✅ |
-| Zero Config | ✅ | ⚠️ | ✅ | ⚠️ |
-| Bundle Size Focus | ✅ | ⚠️ | ✅ | ⚠️ |
+| Feature                | Noxt | Next.js | Astro | Vue/Nuxt |
+| ---------------------- | ---- | ------- | ----- | -------- |
+| Bun Native             | ✅   | ❌      | ❌    | ❌       |
+| Islands                | ✅   | ❌      | ✅    | ❌       |
+| SSR                    | ✅   | ✅      | ✅    | ✅       |
+| Static Site Generation | ✅   | ✅      | ✅    | ✅       |
+| File-based Routing     | ✅   | ✅      | ⚠️    | ✅       |
+| Zero Config            | ✅   | ⚠️      | ✅    | ⚠️       |
+| Bundle Size Focus      | ✅   | ⚠️      | ✅    | ⚠️       |
 
 ## Need Help?
 
@@ -144,7 +157,7 @@ Noxt is designed with the following principles:
 
 ## Contributing
 
-Found a bug or want to add a feature? 
+Found a bug or want to add a feature?
 
 1. Read the source code in `src/`
 2. Check existing issues/PRs
