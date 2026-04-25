@@ -30,19 +30,21 @@ async function prerenderPage(
   const filePath = path.join(PAGES_DIR, pathFromPages);
   const basename = pathFromPages.replace(/\.(tsx|ts|jsx|js)$/, "");
   console.log(`Prerendering page [${basename}]`);
-
   const prerenderPath = path.resolve(CACHE_PAGES_DIR, `${basename}.html`);
-
   const { default: Page } = await import(filePath);
+
   if (!Page) {
     console.log(
       `Skipping ${pathFromPages} because it does not have a default export.`,
     );
+
     return null;
   }
 
   const prerenderedContent = renderToString(h(Page, {}, []));
-  await Bun.write(prerenderPath, prerenderedContent);
+  const fullContent = "<!DOCTYPE html>" + prerenderedContent;
+
+  await Bun.write(prerenderPath, fullContent);
 
   const routeName =
     "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
@@ -52,6 +54,7 @@ async function prerenderPage(
 
 async function copyAssets() {
   await mkdir(CACHE_ASSETS_DIR, { recursive: true });
+
   const glob = new Bun.Glob("**/*");
 
   for await (const file of glob.scan(ASSETS_DIR)) {
@@ -70,6 +73,7 @@ async function copyAssets() {
 
 export async function prepareManifest(): Promise<Record<string, string>> {
   await copyAssets();
+
   const manifest: Record<string, string> = {};
   const glob = new Bun.Glob("**/*.{tsx,ts,jsx,js}");
 
