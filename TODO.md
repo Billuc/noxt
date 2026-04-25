@@ -3,7 +3,6 @@
 Ideas of things that could be implemented:
 
 - Static page generator from Markdown
-- Asset referencing function
 - Automatically add DOCTYPE at the start of prerendered functions
 - Incremental building ?
 - Prerender island in `[data-island]` div
