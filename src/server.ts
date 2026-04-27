@@ -17,8 +17,7 @@ import path from "path";
 import { h, type Attributes, type ComponentType } from "preact";
 import { CACHE_ASSETS_DIR, relativeFromRoot } from "./paths";
 import { html } from "htm/preact";
-import { useRef, useEffect, useState } from "preact/hooks";
-import { defineIsland, getIslandPath, type IslandComponent } from "./island";
+import { getIslandPath, type IslandComponent } from "./island";
 import { renderToStringAsync } from "preact-render-to-string";
 import { prepareImportMap as prepareIM } from "./import_map";
 
@@ -86,51 +85,3 @@ export async function serverRender<Props>(
   });
   return result;
 }
-
-interface ServerComponentProps {
-  action: string;
-  method?: string;
-  body?: BodyInit | null;
-  headers?: HeadersInit;
-  loading?: ComponentType<{}>;
-  counter?: number;
-}
-
-function _ServerComponent(props: ServerComponentProps) {
-  const ref = useRef<HTMLElement | null>(null);
-  const [fetching, setFetching] = useState(false);
-  const [counter, setCounter] = useState(props.counter ?? 1);
-
-  async function doFetch() {
-    if (fetching) return;
-
-    setFetching(true);
-    const res = await fetch(props.action, {
-      method: props.method,
-      body: props.body,
-      headers: props.headers,
-    });
-    const htmlBody = await res.text();
-
-    if (ref.current) {
-      ref.current.innerHTML = htmlBody;
-    }
-    setFetching(false);
-  }
-
-  useEffect(() => {
-    if (counter > 0) {
-      doFetch();
-    }
-  }, [counter]);
-  useEffect(() => {
-    if (!props.counter) return;
-    if (props.counter !== counter) {
-      setCounter(props.counter);
-    }
-  }, [props.counter]);
-
-  return html`<div ref=${ref}><${props.loading} /></div>`;
-}
-
-export const ServerComponent = defineIsland(_ServerComponent, import.meta.path);
