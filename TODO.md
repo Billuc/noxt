@@ -3,7 +3,6 @@
 Ideas of things that could be implemented:
 
 - Static page generator from Markdown
-- Automatically add DOCTYPE at the start of prerendered functions
 - Incremental building ?
 - Prerender island in `[data-island]` div
 - Add reference to template in Getting Started page and the scripts in package.json
