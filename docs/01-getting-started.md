@@ -10,8 +10,27 @@ Noxt is a high-performance web framework built on [Bun](https://bun.sh) that com
 
 ### 1. Install Dependencies
 
+You can create a Noxt project using the template at this URL [https://github.com/Billuc/noxt-template](https://github.com/Billuc/noxt-template)
+
+If you have an existing project, you can add noxt as a dependency using this command:
+
 ```bash
 bun install git+https://github.com/Billuc/noxt.git
+```
+
+Then, you can add scripts to your `package.json` to run the dev server and build and preview your project:
+
+```json
+{
+  ...
+  "scripts": {
+    "dev": "bun run --hot ./index.ts",
+    "build": "bun run noxt/build.ts",
+    "preview": "cd dist && bun run ./index.js",
+    "prerender": "bun run noxt/prerender.ts"
+  }
+  ...
+}
 ```
 
 ### 2. Create Your First Page
