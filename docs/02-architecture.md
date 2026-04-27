@@ -19,6 +19,7 @@ Noxt's architecture is designed around the principle of server-side rendering wi
 ```
 
 The flow works as follows:
+
 1. A browser sends a request to the server
 2. Noxt's server receives the request and identifies the page component based on the URL
 3. The page component is rendered to HTML on the server
@@ -36,7 +37,7 @@ The main entry point exports all public APIs that you'll use to build your appli
 
 ```ts
 // Core island utilities
-export { defineIsland, asIsland, serverRender, ServerComponent, prepareImportMap };
+export { defineIsland, asIsland, serverRender, prepareImportMap };
 
 // Build utilities
 export { build, prerender };
@@ -85,7 +86,7 @@ src/
 ├── manifest.ts           # Page manifest generation
 ├── import_map.ts         # Import map generation for builds
 ├── render.ts             # Client-side rendering (hydration)
-├── server.ts             # Server-side rendering and ServerComponent
+├── server.ts             # Server-side & island rendering
 ├── build.ts              # SSR build function
 └── prerender.ts          # Static prerendering function
 ```

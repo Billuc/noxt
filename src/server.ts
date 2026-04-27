@@ -19,9 +19,6 @@ import { CACHE_ASSETS_DIR, relativeFromRoot } from "./paths";
 import { html } from "htm/preact";
 import { getIslandPath, type IslandComponent } from "./island";
 import { renderToStringAsync } from "preact-render-to-string";
-import { prepareImportMap as prepareIM } from "./import_map";
-
-export const prepareImportMap = prepareIM;
 
 async function prepareIslandScript(
   fullPath: string,

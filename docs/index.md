@@ -40,7 +40,6 @@ import {
   defineIsland,
   asIsland,
   serverRender,
-  ServerComponent,
   prepareImportMap,
 
   // Build utilities
@@ -117,7 +116,7 @@ noxt-project/
 │   ├── manifest.ts          # Page manifest generation
 │   ├── paths.ts             # Filesystem paths
 │   ├── render.ts            # Client-side rendering
-│   └── server.ts            # Server-side rendering & ServerComponent
+│   └── server.ts            # Server-side & island rendering
 ├── index.ts                 # Framework entry point
 ├── package.json
 ├── tsconfig.json
