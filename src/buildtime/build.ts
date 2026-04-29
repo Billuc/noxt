@@ -13,26 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { prepareManifest } from "./manifest";
+import { prepareManifest } from "../common/manifest";
 import { rm } from "node:fs/promises";
-import { CACHE_DIR, DIST, INDEX } from "./paths";
+import type { NoxtConfig } from "../common/config";
+import path from "node:path";
 
 /**
  * Options for the build function.
  */
 export interface BuildOptions {
-  /** Entry point file path. Defaults to INDEX. */
+  /** Entry point file path. Defaults to index.ts in the root directory. */
   entrypoints?: string[];
-  /** Output directory. Defaults to DIST. */
+  /** Output directory. Defaults to "dist". */
   outdir?: string;
-  /** Build target. Defaults to "bun". */
-  target?: Bun.Target;
-  /** Whether to clear cache before building. Defaults to true. */
-  clearCache?: boolean;
-  /** Whether to clear dist before building. Defaults to true. */
-  clearDist?: boolean;
-  /** Whether to enable code splitting. Defaults to true. */
-  splitting?: boolean;
   /** Whether to minify output. Defaults to true. */
   minify?: boolean;
 }
@@ -40,13 +33,20 @@ export interface BuildOptions {
 /**
  * Creates an import map plugin for Bun.build that generates
  * dynamic imports for prerendered pages from the manifest.
+ *
+ * This plugin intercepts imports of import_map.ts and generates
+ * code that exports a prepareImportMap() function which returns
+ * a mapping of route names to their HTML bundles.
+ *
+ * @param config - Noxt configuration object
+ * @returns A Bun.BunPlugin that generates the import map
  */
-function createImportMapPlugin() {
+function createImportMapPlugin(config: NoxtConfig) {
   const importMapPlugin: Bun.BunPlugin = {
     name: "import-map-plugin",
     setup: (build) => {
-      build.onLoad({ filter: /lib[\/\\]import_map\.ts$/ }, async (args) => {
-        const manifest = await prepareManifest();
+      build.onLoad({ filter: /import_map\.ts$/ }, async (args) => {
+        const manifest = await prepareManifest(config);
         console.log("Generated manifest:", manifest);
 
         const imports = [];
@@ -85,48 +85,40 @@ function createImportMapPlugin() {
  * and runs Bun.build with an import map plugin that generates dynamic imports
  * for all prerendered pages.
  *
- * @param options - Build configuration options
+ * @param noxtConfig - Noxt configuration object
+ * @param buildOptions - Build configuration options
  * @returns A promise that resolves when the build is complete
  *
  * @example
  * ```ts
- * import { build } from "./src/build";
+ * import { build, buildConfig } from "noxt";
  *
- * await build();
+ * const config = buildConfig({});
+ * await build(config);
  *
  * // With custom options
- * await build({ target: "browser", splitting: false });
+ * await build(config, { minify: false });
  * ```
  */
-export async function build(options: BuildOptions = {}): Promise<void> {
-  const {
-    entrypoints = [INDEX],
-    outdir = DIST,
-    target = "bun",
-    clearCache = true,
-    clearDist = true,
-    splitting = true,
-    minify = true,
-  } = options;
+export async function build(
+  noxtConfig: NoxtConfig,
+  buildOptions: BuildOptions = {},
+): Promise<void> {
+  const { entrypoints, outdir, minify = true } = buildOptions;
 
-  if (clearCache) {
-    await rm(CACHE_DIR, { recursive: true, force: true });
-  }
-  if (clearDist) {
-    await rm(outdir, { recursive: true, force: true });
-  }
+  const cacheDir = path.resolve(noxtConfig.root, ".cache");
+  const distDir = path.resolve(noxtConfig.root, outdir ?? "dist");
+  const index = path.resolve(noxtConfig.root, "index.ts");
+
+  await rm(cacheDir, { recursive: true, force: true });
+  await rm(distDir, { recursive: true, force: true });
 
   await Bun.build({
-    entrypoints,
+    entrypoints: entrypoints ?? [index],
     outdir,
-    target,
-    plugins: [createImportMapPlugin()],
-    splitting,
+    target: "bun",
+    plugins: [createImportMapPlugin(noxtConfig)],
+    splitting: true,
     minify,
   });
-}
-
-// Run build when executed directly
-if (import.meta.main) {
-  await build();
 }

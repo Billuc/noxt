@@ -17,18 +17,18 @@ Understand how Noxt works:
 - **[Islands](04-islands.md)** - The key to interactive components with minimal client-side JavaScript
 - **[Prerendering](05-prerendering.md)** - Generate static HTML files at build time
 - **[SSR (Server-Side Rendering)](06-ssr.md)** - Dynamic rendering for each request with request-specific data
+- **[Fetching HTML](07-fetching.md)** - Client-side HTML fetching with automatic DOM insertion
 
 ## Quick Links
 
-| Topic                                                        | Description                   |
-| ------------------------------------------------------------ | ----------------------------- |
-| [Installation](01-getting-started.md#installation)           | Set up Noxt in your project   |
-| [Pages](01-getting-started.md#creating-pages)                | File-based routing            |
-| [Islands](04-islands.md)                                     | Create interactive components |
-| [Prerendering](05-prerendering.md)                           | Static site generation        |
-| [SSR](06-ssr.md)                                             | Dynamic server-side rendering |
-| [Configuration](01-getting-started.md#configuration)         | Environment variables         |
-| [Deployment](05-prerendering.md#deploying-prerendered-sites) | Hosting options               |
+| Topic                                                | Description                   |
+| ---------------------------------------------------- | ----------------------------- |
+| [Installation](01-getting-started.md#installation)   | Set up Noxt in your project   |
+| [Pages](01-getting-started.md#creating-pages)        | File-based routing            |
+| [Islands](04-islands.md)                             | Create interactive components |
+| [Prerendering](05-prerendering.md)                   | Static site generation        |
+| [SSR](06-ssr.md)                                     | Dynamic server-side rendering |
+| [Configuration](01-getting-started.md#configuration) | NoxtConfig options            |
 
 ## API Reference
 
@@ -36,22 +36,51 @@ Understand how Noxt works:
 
 ```ts
 import {
-  // Island utilities
-  defineIsland,
-  asIsland,
+  // Core utilities
   serverRender,
   prepareImportMap,
 
   // Build utilities
   build,
   prerender,
+  buildConfig,
 
   // Asset utilities
   getAssetPath,
+
+  // Fetching
+  useFetchHtml,
 } from "noxt";
 
 // Types
-type { BuildOptions, PrerenderOptions, IslandComponent };
+type { BuildOptions, PrerenderOptions, NoxtConfig };
+type { HttpMethod, FormDataFormat, FetchError, SwapStrategy };
+```
+
+### NoxtConfig
+
+The `NoxtConfig` interface provides centralized configuration for your Noxt application:
+
+```ts
+interface NoxtConfig {
+  root: string; // Project root directory
+  pagesDir: string; // Directory containing page components
+  islandsDir: string; // Directory containing island components
+  assetsDir: string; // Directory for static assets
+}
+```
+
+Use `buildConfig()` to create a configuration with sensible defaults:
+
+```ts
+import { buildConfig, type NoxtConfig } from "noxt";
+
+const config: NoxtConfig = buildConfig({
+  root: ".",
+  pagesDir: "src/pages",
+  islandsDir: "src/islands",
+  assetsDir: "public/assets",
+});
 ```
 
 ### Asset Utilities
@@ -61,34 +90,36 @@ type { BuildOptions, PrerenderOptions, IslandComponent };
 function getAssetPath(assetPath: string): string;
 ```
 
-The `getAssetPath()` function returns the absolute filesystem path for an asset. It takes a path relative to your `ASSETS_DIR` and returns the full path, working correctly on both Unix and Windows systems.
+The `getAssetPath()` function returns the absolute filesystem path for an asset. It takes a path relative to your `assetsDir` configuration and returns the full path, working correctly on both Unix and Windows systems.
 
 ### Build Options
+
+The `build()` function accepts a `NoxtConfig` as its first parameter and build-specific options:
 
 ```ts
 interface BuildOptions {
   entrypoints?: string[]; // Entry point files
-  outdir?: string; // Output directory
-  target?: Bun.Target;
-  clearCache?: boolean; // Clear cache before build
-  clearDist?: boolean; // Clear dist before build
-  splitting?: boolean; // Enable code splitting
-  minify?: boolean; // Minify output
+  outdir?: string; // Output directory (default: "dist")
+  minify?: boolean; // Minify output (default: true)
 }
+
+// Usage
+await build(config, { minify: false });
 ```
 
 ### Prerender Options
 
+The `prerender()` function also accepts a `NoxtConfig` and prerender-specific options:
+
 ```ts
 interface PrerenderOptions {
-  outdir?: string; // Output directory
-  target?: Bun.Target;
-  clearCache?: boolean; // Clear cache before prerender
-  clearDist?: boolean; // Clear dist before prerender
-  logManifest?: boolean; // Log the generated manifest
-  splitting?: boolean; // Enable code splitting
-  minify?: boolean; // Minify output
+  outdir?: string; // Output directory (default: "dist")
+  logManifest?: boolean; // Log the generated manifest (default: true)
+  minify?: boolean; // Minify output (default: true)
 }
+
+// Usage
+const manifest = await prerender(config, { logManifest: false });
 ```
 
 ## Project Structure
@@ -104,20 +135,20 @@ noxt-project/
 │   ├── 05-prerendering.md   # Static site generation
 │   └── 06-ssr.md            # Server-side rendering
 ├── src/
-│   ├── pages/               # Page components (routes)
-│   ├── components/          # Reusable components
-│   ├── assets/              # Static assets
-│   ├── assets.ts            # Asset path utilities
-│   ├── build.ts             # SSR build function
-│   ├── prerender.ts         # Static build function
-│   ├── env.ts               # Environment configuration
-│   ├── island.ts            # Island utilities
-│   ├── import_map.ts        # Import map generation
-│   ├── manifest.ts          # Page manifest generation
-│   ├── paths.ts             # Filesystem paths
-│   ├── render.ts            # Client-side rendering
-│   └── server.ts            # Server-side & island rendering
-├── index.ts                 # Framework entry point
+│   ├── common/
+│   │   ├── config.ts         # NoxtConfig type and buildConfig()
+│   │   ├── assets.ts         # Asset copying utilities
+│   │   ├── island.ts         # Island preparation
+│   │   ├── manifest.ts        # Page manifest generation
+│   │   └── import_map.ts      # Import map generation for builds
+│   ├── buildtime/
+│   │   ├── build.ts          # SSR build function
+│   │   └── prerender.ts      # Static prerendering function
+│   └── runtime/
+│       ├── server.ts         # Server-side rendering
+│       ├── render.ts         # Client-side island rendering
+│       └── fetch.ts          # Fetching utilities (useFetchHtml)
+├── index.ts                 # Framework entry point with CLI
 ├── package.json
 ├── tsconfig.json
 └── README.md

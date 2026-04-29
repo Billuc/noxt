@@ -13,26 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { prepareManifest } from "./manifest";
+import path from "node:path";
+import type { NoxtConfig } from "../common/config";
+import { prepareManifest } from "../common/manifest";
 import { rm } from "node:fs/promises";
-import { CACHE_DIR, DIST } from "./paths";
 
 /**
  * Options for the prerender function.
  */
 export interface PrerenderOptions {
-  /** Output directory. Defaults to DIST. */
+  /** Output directory. Defaults to "dist". */
   outdir?: string;
-  /** Build target. Defaults to "browser". */
-  target?: Bun.Target;
-  /** Whether to clear cache before prerendering. Defaults to true. */
-  clearCache?: boolean;
-  /** Whether to clear dist before prerendering. Defaults to true. */
-  clearDist?: boolean;
   /** Whether to log the generated manifest. Defaults to true. */
   logManifest?: boolean;
-  /** Whether to enable code splitting. Defaults to true. */
-  splitting?: boolean;
   /** Whether to minify output. Defaults to true. */
   minify?: boolean;
 }
@@ -44,40 +37,39 @@ export interface PrerenderOptions {
  * cleans the cache and dist directories, and runs Bun.build to bundle all
  * prerendered pages into static files for browser consumption.
  *
- * @param options - Prerender configuration options
- * @returns A promise that resolves to the generated manifest
+ * @param noxtConfig - Noxt configuration object
+ * @param prerenderOptions - Prerender configuration options
+ * @returns A promise that resolves to the generated manifest mapping routes to file paths
  *
  * @example
  * ```ts
- * import { prerender } from "./src/prerender";
+ * import { prerender, buildConfig } from "noxt";
  *
- * const manifest = await prerender();
+ * const config = buildConfig({});
+ * const manifest = await prerender(config);
  *
  * // With custom options
- * const manifest = await prerender({ target: "bun", minify: false });
+ * const manifest = await prerender(config, {
+ *   outdir: "public",
+ *   logManifest: false,
+ *   minify: false
+ * });
  * ```
  */
 export async function prerender(
-  options: PrerenderOptions = {},
+  noxtConfig: NoxtConfig,
+  prerenderOptions: PrerenderOptions = {},
 ): Promise<Record<string, string>> {
-  const {
-    outdir = DIST,
-    target = "browser",
-    clearCache = true,
-    clearDist = true,
-    logManifest = true,
-    splitting = true,
-    minify = true,
-  } = options;
+  const { outdir, logManifest = true, minify = true } = prerenderOptions;
 
-  if (clearCache) {
-    await rm(CACHE_DIR, { recursive: true, force: true });
-  }
-  if (clearDist) {
-    await rm(outdir, { recursive: true, force: true });
-  }
+  const cacheDir = path.resolve(noxtConfig.root, ".cache");
+  const distDir = path.resolve(noxtConfig.root, outdir ?? "dist");
+  const index = path.resolve(noxtConfig.root, "index.ts");
 
-  const manifest = await prepareManifest();
+  await rm(cacheDir, { recursive: true, force: true });
+  await rm(distDir, { recursive: true, force: true });
+
+  const manifest = await prepareManifest(noxtConfig);
 
   if (logManifest) {
     console.log("Generated manifest:", manifest);
@@ -86,15 +78,10 @@ export async function prerender(
   await Bun.build({
     entrypoints: Object.values(manifest),
     outdir,
-    target,
-    splitting,
+    target: "browser",
+    splitting: true,
     minify,
   });
 
   return manifest;
-}
-
-// Run prerender when executed directly
-if (import.meta.main) {
-  await prerender();
 }

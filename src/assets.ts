@@ -14,15 +14,15 @@
  *  limitations under the License.
  **/
 import path from "node:path";
-import { ASSETS_DIR } from "./paths";
+import { buildConfig } from "./common/config";
 
 /**
  * Returns the full filesystem path for an asset.
  *
- * Takes a path relative to ASSETS_DIR and returns the absolute filesystem path.
+ * Takes a path relative to the configured assetsDir and returns the absolute filesystem path.
  * Works correctly on both Unix and Windows systems.
  *
- * @param assetPath - Path to the asset relative to ASSETS_DIR (e.g., "images/logo.png")
+ * @param assetPath - Path to the asset relative to assetsDir (e.g., "images/logo.png")
  * @returns The absolute filesystem path (e.g., "/path/to/project/src/assets/images/logo.png" or "C:\\path\\to\\project\\src\\assets\\images\\logo.png")
  *
  * @example
@@ -31,16 +31,19 @@ import { ASSETS_DIR } from "./paths";
  *
  * // In a page or component
  * const logoPath = getAssetPath("images/logo.png");
- * // or
- * html`<img src=${getAssetPath("images/logo.png")} />`
- * // Returns: /path/to/project/src/assets/images/logo.png (or Windows equivalent)
+ * // Returns: /path/to/project/src/assets/images/logo.png
  *
  * // Use with Bun.file()
  * const file = await Bun.file(getAssetPath("data/config.json")).json();
  * ```
  */
 export function getAssetPath(assetPath: string): string {
+  // TODO : use config
+  // Get default config to get the assetsDir path
+  const config = buildConfig({});
+
   // Normalize the path to remove leading slashes
   const normalizedPath = assetPath.replace(/^[\\/]+/, "");
-  return path.join(ASSETS_DIR, normalizedPath);
+
+  return path.resolve(config.root, config.assetsDir, normalizedPath);
 }

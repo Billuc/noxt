@@ -1,7 +1,6 @@
-import { defineIsland } from "./src/island";
-import { asIsland, serverRender } from "./src/server";
-import { build, type BuildOptions } from "./src/build";
-import { prerender, type PrerenderOptions } from "./src/prerender";
+import { serverRender } from "./src/runtime/server";
+import { build, type BuildOptions } from "./src/buildtime/build";
+import { prerender, type PrerenderOptions } from "./src/buildtime/prerender";
 import { getAssetPath } from "./src/assets";
 import {
   useFetchHtml,
@@ -11,12 +10,11 @@ import {
   type HttpMethod,
   type FormDataFormat,
   type FetchError,
-} from "./src/fetch";
-import { prepareImportMap } from "./src/import_map";
+} from "./src/runtime/fetch";
+import { prepareImportMap } from "./src/common/import_map";
+import { buildConfig, type NoxtConfig } from "./src/common/config";
 
 export {
-  defineIsland,
-  asIsland,
   prepareImportMap,
   serverRender,
   build,
@@ -33,4 +31,16 @@ export type {
   FetchError,
   HttpMethod,
   FormDataFormat,
+  NoxtConfig,
 };
+
+if (import.meta.main) {
+  const [action, ...args] = Bun.argv.slice(2);
+  const config = buildConfig({});
+
+  if (action === "build") {
+    await build(config);
+  } else if (action === "prerender") {
+    await prerender(config);
+  }
+}

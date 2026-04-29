@@ -13,21 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
+import type { NoxtConfig } from "./config";
 import { prepareManifest } from "./manifest";
 
 /**
- * Prepares an import map of prerendered pages from the manifest.
+ * Prepares an import map object that can be used for dynamic page imports.
  *
- * Loads the manifest file, iterates through all routes, dynamically imports
- * the prerendered page component for each route, and returns a map with
- * route names as keys and their corresponding prerendered components as values.
+ * This function:
+ * - Prepares the manifest by calling prepareManifest(config)
+ * - Generates an object mapping route names to their corresponding HTML bundles
+ * - This import map is used by the build system to create dynamic imports
  *
- * @returns A promise resolving to a record mapping route names to their prerendered HTML bundles
+ * @param config - Noxt configuration object
+ * @returns Promise resolving to a record mapping route names to Bun.HTMLBundle objects
+ *
+ * @example
+ * ```ts
+ * import { prepareImportMap, buildConfig } from "noxt";
+ *
+ * const config = buildConfig({});
+ * const importMap = await prepareImportMap(config);
+ * // importMap = { "/": HTMLBundle, "/about": HTMLBundle, ... }
+ * ```
  */
-export async function prepareImportMap(): Promise<
-  Record<string, Bun.HTMLBundle>
-> {
-  const manifest = await prepareManifest();
+export async function prepareImportMap(
+  config: NoxtConfig,
+): Promise<Record<string, Bun.HTMLBundle>> {
+  const manifest = await prepareManifest(config);
   const importMap: Record<string, Bun.HTMLBundle> = {};
 
   for (const route in manifest) {

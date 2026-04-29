@@ -34,17 +34,20 @@ Traditional SPA:      Noxt with Islands:
 
 ## Creating an Island
 
-### Step 1: Define the Component
+### Step 1: Place the Component in the Islands Directory
 
-Use `defineIsland()` to mark a component as an island:
+Create your component in the `src/islands` directory (or your configured `islandsDir`):
 
 ```tsx
-// components/Counter.tsx
+// src/islands/Counter.tsx
 import { useState } from "preact/hooks";
 import { html } from "htm/preact";
-import { defineIsland } from "noxt";
 
-function Counter({ initialCount = 0 }: { initialCount?: number }) {
+export default function Counter({
+  initialCount = 0,
+}: {
+  initialCount?: number;
+}) {
   const [count, setCount] = useState(initialCount);
 
   return html`
@@ -55,35 +58,27 @@ function Counter({ initialCount = 0 }: { initialCount?: number }) {
     </div>
   `;
 }
-
-// This is required to make it an island
-export default defineIsland(Counter, import.meta.path);
 ```
 
-**Important**: The second argument to `defineIsland()` must be `import.meta.path` - this tells Noxt where to find the component for client-side hydration.
+**That's it!** Just export a regular Preact component.
 
 ### Step 2: Use the Island in a Page
 
-In your page component, use `asIsland()` to transform the island for server-side rendering:
+Import and use the island component directly in your page:
 
 ```tsx
-// pages/index.tsx
+// src/pages/index.tsx
 import { html } from "htm/preact";
-import { asIsland } from "noxt";
-import Counter from "../components/Counter";
+import Counter from "../islands/Counter";
 
-// Transform the island component
-const InteractiveCounter = await asIsland(Counter);
-
-export default async function HomePage() {
+export default function HomePage() {
   return html`
     <div>
       <h1>Welcome to my site!</h1>
       <p>This content is server-rendered and static.</p>
 
-      <!-- The island will render as static HTML first, 
-           then hydrate on the client -->
-      <${InteractiveCounter} initialCount=${10} />
+      <!-- The island will automatically be hydrated on client-side -->
+      <${Counter} initialCount=${10} />
     </div>
   `;
 }
@@ -100,13 +95,21 @@ When a user visits this page:
      <h1>Welcome to my site!</h1>
      <p>This content is server-rendered and static.</p>
      <div data-island="abc123..." data-props='{"initialCount":10}'></div>
-     <script type="module" src=".cache/assets/abc123....js"></script>
+     <script type="module" src=".cache/src/islands/abc123....js"></script>
    </div>
    ```
 
-2. **User sees**: The page appears instantly with nothing displayed
+2. **User sees**: The page appears instantly with the counter displaying "10"
 
 3. **Client hydrates**: The browser loads the island's JavaScript file and the counter becomes interactive
+
+The build system automatically:
+
+- Detects the components defined in the islands directory
+- Generates a unique hash for each island based on its file path
+- Creates a placeholder div with `data-island` and `data-props` attributes
+- Generates a client-side script file for hydration
+- Adds a `<script type="module">` tag to load the island's code
 
 ## Island Lifecycle
 
@@ -115,13 +118,12 @@ When a user visits this page:
 │                    Island Lifecycle                            │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  1. DEFINITION         2. TRANSFORMATION    3. SERVER RENDER │
-│  ─────────────         ────────────────     ─────────────── │
-│  defineIsland()        asIsland()            HTML output     │
-│  - Attaches path       - Generates hash      - Static markup  │
-│  - Marks component     - Creates script      - data-island   │
-│                         - Returns wrapper     - data-props    │
-│                                              - script tag    │
+│  1. DETECTION          2. SCRIPT GENERATION    3. SERVER RENDER │
+│  ─────────────         ────────────────────     ─────────────── │
+│  Component in          prepareIslandScript()    HTML with        │
+│  src/islands/         - Unique hash           data-island      │
+│                        - Client script         data-props       │
+│                        - Returns IslandData     script tag       │
 │                                                             │
 │  4. CLIENT LOAD          5. CLIENT HYDRATION                │
 │  ─────────────         ────────────────                     │
@@ -129,7 +131,7 @@ When a user visits this page:
 │  <script> loads        - Finds matching divs                 │
 │  island JS fetches     - Parses props                        │
 │                        - Mounts Preact component            │
-│                        - Updates DOM                         │
+│                        - Updates DOM (already has content)   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -139,10 +141,10 @@ When a user visits this page:
 ### Island with Children
 
 ```tsx
-import { defineIsland } from "noxt";
+// src/islands/Card.tsx
 import { html } from "htm/preact";
 
-function Card({ title, children }) {
+export default function Card({ title, children }) {
   return html`
     <div class="card">
       <h2>${title}</h2>
@@ -151,41 +153,45 @@ function Card({ title, children }) {
   `;
 }
 
-export default defineIsland(Card, import.meta.path);
+// Usage in page:
+// src/pages/index.tsx
+import Card from "../islands/Card";
 
-// Usage:
-const InteractiveCard = await asIsland(Card);
-html`<${InteractiveCard} title="My Card">Some content</${InteractiveCard}>`;
+export default function HomePage() {
+  return html`
+    <div>
+      <${Card} title="My Card">Some content</${Card}>
+    </div>
+  `;
+}
 ```
 
 ### Island with Server Data
 
 ```tsx
-// pages/blog/post.tsx
+// src/pages/blog/post.tsx
 import { html } from "htm/preact";
-import { asIsland } from "noxt";
-import LikeButton from "../components/LikeButton";
+import LikeButton from "../../islands/LikeButton";
 
-// Fetch data on server
 export default async function BlogPost({ params }) {
+  // Data has to be fetched on the server
   const post = await fetchPost(params.id);
-
-  const LikeIsland = await asIsland(LikeButton);
 
   return html`
     <article>
       <h1>${post.title}</h1>
       <div>${post.content}</div>
-      <${LikeIsland} postId=${post.id} initialLikes=${post.likes} />
+      <!-- LikeButton is automatically detected as an island -->
+      <${LikeButton} postId=${post.id} initialLikes=${post.likes} />
     </article>
   `;
 }
 
-// components/LikeButton.tsx
+// src/islands/LikeButton.tsx
 import { useState } from "preact/hooks";
-import { defineIsland } from "noxt";
+import { html } from "htm/preact";
 
-function LikeButton({ postId, initialLikes }) {
+export default function LikeButton({ postId, initialLikes }) {
   const [likes, setLikes] = useState(initialLikes);
   const [loading, setLoading] = useState(false);
 
@@ -201,24 +207,185 @@ function LikeButton({ postId, initialLikes }) {
     <button onClick=${handleLike} disabled=${loading}>${likes} likes</button>
   `;
 }
-
-export default defineIsland(LikeButton, import.meta.path);
 ```
 
 ### Conditional Islands
 
 ```tsx
-export default async function Page({ user }) {
-  const InteractiveComponent = await asIsland(MyComponent);
-  const StaticComponent = MyComponent; // Use without asIsland for static rendering
-
+// src/pages/user.tsx
+export default function UserPage({ user }) {
   return html`
     <div>
       ${user?.isLoggedIn
-        ? html`<${InteractiveComponent} />`
-        : html`<${StaticComponent} />`}
+        ? html`<${InteractiveDashboard} />`
+        : html`<${StaticDashboard} />`}
     </div>
   `;
 }
 ```
 
+You can still use non-island components for fully static rendering. Just place them outside the islands directory.
+
+## Configuration
+
+Island directories are configured through `NoxtConfig`:
+
+```ts
+import { buildConfig } from "noxt";
+
+const config = buildConfig({
+  islandsDir: "src/islands", // Default
+  // or
+  islandsDir: "src/components/islands",
+});
+```
+
+The build system will scan this directory for `.tsx`, `.ts`, `.jsx`, `.js` files and automatically process them as islands.
+
+## Best Practices
+
+### 1. Organize Islands by Feature
+
+```
+src/islands/
+├── ui/
+│   ├── Button.tsx
+│   └── Modal.tsx
+├── features/
+│   ├── LikeButton.tsx
+│   ├── CommentSection.tsx
+│   └── ...
+└── widgets/
+    ├── Counter.tsx
+    └── Timer.tsx
+```
+
+### 2. Keep Islands Focused
+
+- Each island should have a single responsibility
+- Don't create "wrapper" islands that contain multiple interactive elements
+- Keep islands small and composable
+
+### 3. Use Islands Sparingly
+
+Only use islands for components that need interactivity:
+
+```tsx
+// ✅ Good: Only the button is an island
+<div>
+  <h1>Page Title</h1>
+  <p>Static content...</p>
+  <LikeButton />  {/* Only this is an island */}
+</div>
+
+// ❌ Bad: Entire section is an island
+<InteractiveSection>  {/* This will hydrate everything */}
+  <h1>Page Title</h1>
+  <p>Static content...</p>
+  <LikeButton />
+</InteractiveSection>
+```
+
+### 4. Pass Minimal Props
+
+Since props are serialized to JSON in the HTML, keep them small:
+
+```tsx
+// ✅ Good: Small props
+<${UserCard} userId=${user.id} />
+
+// ❌ Bad: Large props
+<${UserCard} user=${user} />  // Entire user object
+```
+
+### 5. Use Primitive Types for Props
+
+Props must be JSON-serializable. Stick to:
+
+- Strings, numbers, booleans
+- Arrays and objects (but keep them simple)
+- null, undefined, null
+
+Avoid:
+
+- Functions (they can't be serialized)
+- Dates (convert to string or ISO string)
+- Class instances
+- Circular references
+
+### 6. Handle Loading States in Islands
+
+```tsx
+// src/islands/AsyncData.tsx
+import { useState, useEffect } from "preact/hooks";
+import { html } from "htm/preact";
+
+export default function AsyncData({ url }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // Alternatively, we could have used `useFetchHtml`
+
+  useEffect(() => {
+    fetch(url)
+      .then(res => res.json())
+      .then(setData)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [url]);
+
+  if (loading) return html`<div>Loading...</div>`;
+  if (error) return html`<div>Error: ${error.message}</div>`;
+  if (!data) return html`<div>No data</div>`;
+
+  return html`<div>${JSON.stringify(data)}</div>`;
+}
+
+// In page:
+// The initial HTML will show "Loading..." (from the rendered output)
+// Then client-side fetch will update it with real data
+<${AsyncData} url="/api/data" />
+```
+
+## Troubleshooting
+
+### Islands Don't Hydrate
+
+**Check:**
+
+- Component is in the `islandsDir` directory (default: `src/islands`)
+- Component has a default export
+- Component is imported in a page
+- No JavaScript errors in the console
+- The `data-island` hash in HTML matches what's in the script filename
+
+**Common causes:**
+
+- Component file is not in the islands directory
+- Missing default export
+- Props that can't be serialized to JSON
+- Component file has an extension not in `.tsx`, `.ts`, `.jsx`, `.js`
+
+### Props Not Updating
+
+Remember: props are serialized at build/render time. If you need dynamic props:
+
+```tsx
+// For static sites (prerender): Pass static props
+<${Counter} initialCount=${5} />
+
+// For SSR: Props can be dynamic per-request
+<${Counter} initialCount=${requestSpecificValue} />
+
+// For client-side updates: Use state in the island
+<${Counter} />  // Counter manages its own state
+```
+
+### Script Files Not Loading / Island Not Interactive
+
+**Check:**
+
+- The script tag's `src` attribute is correct
+- The script file exists in the output directory
+- The file extension is correct
+- No 404 errors for the script file
