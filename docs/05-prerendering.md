@@ -222,6 +222,29 @@ export default function UserProfile({ userId }) {
 }
 ```
 
+## Markdown Pages
+
+Noxt automatically prerenders Markdown files (`.md`) placed in your pages directory.
+
+- Content is converted to HTML using Bun's built-in markdown parser
+- YAML frontmatter (between `---` delimiters) is parsed and passed to the layout component
+- A default HTML layout is used, or you can specify a custom layout via the `layout` frontmatter field.
+
+The `layout` property is a path from the configured root. Without a custom layout, a default HTML wrapper is used to render the page.
+
+### Example
+
+```markdown
+---
+title: About Us
+layout: src/layouts/PageLayout.ts
+---
+
+# About
+
+This is **markdown** that gets prerendered to static HTML.
+```
+
 ## Integrating with Build Tools
 
 ### Custom Build Script

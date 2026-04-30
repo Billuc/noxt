@@ -14,11 +14,17 @@
  *  limitations under the License.
  **/
 import path from "path";
-import { h } from "preact";
-import { renderToString } from "preact-render-to-string";
+import {
+  h,
+  type ComponentChildren,
+  type ComponentType,
+  type JSX,
+} from "preact";
+import { renderToStringAsync } from "preact-render-to-string";
 import type { NoxtConfig } from "./config";
 import { copyAssets } from "./assets";
 import { prepareIslands, type IslandData } from "./island";
+import { html } from "htm/preact/index.js";
 
 /**
  * Creates a Bun.build plugin that transforms island imports into placeholder divs with hydration scripts.
@@ -37,7 +43,7 @@ function createIslandPreparePlugin(
   islandsData: Record<string, IslandData>,
 ) {
   const islandsDir = path.resolve(config.root, config.islandsDir);
-  const islandScriptRegexp = new RegExp(`^${islandsDir}[\\/](.*)\.[tj]sx?$`);
+  const islandScriptRegexp = new RegExp(`^${islandsDir}[\/](.*)\.[tj]sx?$`);
 
   const islandPreparePlugin: Bun.BunPlugin = {
     name: "island-prepare-plugin",
@@ -50,7 +56,7 @@ function createIslandPreparePlugin(
           loader: "js",
           contents: `
             import { html } from "htm/preact";
-            return (props: P) => html\`
+            return (props) => html\`
               <div data-island="${islandData.hash}" data-props="\${JSON.stringify(props)}"></div>
               <script type="module" src="${islandData.prerenderPath}"></script>
             \`;
@@ -60,6 +66,88 @@ function createIslandPreparePlugin(
     },
   };
   return islandPreparePlugin;
+}
+
+/**
+ * Converts a file path from pages directory to a route name.
+ * Removes file extension and handles 'index' specially.
+ *
+ * @param pathFromPages - Relative path from the pages directory
+ * @returns Route name (e.g., "about.md" -> "/about", "index.md" -> "/")
+ */
+function getRouteName(pathFromPages: string): string {
+  const basename = pathFromPages.replace(/\.(tsx|ts|jsx|js|md)$/, "");
+  return "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
+}
+
+/**
+ * Gets the cache directory path for pages.
+ *
+ * @param config - Noxt configuration object
+ * @returns Absolute path to the cache pages directory
+ */
+function getCachePagesDir(config: NoxtConfig): string {
+  return path.resolve(config.root, ".cache", config.pagesDir);
+}
+
+/**
+ * Gets the full path to a page file.
+ *
+ * @param config - Noxt configuration object
+ * @param pathFromPages - Relative path from the pages directory
+ * @returns Absolute file path
+ */
+function getPageFilePath(config: NoxtConfig, pathFromPages: string): string {
+  const pagesDir = path.resolve(config.root, config.pagesDir);
+  return path.join(pagesDir, pathFromPages);
+}
+
+/**
+ * Writes HTML content to the cache directory.
+ *
+ * @param cachePagesDir - Cache pages directory
+ * @param basename - File name without extension
+ * @param content - HTML content to write
+ * @returns Absolute path to the written HTML file
+ */
+async function writeHtmlFile(
+  cachePagesDir: string,
+  basename: string,
+  content: string,
+): Promise<string> {
+  const prerenderPath = path.resolve(cachePagesDir, `${basename}.html`);
+  await Bun.write(prerenderPath, content);
+  return prerenderPath;
+}
+
+/**
+ * Renders a Preact component to HTML string with DOCTYPE.
+ *
+ * @param component - Preact component to render
+ * @returns HTML string with DOCTYPE
+ */
+async function renderPageToHtml(
+  component: preact.ComponentType,
+): Promise<string> {
+  const prerenderedContent = await renderToStringAsync(h(component, {}, []));
+  return "<!DOCTYPE html>" + prerenderedContent;
+}
+
+/**
+ * Renders Markdown content to HTML string with DOCTYPE.
+ *
+ * @param markdownContent - Markdown content to convert
+ * @returns HTML string with DOCTYPE
+ */
+async function renderMarkdownToHtml(
+  markdownContent: string,
+  Layout: ComponentType<Record<string, any>>,
+  frontmatterData: Record<string, any>,
+): Promise<string> {
+  const markdownComponent = Bun.markdown.react(markdownContent) as JSX.Element;
+  const fullPage = h(Layout, frontmatterData, markdownComponent);
+  const htmlContent = await renderToStringAsync(fullPage);
+  return "<!DOCTYPE html>" + htmlContent;
 }
 
 /**
@@ -85,10 +173,9 @@ async function prerenderPage(
   const basename = pathFromPages.replace(/\.(tsx|ts|jsx|js)$/, "");
   console.log(`Prerendering page [${basename}]`);
 
-  const pagesDir = path.resolve(config.root, config.pagesDir);
-  const cachePagesDir = path.resolve(config.root, ".cache", config.pagesDir);
+  const cachePagesDir = getCachePagesDir(config);
+  const filePath = getPageFilePath(config, pathFromPages);
 
-  const filePath = path.join(pagesDir, pathFromPages);
   const buildResult = await Bun.build({
     entrypoints: [filePath],
     outdir: cachePagesDir,
@@ -109,18 +196,110 @@ async function prerenderPage(
     console.log(
       `Skipping ${pathFromPages} because it does not have a default export.`,
     );
-
     return null;
   }
 
-  const prerenderPath = path.resolve(cachePagesDir, `${basename}.html`);
-  const prerenderedContent = renderToString(h(Page, {}, []));
-  const fullContent = "<!DOCTYPE html>" + prerenderedContent;
+  const htmlContent = await renderPageToHtml(Page);
+  const prerenderPath = await writeHtmlFile(
+    cachePagesDir,
+    basename,
+    htmlContent,
+  );
+  const routeName = getRouteName(pathFromPages);
 
-  await Bun.write(prerenderPath, fullContent);
+  return { routeName, prerenderPath };
+}
 
-  const routeName =
-    "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
+function parseFrontmatter(frontmatterContent: string): Record<string, any> {
+  const frontmatterData = Bun.YAML.parse(frontmatterContent);
+  if (!(frontmatterData instanceof Object)) return {};
+  return frontmatterData;
+}
+
+function splitMarkdownAndFrontmatter(
+  markdownContent: string,
+): [string, string] {
+  if (!markdownContent.startsWith("---\n")) {
+    return ["", markdownContent];
+  }
+
+  const frontmatterEnd = markdownContent.indexOf("---\n", 4);
+  if (!frontmatterEnd) return ["", markdownContent];
+
+  return [
+    markdownContent.slice(4, frontmatterEnd),
+    markdownContent.slice(frontmatterEnd + 4),
+  ];
+}
+
+function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {
+  return html`<html>
+    <head></head>
+    <body>
+      ${children}
+    </body>
+  </html>`;
+}
+
+async function findMarkdownLayout(
+  config: NoxtConfig,
+  frontmatterData: Record<string, any>,
+): Promise<ComponentType<Record<string, any>>> {
+  const layoutPath = frontmatterData["layout"];
+  if (!layoutPath) {
+    return DefaultMarkdownLayout;
+  }
+  const absoluteLayoutPath = path.resolve(config.root, layoutPath);
+  const layoutExports = await import(absoluteLayoutPath);
+  const Layout = layoutExports.default;
+  if (!Layout) {
+    throw new Error(
+      `Layout component file at ${layoutPath} has no default export !`,
+    );
+  }
+  return Layout as ComponentType<Record<string, any>>;
+}
+
+/**
+ * Prerenders a Markdown file to HTML.
+ *
+ * This function:
+ * - Reads the Markdown file content
+ * - Converts Markdown to HTML using Bun's built-in markdown parser
+ * - Wraps the HTML in a DOCTYPE declaration
+ * - Generates a route name based on the file path
+ * - Saves the HTML to the cache directory
+ *
+ * @param config - Noxt configuration object
+ * @param pathFromPages - Relative path of the markdown file from the pages directory
+ * @returns Promise resolving to route name and prerender path
+ */
+async function prerenderMarkdown(
+  config: NoxtConfig,
+  pathFromPages: string,
+): Promise<{ routeName: string; prerenderPath: string }> {
+  const basename = pathFromPages.replace(/\.md$/, "");
+  console.log(`Prerendering markdown [${basename}]`);
+
+  const cachePagesDir = getCachePagesDir(config);
+  const filePath = getPageFilePath(config, pathFromPages);
+
+  const content = await Bun.file(filePath).text();
+  const [frontmatterContent, markdownContent] =
+    splitMarkdownAndFrontmatter(content);
+  const frontmatterData = parseFrontmatter(frontmatterContent);
+  const Layout = await findMarkdownLayout(config, frontmatterData);
+  const htmlContent = await renderMarkdownToHtml(
+    markdownContent,
+    Layout,
+    frontmatterData,
+  );
+  const prerenderPath = await writeHtmlFile(
+    cachePagesDir,
+    basename,
+    htmlContent,
+  );
+  const routeName = getRouteName(pathFromPages);
 
   return { routeName, prerenderPath };
 }
@@ -131,7 +310,7 @@ async function prerenderPage(
  * This function:
  * - Copies assets from assetsDir to cache/assetsDir
  * - Prepares all island components for client-side hydration
- * - Scans the pages directory for page components
+ * - Scans the pages directory for page components and markdown files
  * - Prerenders each page to HTML with island placeholders
  * - Returns a mapping of routes to their HTML file paths
  *
@@ -156,14 +335,19 @@ export async function prepareManifest(
   const islandsData = await prepareIslands(config);
 
   const manifest: Record<string, string> = {};
-  const glob = new Bun.Glob("**/*.{tsx,ts,jsx,js}");
+  const glob = new Bun.Glob("**/*.{tsx,ts,jsx,js,md}");
 
   for await (const file of glob.scan(pagesDir)) {
-    const prerenderResult = await prerenderPage(config, islandsData, file);
-    if (!prerenderResult) continue;
+    if (file.endsWith(".md")) {
+      const result = await prerenderMarkdown(config, file);
+      manifest[result.routeName] = result.prerenderPath;
+    } else {
+      const prerenderResult = await prerenderPage(config, islandsData, file);
+      if (!prerenderResult) continue;
 
-    const { routeName, prerenderPath } = prerenderResult;
-    manifest[routeName] = prerenderPath;
+      const { routeName, prerenderPath } = prerenderResult;
+      manifest[routeName] = prerenderPath;
+    }
   }
 
   return manifest;
