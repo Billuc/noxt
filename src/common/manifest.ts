@@ -76,7 +76,9 @@ function createIslandPreparePlugin(
  * @returns Route name (e.g., "about.md" -> "/about", "index.md" -> "/")
  */
 function getRouteName(pathFromPages: string): string {
-  const basename = pathFromPages.replace(/\.(tsx|ts|jsx|js|md)$/, "");
+  const basename = pathFromPages
+    .replace(/\.(tsx|ts|jsx|js|md)$/, "")
+    .replaceAll("\\", "/");
   return "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
 }
 
@@ -133,6 +135,8 @@ async function renderPageToHtml(
   return "<!DOCTYPE html>" + prerenderedContent;
 }
 
+const MARKDOWN_PLACEHOLDER = "---MARKDOWN:CHILDREN---";
+
 /**
  * Renders Markdown content to HTML string with DOCTYPE.
  *
@@ -144,9 +148,11 @@ async function renderMarkdownToHtml(
   Layout: ComponentType<Record<string, any>>,
   frontmatterData: Record<string, any>,
 ): Promise<string> {
-  const markdownComponent = Bun.markdown.react(markdownContent) as JSX.Element;
-  const fullPage = h(Layout, frontmatterData, markdownComponent);
-  const htmlContent = await renderToStringAsync(fullPage);
+  const markdownHTML = Bun.markdown.html(markdownContent);
+
+  const fullPage = h(Layout, frontmatterData, MARKDOWN_PLACEHOLDER);
+  let htmlContent = await renderToStringAsync(fullPage);
+  htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);
   return "<!DOCTYPE html>" + htmlContent;
 }
 
@@ -284,7 +290,8 @@ async function prerenderMarkdown(
   const cachePagesDir = getCachePagesDir(config);
   const filePath = getPageFilePath(config, pathFromPages);
 
-  const content = await Bun.file(filePath).text();
+  let content = await Bun.file(filePath).text();
+  content = content.replaceAll("\r\n", "\n");
   const [frontmatterContent, markdownContent] =
     splitMarkdownAndFrontmatter(content);
   const frontmatterData = parseFrontmatter(frontmatterContent);
