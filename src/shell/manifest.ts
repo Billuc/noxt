@@ -19,13 +19,14 @@ import type { NoxtConfig } from "../core/config";
 import { copyAssets } from "../shell/assets";
 import { prepareIslands, type IslandData } from "./island";
 import { html } from "htm/preact/index.js";
+import { generateIslandWrapperCode } from "../core/code_generator";
 import { cachePagesDir, getPageFilePath } from "../core/paths";
 import {
   getRouteName,
   parseMarkdown,
   renderMarkdownToHtml,
   renderPageToHtml,
-} from "../core/manifest";
+} from "../core/rendering";
 
 /**
  * Creates a Bun.build plugin that transforms island imports into placeholder divs with hydration scripts.
@@ -55,13 +56,7 @@ export function createIslandPreparePlugin(
 
         return {
           loader: "js",
-          contents: `
-            import { html } from "htm/preact";
-            return (props) => html\`
-              <div data-island="${islandData.hash}" data-props="\${JSON.stringify(props)}"></div>
-              <script type="module" src="${islandData.prerenderPath}"></script>
-            \`;
-          `,
+          contents: generateIslandWrapperCode(islandData),
         };
       });
     },

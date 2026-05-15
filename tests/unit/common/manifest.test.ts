@@ -4,7 +4,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { buildConfig } from "../../../src/core/config";
-import { prepareManifest } from "../../../src/core/manifest";
+import { prepareManifest } from "../../../src/shell/manifest";
 import { TEST_CONFIG } from "../../utils/config";
 
 describe("prepareManifest", () => {

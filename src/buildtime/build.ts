@@ -14,6 +14,7 @@
  *  limitations under the License.
  **/
 import { prepareManifest } from "../shell/manifest";
+import { generateImportMapCode } from "../core/code_generator";
 import { rm } from "node:fs/promises";
 import type { NoxtConfig } from "../core/config";
 import path from "node:path";
@@ -49,24 +50,7 @@ function createImportMapPlugin(config: NoxtConfig) {
         const manifest = await prepareManifest(config);
         console.log("Generated manifest:", manifest);
 
-        const imports = [];
-        const mapCode = [];
-
-        for (const route in manifest) {
-          const sanitizedRouteName = route.replace(/\W/g, "_");
-          imports.push(
-            `import ${sanitizedRouteName} from ${JSON.stringify(manifest[route])};`,
-          );
-          mapCode.push(`"${route}": ${sanitizedRouteName}`);
-        }
-
-        const serverFile = `
-          ${imports.join("\n")}
-
-          export async function prepareImportMap() {
-            return {${mapCode.join(",\n")}};
-          }
-        `;
+        const serverFile = generateImportMapCode(manifest);
 
         return {
           contents: serverFile,

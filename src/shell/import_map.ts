@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { NoxtConfig } from "./config";
+import type { NoxtConfig } from "../core/config";
 import { prepareManifest } from "./manifest";
 
 /**

@@ -69,9 +69,12 @@ export async function renderMarkdownToHtml(
 }
 
 function parseFrontmatter(frontmatterContent: string): Record<string, any> {
-  const frontmatterData = Bun.YAML.parse(frontmatterContent);
-  if (!(frontmatterData instanceof Object)) return {};
-  return frontmatterData;
+  try {
+    const frontmatterData = Bun.YAML.parse(frontmatterContent);
+    return frontmatterData instanceof Object ? frontmatterData : {};
+  } catch {
+    return {};
+  }
 }
 
 export function parseMarkdown(markdown: string): MarkdownData {

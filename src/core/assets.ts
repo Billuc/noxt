@@ -14,7 +14,7 @@
  *  limitations under the License.
  **/
 import path from "node:path";
-import { buildConfig } from "./core/config";
+import { buildConfig } from "./config";
 
 /**
  * Returns the full filesystem path for an asset.
