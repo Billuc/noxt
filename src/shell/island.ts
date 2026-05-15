@@ -18,6 +18,7 @@ import * as path from "node:path";
 import { cacheIslandsDir, getIslandFilePath, islandsDir } from "../core/paths";
 import { generateScriptForIsland } from "../core/island";
 import { getFilesMatchingGlob } from "./fs";
+import { generateIslandWrapperCode } from "../core/code_generator";
 
 /**
  * Data structure containing information about a prepared island component.
@@ -51,6 +52,42 @@ export interface IslandData {
  * // islands = { "/path/to/Counter.tsx": { fullPath: "...", prerenderPath: "...", hash: "abc123" }, ... }
  * ```
  */
+/**
+ * Creates a Bun.build plugin that transforms island imports into placeholder divs with hydration scripts.
+ *
+ * This plugin intercepts imports from the islands directory and replaces them with code that:
+ * - Renders a placeholder div with data-island and data-props attributes
+ * - Adds a script tag to load the island's client-side code
+ * - Preserves the component's props for client-side hydration
+ *
+ * @param config - Noxt configuration object
+ * @param islandsData - Map of island file paths to their IslandData
+ * @returns A Bun.BunPlugin that transforms island imports
+ */
+export function createIslandPreparePlugin(
+  config: NoxtConfig,
+  islandsData: Record<string, IslandData>,
+) {
+  const islandsDir = path.resolve(config.root, config.islandsDir);
+  const islandScriptRegexp = new RegExp(`^${islandsDir}[\\/](.*)\\.([tj]sx?)$`);
+
+  const islandPreparePlugin: Bun.BunPlugin = {
+    name: "island-prepare-plugin",
+    setup: (build) => {
+      build.onLoad({ filter: islandScriptRegexp }, async (args) => {
+        const islandData = islandsData[args.path];
+        if (!islandData) return undefined;
+
+        return {
+          loader: "js",
+          contents: generateIslandWrapperCode(islandData),
+        };
+      });
+    },
+  };
+  return islandPreparePlugin;
+}
+
 export async function prepareIslands(
   config: NoxtConfig,
 ): Promise<Record<string, IslandData>> {

@@ -17,52 +17,21 @@ import path from "path";
 import { type ComponentChildren, type ComponentType } from "preact";
 import type { NoxtConfig } from "../core/config";
 import { copyAssets } from "../shell/assets";
-import { prepareIslands, type IslandData } from "./island";
+import {
+  prepareIslands,
+  createIslandPreparePlugin,
+  type IslandData,
+} from "./island";
 import { html } from "htm/preact/index.js";
-import { generateIslandWrapperCode } from "../core/code_generator";
 import { cachePagesDir, getPageFilePath } from "../core/paths";
+import { writeFile, readFile, getFilesMatchingGlob } from "./fs";
+import { prepareScript } from "./build";
 import {
   getRouteName,
   parseMarkdown,
   renderMarkdownToHtml,
   renderPageToHtml,
 } from "../core/rendering";
-
-/**
- * Creates a Bun.build plugin that transforms island imports into placeholder divs with hydration scripts.
- *
- * This plugin intercepts imports from the islands directory and replaces them with code that:
- * - Renders a placeholder div with data-island and data-props attributes
- * - Adds a script tag to load the island's client-side code
- * - Preserves the component's props for client-side hydration
- *
- * @param config - Noxt configuration object
- * @param islandsData - Map of island file paths to their IslandData
- * @returns A Bun.BunPlugin that transforms island imports
- */
-export function createIslandPreparePlugin(
-  config: NoxtConfig,
-  islandsData: Record<string, IslandData>,
-) {
-  const islandsDir = path.resolve(config.root, config.islandsDir);
-  const islandScriptRegexp = new RegExp(`^${islandsDir}[\/](.*)\.[tj]sx?$`);
-
-  const islandPreparePlugin: Bun.BunPlugin = {
-    name: "island-prepare-plugin",
-    setup: (build) => {
-      build.onLoad({ filter: islandScriptRegexp }, async (args) => {
-        const islandData = islandsData[args.path];
-        if (!islandData) return undefined;
-
-        return {
-          loader: "js",
-          contents: generateIslandWrapperCode(islandData),
-        };
-      });
-    },
-  };
-  return islandPreparePlugin;
-}
 
 /**
  * Writes HTML content to the cache directory.
@@ -78,7 +47,7 @@ async function writeHtmlFile(
   content: string,
 ): Promise<string> {
   const prerenderPath = path.resolve(cachePagesDir, `${basename}.html`);
-  await Bun.write(prerenderPath, content);
+  await writeFile(prerenderPath, content);
   return prerenderPath;
 }
 
@@ -107,7 +76,7 @@ export async function prerenderPage(
 
   const filePath = getPageFilePath(config, pathFromPages);
 
-  const buildResult = await Bun.build({
+  const buildResult = await prepareScript({
     entrypoints: [filePath],
     outdir: cachePagesDir(config),
     plugins: [createIslandPreparePlugin(config, islandsData)],
@@ -192,7 +161,7 @@ export async function prerenderMarkdown(
 
   const filePath = getPageFilePath(config, pathFromPages);
 
-  let content = await Bun.file(filePath).text();
+  let content = await readFile(filePath);
   content = content.replaceAll("\r\n", "\n");
   const markdownData = parseMarkdown(content);
   const Layout = await findMarkdownLayout(config, markdownData.frontmatter);

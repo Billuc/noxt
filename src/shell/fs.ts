@@ -9,8 +9,12 @@ interface RelativePath {
   absolute: string;
 }
 
-export async function writeFile(path: PathLike, content: string) {
+export async function writeFile(path: string, content: string) {
   await Bun.write(path, content);
+}
+
+export async function readFile(filePath: string): Promise<string> {
+  return await Bun.file(filePath).text();
 }
 
 export async function removeFolder(path: string) {
