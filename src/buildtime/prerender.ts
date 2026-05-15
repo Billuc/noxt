@@ -14,8 +14,8 @@
  *  limitations under the License.
  **/
 import path from "node:path";
-import type { NoxtConfig } from "../common/config";
-import { prepareManifest } from "../common/manifest";
+import type { NoxtConfig } from "../core/config";
+import { prepareManifest } from "../shell/manifest";
 import { rm } from "node:fs/promises";
 
 /**
@@ -64,7 +64,6 @@ export async function prerender(
 
   const cacheDir = path.resolve(noxtConfig.root, ".cache");
   const distDir = path.resolve(noxtConfig.root, outdir ?? "dist");
-  const index = path.resolve(noxtConfig.root, "index.ts");
 
   await rm(cacheDir, { recursive: true, force: true });
   await rm(distDir, { recursive: true, force: true });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { buildConfig, type NoxtConfig } from "../../../src/common/config";
+import { buildConfig, type NoxtConfig } from "../../../src/core/config";
 
 describe("buildConfig", () => {
   it("should return default config when no overrides provided", () => {

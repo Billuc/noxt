@@ -13,9 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { prepareManifest } from "../common/manifest";
+import { prepareManifest } from "../shell/manifest";
 import { rm } from "node:fs/promises";
-import type { NoxtConfig } from "../common/config";
+import type { NoxtConfig } from "../core/config";
 import path from "node:path";
 
 /**

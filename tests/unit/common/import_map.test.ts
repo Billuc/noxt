@@ -3,8 +3,8 @@ import path from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { buildConfig } from "../../../src/common/config";
-import { prepareImportMap } from "../../../src/common/import_map";
+import { buildConfig } from "../../../src/core/config";
+import { prepareImportMap } from "../../../src/core/import_map";
 import { resolveAndSanitize } from "../../utils/paths";
 import { TEST_CONFIG } from "../../utils/config";
 

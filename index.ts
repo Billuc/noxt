@@ -11,8 +11,8 @@ import {
   type FormDataFormat,
   type FetchError,
 } from "./src/runtime/fetch";
-import { prepareImportMap } from "./src/common/import_map";
-import { buildConfig, type NoxtConfig } from "./src/common/config";
+import { prepareImportMap } from "./src/core/import_map";
+import { buildConfig, type NoxtConfig } from "./src/core/config";
 
 export {
   prepareImportMap,

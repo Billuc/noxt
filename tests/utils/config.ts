@@ -1,4 +1,4 @@
-import { buildConfig } from "../../src/common/config";
+import { buildConfig } from "../../src/core/config";
 
 const TEST_CONFIG = buildConfig({
   root: "tests/fixtures",

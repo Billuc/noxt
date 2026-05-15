@@ -15,7 +15,9 @@
  **/
 import { mkdir, symlink } from "node:fs/promises";
 import path, { join } from "node:path";
-import type { NoxtConfig } from "./config";
+import type { NoxtConfig } from "../core/config";
+import { assetsDir, cacheAssetsDir } from "../core/paths";
+import { linkDir } from "./fs";
 
 /**
  * Copies assets from the assets directory to the cache directory.
@@ -34,24 +36,14 @@ import type { NoxtConfig } from "./config";
  * ```
  */
 export async function copyAssets(config: NoxtConfig) {
-  const cacheAssetsDir = path.resolve(config.root, ".cache", config.assetsDir);
-  const assetsDir = path.resolve(config.root, config.assetsDir);
-
-  await mkdir(cacheAssetsDir, { recursive: true });
-
-  const glob = new Bun.Glob("**/*");
-
-  for await (const file of glob.scan(assetsDir)) {
-    const srcPath = join(assetsDir, file);
-    const destPath = join(cacheAssetsDir, file);
-
-    try {
-      await symlink(srcPath, destPath);
-    } catch (e: any) {
-      // Ignore EEXIST errors (symlink already exists)
-      if (e.code !== "EEXIST") {
-        throw e;
-      }
+  const cacheDir = cacheAssetsDir(config);
+  const srcDir = assetsDir(config);
+  try {
+    await linkDir(srcDir, cacheDir);
+  } catch (e: any) {
+    // Ignore EEXIST errors (symlink already exists)
+    if (e.code !== "EEXIST") {
+      throw e;
     }
   }
 }

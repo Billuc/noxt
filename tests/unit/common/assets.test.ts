@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import { getAssetPath } from "../../../src/assets";
-import { copyAssets } from "../../../src/common/assets";
-import { buildConfig } from "../../../src/common/config";
+import { copyAssets } from "../../../src/shell/assets";
+import { buildConfig } from "../../../src/core/config";
 import { mkdir, readlink } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { rm } from "node:fs/promises";

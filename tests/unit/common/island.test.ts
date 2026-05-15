@@ -3,8 +3,8 @@ import path from "node:path";
 import { mkdir, rm, readFile } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { buildConfig, type NoxtConfig } from "../../../src/common/config";
-import { prepareIslands, type IslandData } from "../../../src/common/island";
+import { buildConfig, type NoxtConfig } from "../../../src/core/config";
+import { prepareIslands, type IslandData } from "../../../src/core/island";
 
 describe("prepareIslands", () => {
   let tempDir: string;
@@ -29,7 +29,7 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "Counter.tsx"),
-      `import { useState } from "preact/hooks";\nexport default function Counter() { return null; }`
+      `import { useState } from "preact/hooks";\nexport default function Counter() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -44,7 +44,7 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "counter.ts"),
-      `export default function counter() { return null; }`
+      `export default function counter() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -57,7 +57,7 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "counter.jsx"),
-      `export default function Counter() { return null; }`
+      `export default function Counter() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -70,7 +70,7 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "counter.js"),
-      `export default function Counter() { return null; }`
+      `export default function Counter() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -85,7 +85,7 @@ describe("prepareIslands", () => {
     await mkdir(nestedDir, { recursive: true });
     await Bun.write(
       path.join(nestedDir, "Button.tsx"),
-      `export default function Button() { return null; }`
+      `export default function Button() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -100,7 +100,7 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "TestIsland.tsx"),
-      `export default function TestIsland() { return null; }`
+      `export default function TestIsland() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -121,11 +121,11 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "Counter.tsx"),
-      `export default function Counter() { return null; }`
+      `export default function Counter() { return null; }`,
     );
     await Bun.write(
       path.join(islandsDir, "Button.tsx"),
-      `export default function Button() { return null; }`
+      `export default function Button() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -143,7 +143,7 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "TestIsland.tsx"),
-      `export default function TestIsland() { return null; }`
+      `export default function TestIsland() { return null; }`,
     );
 
     const config = buildConfig({ root: tempDir });
@@ -162,16 +162,10 @@ describe("prepareIslands", () => {
     const islandsDir = path.join(tempDir, "src", "islands");
     await Bun.write(
       path.join(islandsDir, "Counter.tsx"),
-      `export default function Counter() { return null; }`
+      `export default function Counter() { return null; }`,
     );
-    await Bun.write(
-      path.join(islandsDir, "readme.md"),
-      "# README"
-    );
-    await Bun.write(
-      path.join(islandsDir, "styles.css"),
-      "body {}"
-    );
+    await Bun.write(path.join(islandsDir, "readme.md"), "# README");
+    await Bun.write(path.join(islandsDir, "styles.css"), "body {}");
 
     const config = buildConfig({ root: tempDir });
     const islands = await prepareIslands(config);
@@ -184,10 +178,10 @@ describe("prepareIslands", () => {
     await mkdir(customIslandsDir, { recursive: true });
     await Bun.write(
       path.join(customIslandsDir, "Custom.tsx"),
-      `export default function Custom() { return null; }`
+      `export default function Custom() { return null; }`,
     );
 
-    const config = buildConfig({ 
+    const config = buildConfig({
       root: tempDir,
       islandsDir: "custom/islands",
     });

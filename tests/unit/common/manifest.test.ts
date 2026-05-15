@@ -3,8 +3,8 @@ import path from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { buildConfig } from "../../../src/common/config";
-import { prepareManifest } from "../../../src/common/manifest";
+import { buildConfig } from "../../../src/core/config";
+import { prepareManifest } from "../../../src/core/manifest";
 import { TEST_CONFIG } from "../../utils/config";
 
 describe("prepareManifest", () => {

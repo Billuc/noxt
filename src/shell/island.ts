@@ -13,8 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { NoxtConfig } from "./config";
+import type { NoxtConfig } from "../core/config";
 import * as path from "node:path";
+import { cacheIslandsDir, getIslandFilePath, islandsDir } from "../core/paths";
+import { generateScriptForIsland } from "../core/island";
+import { getFilesMatchingGlob } from "./fs";
 
 /**
  * Data structure containing information about a prepared island component.
@@ -26,47 +29,6 @@ export interface IslandData {
   prerenderPath: string;
   /** Unique hash generated from the file path for identifying the island. */
   hash: string;
-}
-
-/**
- * Prepares a single island component by generating its client-side hydration script.
- *
- * @param config - Noxt configuration object
- * @param islandPath - Relative path of the island component from the islands directory
- * @returns Promise resolving to IslandData object with fullPath, prerenderPath, and hash
- */
-async function prepareIslandScript(
-  config: NoxtConfig,
-  islandPath: string,
-): Promise<IslandData> {
-  console.log(`Prerendering island [${islandPath}]`);
-  const islandsDir = path.resolve(config.root, config.islandsDir);
-  const cacheIslandsDir = path.resolve(
-    config.root,
-    ".cache",
-    config.islandsDir,
-  );
-
-  const filePath = path.resolve(islandsDir, islandPath);
-  const prerenderPath = path.resolve(cacheIslandsDir, islandPath);
-  const renderScriptPath = path.join(__dirname, "..", "runtime", "render.ts");
-
-  const hash = new Bun.CryptoHasher("sha256")
-    .update(filePath)
-    .digest("base64url");
-
-  const script = `
-    import { renderComponent } from ${JSON.stringify(renderScriptPath)};
-    import Island from ${JSON.stringify(filePath)};
-    renderComponent(Island, ${JSON.stringify(hash)}); 
-  `;
-
-  await Bun.write(prerenderPath, script);
-  return {
-    fullPath: filePath,
-    prerenderPath,
-    hash,
-  };
 }
 
 /**
@@ -92,16 +54,26 @@ async function prepareIslandScript(
 export async function prepareIslands(
   config: NoxtConfig,
 ): Promise<Record<string, IslandData>> {
-  const islandsDir = path.resolve(config.root, config.islandsDir);
-
+  const islandsFiles = await getFilesMatchingGlob(
+    "**/*.{tsx,ts,jsx,js}",
+    islandsDir(config),
+  );
   const islandsScripts: Record<string, IslandData> = {};
-  const glob = new Bun.Glob("**/*.{tsx,ts,jsx,js}");
 
-  for await (const file of glob.scan(islandsDir)) {
-    const prerenderResult = await prepareIslandScript(config, file);
-    if (!prerenderResult) continue;
+  for (const islandPath of islandsFiles) {
+    const file = islandPath.fromRoot;
+    console.log(`Prerendering island [${file}]`);
+    const filePath = getIslandFilePath(config, file);
+    const prerenderPath = path.resolve(cacheIslandsDir(config), file);
+    const { hash, script } = generateScriptForIsland(config, file);
 
-    islandsScripts[prerenderResult.fullPath] = prerenderResult;
+    await Bun.write(prerenderPath, script);
+
+    islandsScripts[filePath] = {
+      fullPath: filePath,
+      hash,
+      prerenderPath,
+    };
   }
 
   return islandsScripts;
