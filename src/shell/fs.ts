@@ -1,10 +1,9 @@
-import type { PathLike } from "bun";
 import path from "node:path";
 import { rm } from "node:fs/promises";
 import { symlink } from "node:fs/promises";
 import { mkdir } from "node:fs/promises";
 
-interface RelativePath {
+export interface RelativePath {
   fromRoot: string;
   absolute: string;
 }

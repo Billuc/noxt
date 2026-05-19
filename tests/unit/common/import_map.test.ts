@@ -4,7 +4,7 @@ import { mkdir, rm } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { buildConfig } from "../../../src/core/config";
-import { prepareImportMap } from "../../../src/shell/import_map";
+import { prepareImportMap } from "../../../src/core/import_map";
 import { resolveAndSanitize } from "../../utils/paths";
 import { TEST_CONFIG } from "../../utils/config";
 

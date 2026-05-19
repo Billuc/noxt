@@ -17,7 +17,7 @@ import type { NoxtConfig } from "../core/config";
 import * as path from "node:path";
 import { cacheIslandsDir, getIslandFilePath, islandsDir } from "../core/paths";
 import { generateScriptForIsland } from "../core/island";
-import { getFilesMatchingGlob } from "./fs";
+import { getFilesMatchingGlob, writeFile } from "./fs";
 import { generateIslandWrapperCode } from "../core/code_generator";
 
 /**
@@ -69,12 +69,15 @@ export function createIslandPreparePlugin(
   islandsData: Record<string, IslandData>,
 ) {
   const islandsDir = path.resolve(config.root, config.islandsDir);
-  const islandScriptRegexp = new RegExp(`^${islandsDir}[\\/](.*)\\.([tj]sx?)$`);
+  const regex = `^${islandsDir.replaceAll("\\", "\\\\")}[\\\\/](.*)\\.([tj]sx?)$`;
+  const islandScriptRegexp = new RegExp(regex);
 
   const islandPreparePlugin: Bun.BunPlugin = {
     name: "island-prepare-plugin",
     setup: (build) => {
       build.onLoad({ filter: islandScriptRegexp }, async (args) => {
+        console.log(`Loading island [${path.basename(args.path)}]`);
+
         const islandData = islandsData[args.path];
         if (!islandData) return undefined;
 
@@ -104,7 +107,7 @@ export async function prepareIslands(
     const prerenderPath = path.resolve(cacheIslandsDir(config), file);
     const { hash, script } = generateScriptForIsland(config, file);
 
-    await Bun.write(prerenderPath, script);
+    await writeFile(prerenderPath, script);
 
     islandsScripts[filePath] = {
       fullPath: filePath,

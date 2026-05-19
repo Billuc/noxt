@@ -2,6 +2,12 @@
   "name": "noxt",
   "module": "index.ts",
   "type": "module",
+  "exports": {
+    "import": "./index.ts",
+    "require": "./index.ts",
+    "default": "./index.ts",
+    "macro": "./index.macro.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

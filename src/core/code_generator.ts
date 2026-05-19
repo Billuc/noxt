@@ -29,9 +29,9 @@ import type { IslandData } from "../shell/island";
 export function generateIslandWrapperCode(islandData: IslandData): string {
   return `
     import { html } from "htm/preact";
-    return (props) => html\`
+    export default (props) => html\`
       <div data-island="${islandData.hash}" data-props="\${JSON.stringify(props)}"></div>
-      <script type="module" src="${islandData.prerenderPath}"></script>
+      <script type="module" src="${islandData.prerenderPath.replaceAll("\\", "\\\\")}"></script>
     \`;
   `;
 }
@@ -52,7 +52,7 @@ export function generateImportMapCode(
   const mapCode: string[] = [];
 
   for (const route in manifest) {
-    const sanitizedRouteName = route.replaceAll(/\W/, "_");
+    const sanitizedRouteName = route.replace(/\W/g, "_");
     imports.push(
       `import ${sanitizedRouteName} from ${JSON.stringify(manifest[route])};`,
     );

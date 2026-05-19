@@ -13,9 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { NoxtConfig } from "../core/config";
-import { prepareManifest } from "./manifest";
-
 /**
  * Prepares an import map object that can be used for dynamic page imports.
  *
@@ -36,15 +33,12 @@ import { prepareManifest } from "./manifest";
  * // importMap = { "/": HTMLBundle, "/about": HTMLBundle, ... }
  * ```
  */
-export async function prepareImportMap(
-  config: NoxtConfig,
-): Promise<Record<string, Bun.HTMLBundle>> {
-  const manifest = await prepareManifest(config);
-  const importMap: Record<string, Bun.HTMLBundle> = {};
+export function prepareImportMap(manifest: Record<string, string>) {
+  const importMap: Record<string, Response> = {};
 
   for (const route in manifest) {
     const prerenderPath = manifest[route]!;
-    importMap[route] = (await import(prerenderPath)).default;
+    importMap[route] = new Response(Bun.file(prerenderPath));
   }
 
   return importMap;

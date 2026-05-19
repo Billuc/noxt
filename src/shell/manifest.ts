@@ -23,9 +23,13 @@ import {
   type IslandData,
 } from "./island";
 import { html } from "htm/preact/index.js";
-import { cachePagesDir, getPageFilePath } from "../core/paths";
-import { writeFile, readFile, getFilesMatchingGlob } from "./fs";
-import { prepareScript } from "./build";
+import { cachePagesDir, getPageFilePath, pagesDir } from "../core/paths";
+import {
+  writeFile,
+  readFile,
+  getFilesMatchingGlob,
+  type RelativePath,
+} from "./fs";
 import {
   getRouteName,
   parseMarkdown,
@@ -76,7 +80,7 @@ export async function prerenderPage(
 
   const filePath = getPageFilePath(config, pathFromPages);
 
-  const buildResult = await prepareScript({
+  const buildResult = await Bun.build({
     entrypoints: [filePath],
     outdir: cachePagesDir(config),
     plugins: [createIslandPreparePlugin(config, islandsData)],
@@ -154,14 +158,12 @@ async function findMarkdownLayout(
  */
 export async function prerenderMarkdown(
   config: NoxtConfig,
-  pathFromPages: string,
+  pathFromPages: RelativePath,
 ): Promise<{ routeName: string; prerenderPath: string }> {
-  const basename = pathFromPages.replace(/\.md$/, "");
+  const basename = pathFromPages.fromRoot.replace(/\.md$/, "");
   console.log(`Prerendering markdown [${basename}]`);
 
-  const filePath = getPageFilePath(config, pathFromPages);
-
-  let content = await readFile(filePath);
+  let content = await readFile(pathFromPages.absolute);
   content = content.replaceAll("\r\n", "\n");
   const markdownData = parseMarkdown(content);
   const Layout = await findMarkdownLayout(config, markdownData.frontmatter);
@@ -171,9 +173,45 @@ export async function prerenderMarkdown(
     basename,
     htmlContent,
   );
-  const routeName = getRouteName(pathFromPages);
+  const routeName = getRouteName(pathFromPages.fromRoot);
 
   return { routeName, prerenderPath };
+}
+
+async function prerenderAllMarkdown(
+  config: NoxtConfig,
+): Promise<{ routeName: string; prerenderPath: string }[]> {
+  const markdownPagesFiles = await getFilesMatchingGlob(
+    "**/*.md",
+    pagesDir(config),
+  );
+
+  return await Promise.all(
+    markdownPagesFiles.map((p) => prerenderMarkdown(config, p)),
+  );
+}
+
+async function prerenderAllPreact(
+  config: NoxtConfig,
+  islandsData: Record<string, IslandData>,
+): Promise<{ routeName: string; prerenderPath: string }[]> {
+  const preactPagesFiles = await getFilesMatchingGlob(
+    "**/*.{tsx,ts,jsx,js}",
+    pagesDir(config),
+  );
+
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(path.join(__dirname, "prerender-preact.ts"));
+    worker.postMessage({ type: "config", data: config });
+    worker.postMessage({ type: "islands", data: islandsData });
+    worker.postMessage({ type: "prerender", data: preactPagesFiles });
+
+    worker.addEventListener("message", (msg) => {
+      resolve(msg.data);
+    });
+
+    worker.postMessage({ type: "start" });
+  });
 }
 
 /**
@@ -201,24 +239,18 @@ export async function prerenderMarkdown(
 export async function prepareManifest(
   config: NoxtConfig,
 ): Promise<Record<string, string>> {
-  const pagesDir = path.resolve(config.root, config.pagesDir);
-
   await copyAssets(config);
   const islandsData = await prepareIslands(config);
 
   const manifest: Record<string, string> = {};
-  const glob = new Bun.Glob("**/*.{tsx,ts,jsx,js,md}");
+  const entriesByType = await Promise.all([
+    prerenderAllMarkdown(config),
+    prerenderAllPreact(config, islandsData),
+  ]);
 
-  for await (const file of glob.scan(pagesDir)) {
-    if (file.endsWith(".md")) {
-      const result = await prerenderMarkdown(config, file);
-      manifest[result.routeName] = result.prerenderPath;
-    } else {
-      const prerenderResult = await prerenderPage(config, islandsData, file);
-      if (!prerenderResult) continue;
-
-      const { routeName, prerenderPath } = prerenderResult;
-      manifest[routeName] = prerenderPath;
+  for (const type of entriesByType) {
+    for (const entry of type) {
+      manifest[entry.routeName] = entry.prerenderPath;
     }
   }
 

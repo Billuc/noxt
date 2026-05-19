@@ -13,6 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
+import path from "node:path";
 import { h, type ComponentType } from "preact";
 import { renderToStringAsync } from "preact-render-to-string";
 
@@ -24,9 +25,12 @@ import { renderToStringAsync } from "preact-render-to-string";
  * @returns Route name (e.g., "about.md" -> "/about", "index.md" -> "/")
  */
 export function getRouteName(pathFromPages: string): string {
+  const extension = path.extname(pathFromPages);
+  if (extension !== ".html") return "/" + pathFromPages;
+
   const basename = pathFromPages
-    .replace(/\.(tsx|ts|jsx|js|md)$/, "")
-    .replaceAll("\\", "/");
+    .replaceAll("\\", "/")
+    .slice(0, -extension.length);
   return "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
 }
 

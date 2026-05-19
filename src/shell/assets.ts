@@ -13,8 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { mkdir, symlink } from "node:fs/promises";
-import path, { join } from "node:path";
 import type { NoxtConfig } from "../core/config";
 import { assetsDir, cacheAssetsDir } from "../core/paths";
 import { linkDir } from "./fs";
