@@ -1,17 +1,23 @@
 import type { NoxtConfig } from "../core/config";
-import { getPageFilePath, cachePagesDir, distPagesDir } from "../core/paths";
-import { renderPageToHtml, getRouteName } from "../core/rendering";
+import { cachePagesDir, distPagesDir } from "../core/paths";
+import {
+  renderPageToHtml,
+  getRouteName,
+  parseMarkdown,
+  renderMarkdownToHtml,
+} from "../core/rendering";
 import { type IslandData, createIslandPreparePlugin } from "./island";
-import path from "node:path";
-import { writeFile, type RelativePath } from "./fs";
-import type { ComponentType } from "preact";
+import path, { extname } from "node:path";
+import { readFile, type RelativePath } from "./fs";
+import type { ComponentChildren, ComponentType } from "preact";
+import { html } from "htm/preact";
 
 interface RouteData {
   filePath: string;
   prerenderedPage: string;
 }
 
-async function preparePreactPageScript(
+async function preparePreactComponent(
   config: NoxtConfig,
   path: RelativePath,
   islandsPlugin: Bun.BunPlugin,
@@ -31,16 +37,46 @@ async function preparePreactPageScript(
     return null;
   }
 
-  const { default: Page } = await import(buildResult.outputs[0]!.path);
+  const { default: Component } = await import(buildResult.outputs[0]!.path);
 
-  if (!Page) {
+  if (!Component) {
     console.error(
       `Skipping ${path.fromRoot} because it does not have a default export.`,
     );
     return null;
   }
 
-  return Page;
+  return Component;
+}
+
+function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {
+  return html`<html>
+    <head></head>
+    <body>
+      ${children}
+    </body>
+  </html>`;
+}
+
+async function findAndPrepareMarkdownLayout(
+  config: NoxtConfig,
+  frontmatterData: Record<string, any>,
+  islandsPlugin: Bun.BunPlugin,
+): Promise<ComponentType<Record<string, any>> | null> {
+  const layoutPath = frontmatterData["layout"];
+  if (!layoutPath) {
+    return DefaultMarkdownLayout;
+  }
+
+  const Layout = await preparePreactComponent(
+    config,
+    {
+      absolute: path.resolve(config.root, layoutPath),
+      fromRoot: layoutPath,
+    },
+    islandsPlugin,
+  );
+  return Layout as ComponentType<Record<string, any>> | null;
 }
 
 async function optimizeHtmlPages(
@@ -59,6 +95,7 @@ async function optimizeHtmlPages(
     target: "browser",
     splitting: true,
     minify: true,
+    external: ["preact", "htm/preact", "preact/hooks"],
   });
 
   const routes = [];
@@ -93,20 +130,35 @@ async function prerenderPage(
   pathFromPages: RelativePath,
   islandsPlugin: Bun.BunPlugin,
 ): Promise<RouteData | null> {
-  const basename = pathFromPages.fromRoot.replace(/\.(tsx|ts|jsx|js)$/, "");
+  const extension = extname(pathFromPages.fromRoot);
+  const basename = pathFromPages.fromRoot.slice(0, -extension.length);
   console.log(`Prerendering page [${basename}]`);
 
-  const Page = await preparePreactPageScript(
-    config,
-    pathFromPages,
-    islandsPlugin,
-  );
+  if (extension === ".md") {
+    let content = await readFile(pathFromPages.absolute);
+    content = content.replaceAll("\r\n", "\n");
+    const markdownData = parseMarkdown(content);
 
-  if (!Page) return null;
+    const Layout = await findAndPrepareMarkdownLayout(
+      config,
+      markdownData.frontmatter,
+      islandsPlugin,
+    );
+    if (!Layout) return null;
 
-  const prerenderedPage = await renderPageToHtml(Page);
+    const prerenderedPage = await renderMarkdownToHtml(markdownData, Layout);
+    return { filePath: basename, prerenderedPage };
+  } else {
+    const Page = await preparePreactComponent(
+      config,
+      pathFromPages,
+      islandsPlugin,
+    );
+    if (!Page) return null;
 
-  return { filePath: basename, prerenderedPage };
+    const prerenderedPage = await renderPageToHtml(Page);
+    return { filePath: basename, prerenderedPage };
+  }
 }
 
 declare var self: Worker;

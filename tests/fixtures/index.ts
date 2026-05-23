@@ -2,7 +2,7 @@ import { prepareManifest } from "noxt" with { type: "macro" };
 import { prepareImportMap } from "noxt";
 
 const manifest = await prepareManifest({
-  root: "tests/fixtures",
+  root: ".",
   pagesDir: "pages",
   islandsDir: "islands",
   assetsDir: "assets",

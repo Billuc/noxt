@@ -34,6 +34,38 @@ export function getRouteName(pathFromPages: string): string {
   return "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
 }
 
+function sanitizeHtml(htmlContent: string) {
+  if (htmlContent.startsWith("<html")) {
+    return htmlContent;
+  }
+  if (htmlContent.startsWith("<body")) {
+    return `<html>
+      <head></head>
+      ${htmlContent}
+    </html>`;
+  }
+  return `<html>
+      <head></head>
+      <body>${htmlContent}</body>
+    </html>`;
+}
+
+function addImportMap(htmlContent: string) {
+  return htmlContent.replace(
+    "</head>",
+    `<script type="importmap">
+			{
+				"imports": {
+					"preact": "https://esm.sh/preact@10.23.1",
+					"preact/hooks": "https://esm.sh/preact@10.23.1/hooks?external=preact",
+					"htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact"
+				}
+			}
+		</script>
+  </head>`,
+  );
+}
+
 /**
  * Renders a Preact component to HTML string with DOCTYPE.
  *
@@ -43,11 +75,13 @@ export function getRouteName(pathFromPages: string): string {
 export async function renderPageToHtml(
   component: preact.ComponentType,
 ): Promise<string> {
-  const prerenderedContent = await renderToStringAsync(h(component, {}, []));
-  return "<!DOCTYPE html>" + prerenderedContent;
+  let htmlContent = await renderToStringAsync(h(component, {}, []));
+  htmlContent = sanitizeHtml(htmlContent);
+  htmlContent = addImportMap(htmlContent);
+  return "<!DOCTYPE html>" + htmlContent;
 }
 
-interface MarkdownData {
+export interface MarkdownData {
   frontmatter: Record<string, any>;
   content: string;
 }
@@ -68,6 +102,8 @@ export async function renderMarkdownToHtml(
 
   const fullPage = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
   let htmlContent = await renderToStringAsync(fullPage);
+  htmlContent = sanitizeHtml(htmlContent);
+  htmlContent = addImportMap(htmlContent);
   htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);
   return "<!DOCTYPE html>" + htmlContent;
 }
