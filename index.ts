@@ -1,4 +1,4 @@
-import { serverRender } from "./src/runtime/server";
+import { serverRender } from "./src/core/server";
 import {
   useFetchHtml,
   type UseFetchHtmlOptions,
