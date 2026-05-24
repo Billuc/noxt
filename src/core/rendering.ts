@@ -106,7 +106,7 @@ export function parseMarkdown(markdown: string): MarkdownData {
   }
 
   const frontmatterEnd = markdown.indexOf("---\n", 4);
-  if (!frontmatterEnd) {
+  if (!frontmatterEnd || frontmatterEnd < 0) {
     return {
       frontmatter: {},
       content: markdown,

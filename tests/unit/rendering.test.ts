@@ -63,18 +63,10 @@ author: Test
     expect(result.content).toBe("# Content");
   });
 
-  it("should parse rest as frontmatter for unclosed frontmatter", () => {
+  it("should parse rest as markdown for unclosed frontmatter", () => {
     const markdown = "---\ntitle: Hello";
     const result = parseMarkdown(markdown);
-    // When no closing --- is found, slice(4, -1) extracts "title: Hell"
-    expect(result.frontmatter).toEqual({ title: "Hell" });
-    expect(result.content).toBe("\ntitle: Hello");
-  });
-
-  it("should handle frontmatter with only opening delimiter", () => {
-    const markdown = "---\n# Content";
-    const result = parseMarkdown(markdown);
     expect(result.frontmatter).toEqual({});
-    expect(result.content).toBe("\n# Content");
+    expect(result.content).toBe("---\ntitle: Hello");
   });
 });
