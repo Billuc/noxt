@@ -1,2 +1,2 @@
-import { prepareManifest } from "./src/shell/manifest";
-export { prepareManifest };
+import { prepareRoutes } from "./src/shell/routes";
+export { prepareRoutes };

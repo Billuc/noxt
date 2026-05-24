@@ -9,16 +9,18 @@ import {
   type FormDataFormat,
   type FetchError,
 } from "./src/runtime/fetch";
-import { prepareImportMap } from "./src/shell/import_map";
 import { type NoxtConfig } from "./src/core/config";
-import { prepareManifest } from "./index.macro";
+import { prepareIsland } from "./src/shell/island";
+import { prepareRoutes } from "./index.macro";
+import Island from "./src/core/IslandRenderer";
 
 export {
-  prepareImportMap,
   serverRender,
   getAssetPath,
   useFetchHtml,
-  prepareManifest,
+  prepareIsland,
+  prepareRoutes,
+  Island,
 };
 export type {
   UseFetchHtmlOptions,

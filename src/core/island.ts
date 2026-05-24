@@ -13,35 +13,45 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { NoxtConfig } from "./config";
 import * as path from "node:path";
-import { getIslandFilePath } from "./paths";
+import type { FunctionComponent } from "preact";
 
-/**
- * Data structure containing information about a prepared island component.
- */
-export interface IslandScript {
-  /** Unique hash generated from the file path for identifying the island. */
-  hash: string;
-  script: string;
-}
+const IMPORT_PATH = Symbol("Island import path");
+const ISLAND_HASH = Symbol("Island hash");
 
-export function generateScriptForIsland(
-  config: NoxtConfig,
-  islandPath: string,
-): IslandScript {
-  const filePath = getIslandFilePath(config, islandPath);
-  const renderScriptPath = path.join(__dirname, "..", "runtime", "render.ts");
+export type IslandComponent<T> = FunctionComponent<T> & {
+  [IMPORT_PATH]: string;
+  [ISLAND_HASH]: string;
+};
 
+export function defineIsland<T>(
+  component: FunctionComponent<T>,
+  importPath: string,
+): IslandComponent<T> {
   const hash = new Bun.CryptoHasher("sha256")
-    .update(filePath)
+    .update(importPath)
     .digest("base64url");
 
-  const script = `
-    import { renderComponent } from ${JSON.stringify(renderScriptPath)};
-    import Island from ${JSON.stringify(filePath)};
-    renderComponent(Island, ${JSON.stringify(hash)}); 
-  `;
+  let islandComponent: IslandComponent<T> = component as IslandComponent<T>;
+  islandComponent[IMPORT_PATH] = importPath;
+  islandComponent[ISLAND_HASH] = hash;
+  return islandComponent;
+}
 
-  return { hash, script };
+export function getImportPath<T>(component: IslandComponent<T>): string {
+  return component[IMPORT_PATH];
+}
+
+export function getHash<T>(component: IslandComponent<T>): string {
+  return component[ISLAND_HASH];
+}
+
+export function generateScriptForIsland<T>(island: IslandComponent<T>): string {
+  const renderScriptPath = path.join(__dirname, "..", "runtime", "render.ts");
+
+  return `
+    import { renderComponent } from ${JSON.stringify(renderScriptPath)};
+    import Island from ${JSON.stringify(getImportPath(island))};
+    renderComponent(Island, ${JSON.stringify(getHash(island))}); 
+  `;
 }
