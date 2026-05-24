@@ -15,27 +15,25 @@
  **/
 import * as path from "node:path";
 import {
-  defineIsland,
   generateScriptForIsland,
   getHash,
   type IslandComponent,
 } from "../core/island";
 import { writeFile } from "./fs";
-import type { FunctionComponent } from "preact";
+import type { FunctionalComponent } from "preact";
+import { html } from "htm/preact";
 
 export async function prepareIsland<T>(
-  component: FunctionComponent<T>,
-  importPath: string,
-): Promise<IslandComponent<T>> {
-  console.log(
-    `Prerendering island [${component.displayName ?? component.name}]`,
-  );
+  island: IslandComponent<T>,
+): Promise<FunctionalComponent<T>> {
+  console.log(`Prerendering island [${island.displayName ?? island.name}]`);
 
-  const island = defineIsland(component, importPath);
+  const hash = getHash(island);
   const script = generateScriptForIsland(island);
-  const filename = getHash(island) + ".js";
-  const prerenderPath = path.resolve(".cache", filename);
+  const prerenderPath = path.resolve(".cache", getHash(island) + ".js");
   await writeFile(prerenderPath, script);
 
-  return island;
+  return (props: T) =>
+    html`<div data-island=${hash} data-props=${JSON.stringify(props)}></div>
+      <script src=${prerenderPath}></script>`;
 }

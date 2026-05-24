@@ -1,7 +1,9 @@
 import { html } from "htm/preact";
 import Counter from "../islands/counter";
-import { Island } from "noxt";
+import { prepareIsland } from "noxt";
+
+const CounterIsland = await prepareIsland(Counter);
 
 export default function IslandPage() {
-  return html`<${Island} component=${Counter} props=${{}} />`;
+  return html`<${CounterIsland} />`;
 }

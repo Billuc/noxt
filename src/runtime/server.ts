@@ -46,7 +46,6 @@ export async function serverRender<Props>(
   page: ComponentType<Props>,
   props: Attributes & Props,
 ) {
-  // TODO: build islands
   const vnode = h(page, props, []);
   const body = await renderToStringAsync(vnode);
   const result = new Response(body, {

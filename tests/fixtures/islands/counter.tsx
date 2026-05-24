@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
 import { html } from "htm/preact";
-import { prepareIsland } from "noxt";
+import { defineIsland } from "noxt";
 
 function Counter() {
   const [count, setCount] = useState(0);
@@ -9,4 +9,4 @@ function Counter() {
   </button>`;
 }
 
-export default await prepareIsland(Counter, import.meta.path);
+export default defineIsland(Counter, import.meta.path);

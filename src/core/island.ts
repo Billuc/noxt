@@ -17,24 +17,17 @@ import * as path from "node:path";
 import type { FunctionComponent } from "preact";
 
 const IMPORT_PATH = Symbol("Island import path");
-const ISLAND_HASH = Symbol("Island hash");
 
 export type IslandComponent<T> = FunctionComponent<T> & {
   [IMPORT_PATH]: string;
-  [ISLAND_HASH]: string;
 };
 
 export function defineIsland<T>(
   component: FunctionComponent<T>,
   importPath: string,
 ): IslandComponent<T> {
-  const hash = new Bun.CryptoHasher("sha256")
-    .update(importPath)
-    .digest("base64url");
-
   let islandComponent: IslandComponent<T> = component as IslandComponent<T>;
   islandComponent[IMPORT_PATH] = importPath;
-  islandComponent[ISLAND_HASH] = hash;
   return islandComponent;
 }
 
@@ -43,7 +36,9 @@ export function getImportPath<T>(component: IslandComponent<T>): string {
 }
 
 export function getHash<T>(component: IslandComponent<T>): string {
-  return component[ISLAND_HASH];
+  return new Bun.CryptoHasher("sha256")
+    .update(component[IMPORT_PATH])
+    .digest("base64url");
 }
 
 export function generateScriptForIsland<T>(island: IslandComponent<T>): string {

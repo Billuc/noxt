@@ -1,5 +1,4 @@
 import { serverRender } from "./src/runtime/server";
-import { getAssetPath } from "./src/core/assets";
 import {
   useFetchHtml,
   type UseFetchHtmlOptions,
@@ -9,18 +8,16 @@ import {
   type FormDataFormat,
   type FetchError,
 } from "./src/runtime/fetch";
-import { type NoxtConfig } from "./src/core/config";
 import { prepareIsland } from "./src/shell/island";
 import { prepareRoutes } from "./index.macro";
-import Island from "./src/core/IslandRenderer";
+import { defineIsland } from "./src/core/island";
 
 export {
   serverRender,
-  getAssetPath,
   useFetchHtml,
   prepareIsland,
   prepareRoutes,
-  Island,
+  defineIsland,
 };
 export type {
   UseFetchHtmlOptions,
@@ -29,5 +26,4 @@ export type {
   FetchError,
   HttpMethod,
   FormDataFormat,
-  NoxtConfig,
 };
