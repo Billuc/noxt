@@ -17,10 +17,8 @@
   "dependencies": {
     "htm": "^3.1.1",
     "preact": "^10.29.2",
-    "preact-render-to-string": "^6.7.0"
-  },
-  "imports": {
-    "react": "preact/compat",
-    "react-dom": "preact/compat"
+    "preact-render-to-string": "^6.7.0",
+    "react": "npm:@preact/compat",
+    "react-dom": "npm:@preact/compat"
   }
 }
