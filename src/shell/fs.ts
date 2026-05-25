@@ -20,10 +20,10 @@ export async function removeFolder(path: string) {
   await rm(path, { recursive: true, force: true });
 }
 
-export async function linkDir(source: string, target: string) {
-  await mkdir(target, { recursive: true });
-  await symlink(source, target, "dir");
-}
+// export async function linkDir(source: string, target: string) {
+//   await mkdir(target, { recursive: true });
+//   await symlink(source, target, "dir");
+// }
 
 export async function getFilesMatchingGlob(
   globPattern: string,
