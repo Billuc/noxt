@@ -1,7 +1,13 @@
 /**
  * Unit tests for src/core/rendering.ts
  */
-import { getRouteName, parseMarkdown } from "../../src/core/rendering";
+import {
+  getRouteName,
+  parseMarkdown,
+  renderPageToHtml,
+  renderMarkdownToHtml,
+} from "../../src/core/rendering";
+import { h, type ComponentType } from "preact";
 import { describe, it, expect } from "bun:test";
 
 describe("getRouteName", () => {
@@ -68,5 +74,126 @@ author: Test
     const result = parseMarkdown(markdown);
     expect(result.frontmatter).toEqual({});
     expect(result.content).toBe("---\ntitle: Hello");
+  });
+});
+
+describe("renderPageToHtml", () => {
+  it("should render a simple component to full HTML with DOCTYPE", async () => {
+    const Component = () => h("h1", {}, "Hello World");
+    const result = await renderPageToHtml(Component);
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <head></head>
+          <body><h1>Hello World</h1></body>
+        </html>`,
+    );
+  });
+
+  it("should render nested components", async () => {
+    const Child = () => h("span", {}, "Child");
+    const Parent = () => h("div", {}, [h("h1", {}, "Parent"), h(Child, {})]);
+    const result = await renderPageToHtml(Parent);
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <head></head>
+          <body><div><h1>Parent</h1><span>Child</span></div></body>
+        </html>`,
+    );
+  });
+
+  it("should render a component that returns null", async () => {
+    const Component = () => null;
+    const result = await renderPageToHtml(Component);
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <head></head>
+          <body></body>
+        </html>`,
+    );
+  });
+});
+
+describe("renderMarkdownToHtml", () => {
+  it("should render markdown content with a layout that returns html/body", async () => {
+    const Layout: ComponentType<Record<string, any>> = ({ children }) =>
+      h("html", {}, [h("body", {}, children)]);
+    const result = await renderMarkdownToHtml(
+      { frontmatter: { title: "Test" }, content: "# Hello" },
+      Layout,
+    );
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <body><h1>Hello</h1></body>
+        </html>`,
+    );
+  });
+
+  it("should pass frontmatter as props to layout component", async () => {
+    const Layout: ComponentType<Record<string, any>> = (props) =>
+      h("html", {}, [
+        h("head", {}, h("title", {}, props.title)),
+        h("body", {}, props.children),
+      ]);
+    const result = await renderMarkdownToHtml(
+      { frontmatter: { title: "My Page" }, content: "Content" },
+      Layout,
+    );
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <head><title>My Page</title></head>
+          <body><p>Content</p></body>
+        </html>`,
+    );
+  });
+
+  it("should handle empty markdown content", async () => {
+    const Layout: ComponentType<Record<string, any>> = ({ children }) =>
+      h("html", {}, [h("body", {}, children)]);
+    const result = await renderMarkdownToHtml(
+      { frontmatter: {}, content: "" },
+      Layout,
+    );
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <body></body>
+        </html>`,
+    );
+  });
+
+  it("should replace the markdown placeholder with rendered HTML", async () => {
+    const Layout: ComponentType<Record<string, any>> = ({ children }) =>
+      h("html", {}, [h("body", {}, children)]);
+    const result = await renderMarkdownToHtml(
+      { frontmatter: {}, content: "# Clean" },
+      Layout,
+    );
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <body><h1>Clean</h1></body>
+        </html>`,
+    );
+  });
+
+  it("should wrap markdown in html/body when layout output has no wrapping tags", async () => {
+    const Layout: ComponentType<Record<string, any>> = ({ children }) =>
+      h("div", {}, children);
+    const result = await renderMarkdownToHtml(
+      { frontmatter: {}, content: "# Hello" },
+      Layout,
+    );
+    expect(result).toEqualIgnoringWhitespace(
+      `<!DOCTYPE html>
+        <html>
+          <head></head>
+          <body><div><h1>Hello</h1></div></body>
+        </html>`,
+    );
   });
 });
