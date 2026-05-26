@@ -1,7 +1,5 @@
 import path from "node:path";
 import { rm } from "node:fs/promises";
-import { symlink } from "node:fs/promises";
-import { mkdir } from "node:fs/promises";
 
 export interface RelativePath {
   fromRoot: string;
@@ -19,11 +17,6 @@ export async function readFile(filePath: string): Promise<string> {
 export async function removeFolder(path: string) {
   await rm(path, { recursive: true, force: true });
 }
-
-// export async function linkDir(source: string, target: string) {
-//   await mkdir(target, { recursive: true });
-//   await symlink(source, target, "dir");
-// }
 
 export async function getFilesMatchingGlob(
   globPattern: string,

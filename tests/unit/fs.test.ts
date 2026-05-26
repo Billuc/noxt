@@ -139,31 +139,6 @@ describe("fs module", () => {
     });
   });
 
-  // describe("linkDir", () => {
-  //   it("should create a symbolic link to a directory", async () => {
-  //     const sourceDir = path.join(TEST_DIR, "source");
-  //     const targetLink = path.join(TEST_DIR, "target-link");
-  //     await mkdir(sourceDir);
-
-  //     await linkDir(sourceDir, targetLink);
-
-  //     expect(existsSync(targetLink)).toBe(true);
-  //     const stats = lstatSync(targetLink);
-  //     expect(stats.isSymbolicLink()).toBe(true);
-  //   });
-
-  //   it("should create parent directories for target", async () => {
-  //     const sourceDir = path.join(TEST_DIR, "source");
-  //     const targetLink = path.join(TEST_DIR, "nested", "parent", "target-link");
-  //     await mkdir(sourceDir);
-
-  //     await linkDir(sourceDir, targetLink);
-
-  //     expect(existsSync(targetLink)).toBe(true);
-  //     const stats = lstatSync(targetLink);
-  //     expect(stats.isSymbolicLink()).toBe(true);
-  //   });
-  // });
 
   describe("getFilesMatchingGlob", () => {
     it("should return files matching a glob pattern", async () => {
