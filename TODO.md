@@ -2,6 +2,5 @@
 
 Ideas of things that could be implemented:
 
-- Incremental building ?
-- Prerender island in `[data-island]` div
+- Incremental building ? No regeneration if hash match
 - Error handling / middlewares

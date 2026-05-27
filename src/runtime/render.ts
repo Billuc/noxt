@@ -13,7 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { html, render } from "htm/preact";
+import { html } from "htm/preact";
+import { hydrate } from "preact";
 import type { ComponentType } from "preact";
 
 export function renderComponent(Component: ComponentType<any>, hash: string) {
@@ -23,6 +24,6 @@ export function renderComponent(Component: ComponentType<any>, hash: string) {
 
   for (const element of elements) {
     const props = JSON.parse(element.getAttribute("data-props") || "{}");
-    render(html`<${Component} ...${props} />`, element);
+    hydrate(html`<${Component} ...${props} />`, element);
   }
 }

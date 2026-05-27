@@ -13,28 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { IslandData } from "../shell/island";
-
-/**
- * Generates pure JavaScript code for an island wrapper component.
- *
- * This function creates template code that renders a placeholder div with:
- * - data-island attribute containing the island hash
- * - data-props attribute with JSON-stringified props
- * - script tag to load the island's client-side code
- *
- * @param islandData - Island metadata (hash, prerender path)
- * @returns JavaScript code as a string
- */
-export function generateIslandWrapperCode(islandData: IslandData): string {
-  return `
-    import { html } from "htm/preact";
-    export default (props) => html\`
-      <div data-island="${islandData.hash}" data-props="\${JSON.stringify(props)}"></div>
-      <script type="module" src="${islandData.prerenderPath.replaceAll("\\", "\\\\")}"></script>
-    \`;
-  `;
-}
 
 /**
  * Generates pure JavaScript code for the import map.
@@ -45,9 +23,7 @@ export function generateIslandWrapperCode(islandData: IslandData): string {
  * @param manifest - Record mapping route names to prerendered HTML file paths
  * @returns JavaScript code as a string
  */
-export function generateImportMapCode(
-  manifest: Record<string, string>,
-): string {
+export function generateRouteMapCode(manifest: Record<string, string>): string {
   const imports: string[] = [];
   const mapCode: string[] = [];
 
@@ -62,8 +38,8 @@ export function generateImportMapCode(
   return `
     ${imports.join("\n")}
 
-    export async function prepareImportMap() {
-      return {${mapCode.join(",\n")}};
-    }
+    export default {
+      ${mapCode.join(",\n")}
+    };
   `;
 }

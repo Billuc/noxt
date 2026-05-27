@@ -26,8 +26,6 @@ import { renderToStringAsync } from "preact-render-to-string";
  */
 export function getRouteName(pathFromPages: string): string {
   const extension = path.extname(pathFromPages);
-  if (extension !== ".html") return "/" + pathFromPages;
-
   const basename = pathFromPages
     .replaceAll("\\", "/")
     .slice(0, -extension.length);
@@ -50,22 +48,6 @@ function sanitizeHtml(htmlContent: string) {
     </html>`;
 }
 
-function addImportMap(htmlContent: string) {
-  return htmlContent.replace(
-    "</head>",
-    `<script type="importmap">
-			{
-				"imports": {
-					"preact": "https://esm.sh/preact@10.23.1",
-					"preact/hooks": "https://esm.sh/preact@10.23.1/hooks?external=preact",
-					"htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact"
-				}
-			}
-		</script>
-  </head>`,
-  );
-}
-
 /**
  * Renders a Preact component to HTML string with DOCTYPE.
  *
@@ -77,7 +59,6 @@ export async function renderPageToHtml(
 ): Promise<string> {
   let htmlContent = await renderToStringAsync(h(component, {}, []));
   htmlContent = sanitizeHtml(htmlContent);
-  htmlContent = addImportMap(htmlContent);
   return "<!DOCTYPE html>" + htmlContent;
 }
 
@@ -103,7 +84,6 @@ export async function renderMarkdownToHtml(
   const fullPage = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
   let htmlContent = await renderToStringAsync(fullPage);
   htmlContent = sanitizeHtml(htmlContent);
-  htmlContent = addImportMap(htmlContent);
   htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);
   return "<!DOCTYPE html>" + htmlContent;
 }
@@ -118,6 +98,7 @@ function parseFrontmatter(frontmatterContent: string): Record<string, any> {
 }
 
 export function parseMarkdown(markdown: string): MarkdownData {
+  markdown = markdown.replaceAll("\r\n", "\n");
   if (!markdown.startsWith("---\n")) {
     return {
       frontmatter: {},
@@ -126,7 +107,7 @@ export function parseMarkdown(markdown: string): MarkdownData {
   }
 
   const frontmatterEnd = markdown.indexOf("---\n", 4);
-  if (!frontmatterEnd) {
+  if (!frontmatterEnd || frontmatterEnd < 0) {
     return {
       frontmatter: {},
       content: markdown,

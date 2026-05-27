@@ -1,17 +1,9 @@
-import { prepareManifest } from "noxt" with { type: "macro" };
-import { prepareImportMap } from "noxt";
+import { prepareRoutes } from "noxt" with { type: "macro" };
 
-const manifest = await prepareManifest({
-  root: ".",
-  pagesDir: "pages",
-  islandsDir: "islands",
-  assetsDir: "assets",
-});
-const prerenderedRoutes = prepareImportMap(manifest);
+// @ts-ignore
+const routes = (await import(prepareRoutes())).default;
 
 Bun.serve({
   port: 2101,
-  routes: {
-    ...prerenderedRoutes,
-  },
+  routes,
 });
