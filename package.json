@@ -19,11 +19,13 @@
     "LICENSE"
   ],
   "exports": {
-    "import": "./index.ts",
-    "require": "./index.ts",
-    "default": "./index.ts",
-    "./runtime": "./src/runtime/index.ts",
-    "macro": "./index.macro.ts"
+    ".": {
+      "import": "./index.ts",
+      "require": "./index.ts",
+      "default": "./index.ts",
+      "macro": "./index.macro.ts"
+    },
+    "./runtime": "./src/runtime/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
