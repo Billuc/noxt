@@ -1,10 +1,10 @@
 # Noxt
 
-A high-performance web server built with [Bun](https://bun.com), a fast all-in-one JavaScript runtime. Noxt is designed for rapid development and production-grade performance.
+A high-performance web framework built with [Bun](https://bun.sh), a fast all-in-one JavaScript runtime. Noxt combines prerendering with an islands architecture for minimal client-side JavaScript.
 
 ## Features
 
-- **Built on Bun v1.3.10**: Leverage the speed and efficiency of Bun's JavaScript runtime
+- **Built on Bun**: Leverage the speed and efficiency of Bun's JavaScript runtime
 - **Zero-config Setup**: Get started quickly with minimal configuration
 - **TypeScript Support**: Full TypeScript support out of the box
 - **Fast Execution**: Native performance with near-instant startup times
@@ -14,10 +14,14 @@ A high-performance web server built with [Bun](https://bun.com), a fast all-in-o
 
 Full documentation is available in the [docs/](docs/) directory:
 
+- [Index](docs/index.md) - Table of contents
 - [Getting Started](docs/01-getting-started.md) - Installation and basic usage
-- [How It Works](docs/02-how-it-works.md) - Architecture and rendering pipeline
+- [Pages & Routing](docs/02-pages-and-routing.md) - File-based routing and page creation
 - [Islands](docs/03-islands.md) - Interactive components with client-side hydration
-- [Prerendering](docs/04-prerendering.md) - Static site generation
+- [useFetch Hook](docs/04-use-fetch.md) - Client-side data fetching
+- [Building & Deploying](docs/05-building-and-deploying.md) - Build and deployment guide
+- [Architecture](docs/06-architecture.md) - Architecture and rendering pipeline
+- [API Reference](docs/07-api-reference.md) - Complete API documentation
 
 ## Getting Started
 
@@ -38,7 +42,7 @@ bun install
 To start the dev server:
 
 ```bash
-bun dev
+bun run index.ts
 ```
 
 The server will start and be ready to handle requests.
@@ -56,14 +60,14 @@ pages/
 
 ### Creating Islands
 
-Islands are interactive components that run on the client. Define them using the `defineIsland` function and hydrate them correctly using the `asIsland` function.
+Islands are interactive components that run on the client. Define them using the `defineIsland` function and hydrate them correctly using the `prepareIsland` function.
 
 Here is an example of an interactive island:
 
 ```ts
 import { useState } from "preact/hooks";
 import { html } from "htm/preact";
-import { defineIsland } from "@lib/island";
+import { defineIsland } from "noxt";
 
 function Hello() {
   const [name, setName] = useState("World");
@@ -87,54 +91,20 @@ export default defineIsland(Hello, import.meta.path);
 It is imported in a page like so:
 
 ```ts
-import Hello from "../components/Hello";
+import Hello from "../islands/Hello";
+import { prepareIsland } from "noxt";
 
-const HelloIsland = await asIsland(Hello);
+const HelloIsland = await prepareIsland(Hello);
 ```
-
-## Configuration
-
-Configuration is done via environment variables. Create a `.env` file in the root directory to set your environment variables:
-
-```bash
-# Example .env file
-PORT=3000
-MODE=development
-```
-
-Supported environment variables:
-
-- `PORT`: The port number for the server (default: 3000)
-- `MODE`: "development" or "production"
-- `PAGES_DIR`: The directory in which pages are defined
-- `ASSETS_DIR`: The directory in which assets are located
-
-## Loading Assets
-
-Use the `getAssetPath()` function to get the full filesystem path for assets in your `ASSETS_DIR`:
-
-```tsx
-import { getAssetPath } from "noxt";
-
-// Get the filesystem path for an asset
-const logoPath = getAssetPath("images/logo.png");
-// or
-html`<img src=${getAssetPath("images/logo.png")} />`;
-// Returns: /path/to/project/src/assets/images/logo.png (or Windows equivalent)
-
-// Use with Bun.file() to read assets
-const content = await Bun.file(getAssetPath("data/config.json")).text();
-```
-
-The `getAssetPath()` function takes a path relative to your `ASSETS_DIR` and returns the absolute filesystem path. It works correctly on both Unix and Windows systems.
 
 ## Commands
 
 - `bun install` — Install dependencies.
-- `bun dev` — Start the development server with hot reload.
-- `bun run build` — Bundle the project for production.
-- `bun preview` — Preview the bundled project.
-- `bun prerender` — Prerender a static project (no SSR or routes).
+- `bun run index.ts` — Start the development server.
+- `bun build --target=bun --outdir=dist index.ts` — Bundle the project for production.
+- `cd dist && bun run index.js` — Preview the bundled project.
+- `bun test` — Run tests.
+- `rm -rf .cache dist` — Clean build artifacts.
 
 ## Bundle Size
 
@@ -146,6 +116,6 @@ Noxt is built to minimize client-side JavaScript. By combining server-side rende
 
 How Noxt achieves this and how to keep bundles small:
 
-- **Islands over full-page hydration:** Use `defineIsland` and `asIsland` so only interactive parts are hydrated on the client while the rest is prerendered.
+- **Islands over full-page hydration:** Use `defineIsland` and `prepareIsland` so only interactive parts are hydrated on the client while the rest is prerendered.
 - **Prefer lightweight libraries:** Preact + HTM are intentionally small compared to heavier alternatives like React.
 - **Code-split islands & dynamic imports:** Load optional features only when needed.
