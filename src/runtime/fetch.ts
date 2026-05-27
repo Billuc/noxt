@@ -13,29 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { useState, useRef, useCallback } from "preact/hooks";
+import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
 
-/**
- * Supported swap strategies for inserting HTML into the DOM.
- * Matches browser insertAdjacentHTML positions plus common replacements.
- */
-export type SwapStrategy =
-  | "innerHTML" // Replace the inner content of the target element
-  | "outerHTML" // Replace the entire target element
-  | "beforebegin" // Insert immediately before the target element
-  | "afterbegin" // Insert inside the target element, before its first child
-  | "beforeend" // Insert inside the target element, after its last child (append)
-  | "afterend"; // Insert immediately after the target element
-
-/**
- * Supported HTTP methods.
- */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-
-/**
- * Form data serialization format.
- */
-export type FormDataFormat = "auto" | "json" | "formdata" | "urlencoded";
 
 export class FetchError extends Error {
   status: number;
@@ -47,115 +27,37 @@ export class FetchError extends Error {
   }
 }
 
-/**
- * Options for the useFetchHtml hook.
- */
-export interface UseFetchHtmlOptions {
-  /** The URL to fetch HTML from */
-  action: string;
-  /** HTTP method to use */
+export interface UseFetchOptions<T> {
   method?: HttpMethod;
-  /** Request data. Sent as a JSON body or in the query for GET requests */
-  data?: Record<string, any> | null;
-  /** Request headers */
-  headers?: HeadersInit;
-  /** Target element (HTMLElement) or selector string (#id) for automatic HTML insertion */
-  target?: HTMLElement | string;
-  /** Strategy for inserting the fetched HTML (requires target) */
-  swap?: SwapStrategy;
+  body?: any;
+  headers?: Record<string, string>;
+  initial?: T;
 }
 
-/**
- * Return value from the useFetchHtml hook.
- */
-export interface UseFetchHtmlReturn {
-  /** Function to manually trigger the fetch */
-  fetch: () => Promise<string>;
-  /** Whether a fetch is currently in progress */
+export interface UseFetchReturn<T> {
+  data: T | null;
   loading: boolean;
-  /** Any error that occurred during the last fetch */
   error: Error | null;
-  /** The last successfully fetched HTML */
-  data: string | null;
+  refresh: () => Promise<T | null>;
 }
 
-/**
- * Perform DOM swap based on strategy.
- * @param target - The target element
- * @param html - The HTML to insert
- * @param strategy - The swap strategy
- */
-function performSwap(
-  target: HTMLElement,
-  html: string,
-  strategy: SwapStrategy,
-): void {
-  switch (strategy) {
-    case "innerHTML":
-      target.innerHTML = html;
-      break;
-    case "outerHTML":
-      target.outerHTML = html;
-      break;
-    case "beforebegin":
-    case "afterbegin":
-    case "beforeend":
-    case "afterend":
-      target.insertAdjacentHTML(strategy, html);
-      break;
-    default:
-      target.innerHTML = html;
-  }
-}
-
-/**
- * Resolve target to HTMLElement.
- * If target is a string, it's treated as a CSS selector (usually an ID selector like "#my-id").
- * If target is already an HTMLElement, it's returned as-is.
- */
-function resolveTarget(target: HTMLElement | string): HTMLElement | null {
-  if (target instanceof HTMLElement) return target;
-  if (typeof target === "string") {
-    const el = document.querySelector<HTMLElement>(target);
-    return el || null;
-  }
-  return null;
-}
-
-/**
- * Custom hook for fetching HTML content with optional automatic DOM insertion.
- *
- * @param options - Fetch configuration options including optional target for auto-insertion
- * @returns Object with fetch function and state
- *
- * @example
- * ```ts
- * // With automatic insertion into #content
- * const { fetch, loading, error } = useFetchHtml({
- *   action: '/api/content',
- *   target: '#content',
- *   swap: 'innerHTML',
- * });
- *
- * <button onclick=${fetch} ?disabled=${loading}>Load</button>
- * <div id="content"></div>
- *
- * // With element reference
- * const { fetch } = useFetchHtml({
- *   action: '/api/content',
- *   target: myRef.current,
- *   swap: 'beforeend',
- * });
- * ```
- */
-export function useFetchHtml(options: UseFetchHtmlOptions): UseFetchHtmlReturn {
-  const [loading, setLoading] = useState(false);
+export function useFetch<T = any>(
+  url: string,
+  options?: UseFetchOptions<T>,
+): UseFetchReturn<T> {
+  const [data, setData] = useState<T | null>(options?.initial ?? null);
+  const [loading, setLoading] = useState(!options?.initial);
   const [error, setError] = useState<Error | null>(null);
-  const [data, setData] = useState<string | null>(null);
+  // Refs to track abort controller, latest options/url, and mount state across renders
   const abortControllerRef = useRef<AbortController | null>(null);
+  const optionsRef = useRef(options);
+  const urlRef = useRef(url);
+  const mountedRef = useRef(true);
 
-  const doFetch = useCallback(async (): Promise<string> => {
-    // Cancel any pending request
+  optionsRef.current = options;
+  urlRef.current = url;
+
+  const refresh = useCallback(async (): Promise<T | null> => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -167,27 +69,23 @@ export function useFetchHtml(options: UseFetchHtmlOptions): UseFetchHtmlReturn {
     setError(null);
 
     try {
-      const {
-        action,
-        method = "GET",
-        data,
-        headers = {},
-        target,
-        swap = "innerHTML",
-      } = options;
+      const { method = "GET", body, headers: customHeaders = {} } =
+        optionsRef.current ?? {};
 
-      const finalHeaders: HeadersInit = new Headers(headers);
-      const finalUrl = new URL(action);
-      let finalBody: BodyInit | null | undefined = null;
+      const finalHeaders: Record<string, string> = { ...customHeaders };
+      const finalUrl = urlRef.current.startsWith("http://") || urlRef.current.startsWith("https://")
+        ? new URL(urlRef.current)
+        : new URL(urlRef.current, window.location.origin);
+      let finalBody: BodyInit | null | undefined = undefined;
 
-      if (!!data) {
+      if (body != null) {
         if (method === "GET") {
-          Object.entries(data).forEach(([k, v]) => {
+          for (const [k, v] of Object.entries(body)) {
             finalUrl.searchParams.append(k, String(v));
-          });
+          }
         } else {
-          finalBody = JSON.stringify(data);
-          finalHeaders.set("Content-Type", "application/json");
+          finalBody = JSON.stringify(body);
+          finalHeaders["Content-Type"] = "application/json";
         }
       }
 
@@ -202,33 +100,43 @@ export function useFetchHtml(options: UseFetchHtmlOptions): UseFetchHtmlReturn {
         throw new FetchError(response.status, response.statusText);
       }
 
-      const html = await response.text();
-      setData(html);
-
-      // Auto-insert if target is provided
-      if (html && target !== undefined) {
-        const targetElement = resolveTarget(target);
-        if (targetElement) {
-          performSwap(targetElement, html, swap);
-        }
+      const json: T = await response.json();
+      if (mountedRef.current) {
+        setData(json);
       }
-
-      return html;
+      return json;
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        // Request was cancelled, don't set error
-        return "";
+        return null;
       }
       const errorObj = err instanceof Error ? err : new Error(String(err));
-      setError(errorObj);
+      if (mountedRef.current) {
+        setError(errorObj);
+      }
       throw errorObj;
     } finally {
-      setLoading(false);
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;
       }
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
-  }, [options]);
+  }, []);
 
-  return { fetch: doFetch, loading, error, data };
+  // Fetch data on mount and abort on unmount
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    if (!options?.initial) {
+      refresh().catch(() => {});
+    }
+    return () => {
+      mountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  return { data, loading, error, refresh };
 }
