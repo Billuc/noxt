@@ -22,6 +22,7 @@
     "import": "./index.ts",
     "require": "./index.ts",
     "default": "./index.ts",
+    "./runtime": "./src/runtime/index.ts",
     "macro": "./index.macro.ts"
   },
   "devDependencies": {

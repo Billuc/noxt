@@ -5,7 +5,7 @@
 ## Basic Usage
 
 ```ts
-import { useFetch } from "noxt";
+import { useFetch } from "noxt/runtime";
 
 function MyComponent() {
   const { data, loading, error, refresh } = useFetch<MyDataType>("/api/data");

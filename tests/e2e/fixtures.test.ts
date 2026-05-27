@@ -235,16 +235,26 @@ describe("fixtures project - run and build commands", () => {
     });
 
     it("should build and then run the built files successfully", async () => {
-      // First build
       const buildResult = await runCommand("bun", ["build", "--target=bun", "--outdir=dist", "index.ts"], FIXTURES_DIR);
       expect(buildResult.code).toBe(0);
 
-      // Then run the built file on a different port
-      // We need to modify the built index.js to use a different port
-      // Or we can just test that the built file exists and is valid
       const indexPath = path.resolve(DIST_DIR, "index.js");
-      const content = await readFile(indexPath, "utf-8");
-      expect(content).toContain("Bun.serve");
+      let builtContent = await readFile(indexPath, "utf-8");
+      builtContent = builtContent.replace("2101", String(BUILD_TEST_PORT));
+      await Bun.write(indexPath, builtContent);
+
+      serverProcess = spawn("bun", ["run", "index.js"], {
+        cwd: DIST_DIR,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      const serverReady = await waitForServer(BUILD_TEST_PORT, 10000);
+      expect(serverReady).toBe(true);
+
+      const response = await fetch(`http://localhost:${BUILD_TEST_PORT}/`);
+      expect(response.status).toBe(200);
+      const body = await response.text();
+      expect(body).toContain("Index Page");
     });
 
     it("should generate .cache with all page HTML files during build", async () => {

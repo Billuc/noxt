@@ -60,7 +60,7 @@ The returned file is a JavaScript module exporting a `Record<string, string>` ma
 
 ### `useFetch(url, options?)`
 
-Preact hook for client-side data fetching with loading/error states and automatic request cancellation.
+Preact hook for client-side data fetching with loading/error states and automatic request cancellation. Import from `"noxt/runtime"`.
 
 ```ts
 function useFetch<T = any>(
