@@ -34,6 +34,8 @@ export async function prepareIsland<T>(
   await writeFile(prerenderPath, script);
 
   return (props: T) =>
-    html`<div data-island=${hash} data-props=${JSON.stringify(props)}></div>
+    html`<div data-island=${hash} data-props=${JSON.stringify(props)}>
+        <${island} ...${props} />
+      </div>
       <script src=${prerenderPath}></script>`;
 }
