@@ -1,4 +1,3 @@
-import { serverRender } from "./src/core/server";
 import {
   useFetch,
   type UseFetchOptions,
@@ -10,7 +9,6 @@ import { prepareRoutes } from "./index.macro";
 import { defineIsland } from "./src/core/island";
 
 export {
-  serverRender,
   useFetch,
   prepareIsland,
   prepareRoutes,
