@@ -30,7 +30,7 @@ export async function prepareIsland<T>(
 
   const hash = getHash(island);
   const script = generateScriptForIsland(island);
-  const prerenderPath = path.resolve(".cache", getHash(island) + ".js");
+  const prerenderPath = path.resolve(".cache", hash + ".js");
   await writeFile(prerenderPath, script);
 
   return (props: T) =>

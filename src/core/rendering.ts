@@ -98,6 +98,7 @@ function parseFrontmatter(frontmatterContent: string): Record<string, any> {
 }
 
 export function parseMarkdown(markdown: string): MarkdownData {
+  markdown = markdown.replaceAll("\r\n", "\n");
   if (!markdown.startsWith("---\n")) {
     return {
       frontmatter: {},

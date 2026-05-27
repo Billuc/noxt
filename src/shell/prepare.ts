@@ -28,7 +28,7 @@ export async function preparePreact(
 }
 
 export async function prepareMarkdown(markdownPath: string): Promise<string> {
-  let content = await readFile(markdownPath);
+  const content = await readFile(markdownPath);
 
   const pageHash = new Bun.CryptoHasher("sha256")
     .update(content)
@@ -36,11 +36,11 @@ export async function prepareMarkdown(markdownPath: string): Promise<string> {
   const fileName = basename(markdownPath, ".md") + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 
-  content = content.replaceAll("\r\n", "\n");
   const markdownData = parseMarkdown(content);
 
   const Layout = await findAndPrepareMarkdownLayout(markdownData.frontmatter);
-  if (!Layout) throw new Error("Error while prerendering md");
+  if (!Layout)
+    throw new Error("Error while preparing layout for page " + markdownPath);
 
   const prerenderedPage = await renderMarkdownToHtml(markdownData, Layout);
   await writeFile(prerenderPath, prerenderedPage);
