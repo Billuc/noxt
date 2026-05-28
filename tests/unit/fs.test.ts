@@ -4,6 +4,7 @@
 import {
   writeFile,
   readFile,
+  copyFile,
   removeFolder,
   getFilesMatchingGlob,
   type RelativePath,
@@ -95,6 +96,59 @@ describe("fs module", () => {
         expect(e).toBeInstanceOf(Error);
         expect((e as Error).message).toContain("no such file or directory");
       }
+    });
+  });
+
+  describe("copyFile", () => {
+    it("should copy a file to a new location", async () => {
+      const sourcePath = path.join(TEST_DIR, "source.txt");
+      const destPath = path.join(TEST_DIR, "dest.txt");
+      const content = "Copy test content";
+      await Bun.write(sourcePath, content);
+
+      await copyFile(sourcePath, destPath);
+
+      const result = await Bun.file(destPath).text();
+      expect(result).toBe(content);
+      const sourceResult = await Bun.file(sourcePath).text();
+      expect(sourceResult).toBe(content);
+    });
+
+    it("should overwrite destination if it already exists", async () => {
+      const sourcePath = path.join(TEST_DIR, "source.txt");
+      const destPath = path.join(TEST_DIR, "dest.txt");
+      await Bun.write(sourcePath, "New content");
+      await Bun.write(destPath, "Old content");
+
+      await copyFile(sourcePath, destPath);
+
+      const result = await Bun.file(destPath).text();
+      expect(result).toBe("New content");
+    });
+
+    it("should copy files to a different directory", async () => {
+      const sourcePath = path.join(TEST_DIR, "source.txt");
+      const destDir = path.join(TEST_DIR, "subdir");
+      const destPath = path.join(destDir, "copied.txt");
+      const content = "Cross-directory copy";
+      await Bun.write(sourcePath, content);
+
+      await copyFile(sourcePath, destPath);
+
+      const result = await Bun.file(destPath).text();
+      expect(result).toBe(content);
+    });
+
+    it("should copy binary files", async () => {
+      const sourcePath = path.join(TEST_DIR, "source.bin");
+      const destPath = path.join(TEST_DIR, "dest.bin");
+      const content = "0".repeat(1024);
+      await Bun.write(sourcePath, content);
+
+      await copyFile(sourcePath, destPath);
+
+      const result = await Bun.file(destPath).text();
+      expect(result).toBe(content);
     });
   });
 

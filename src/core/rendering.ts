@@ -32,6 +32,12 @@ export function getRouteName(pathFromPages: string): string {
   return "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
 }
 
+export function routeToHtmlPath(routeName: string): string {
+  const relative = routeName.replace(/^\//, "");
+  if (relative === "") return "index.html";
+  return path.join(relative, "index.html");
+}
+
 function sanitizeHtml(htmlContent: string) {
   if (htmlContent.startsWith("<html")) {
     return htmlContent;
