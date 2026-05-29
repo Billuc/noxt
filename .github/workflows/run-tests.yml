@@ -9,5 +9,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
 
+      - run: ls
+      - run: pwd
+
       - run: bun install
       - run: bun test
