@@ -2,9 +2,9 @@ import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import { removeFolder, copyFile } from "./fs";
 import { prepareRoutes, type RouteData } from "./routes";
-import { routeToHtmlPath } from "../core/rendering";
+import { getRouteName, routeToHtmlPath } from "../core/rendering";
 
-export async function staticPrerender(): Promise<void> {
+export async function staticPrerender(): Promise<RouteData[]> {
   console.log("Exporting static site...");
 
   await prepareRoutes();
@@ -13,7 +13,7 @@ export async function staticPrerender(): Promise<void> {
 
   if (manifest.length === 0) {
     console.log("No pages to export.");
-    return;
+    return [];
   }
 
   const stagingDir = path.resolve(".export");
@@ -45,12 +45,21 @@ export async function staticPrerender(): Promise<void> {
       throw new Error("Static export build failed");
     }
 
-    buildSuccess = true;
+    console.log("Static export complete! Output in dist/");
+
+    const routeData = [];
+    for (const output of result.outputs) {
+      const pathFromDist = path.relative(path.resolve("dist"), output.path);
+      const routeName = pathFromDist.endsWith(".html")
+        ? getRouteName(pathFromDist)
+        : "/" + pathFromDist;
+      routeData.push({ routeName, filePath: output.path });
+    }
+
+    return routeData;
+  } catch {
+    return [];
   } finally {
     await removeFolder(stagingDir);
-  }
-
-  if (buildSuccess) {
-    console.log("Static export complete! Output in dist/");
   }
 }

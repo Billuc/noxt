@@ -29,7 +29,10 @@ export function getRouteName(pathFromPages: string): string {
   const basename = pathFromPages
     .replaceAll("\\", "/")
     .slice(0, -extension.length);
-  return "/" + (basename.endsWith("index") ? basename.slice(0, -5) : basename);
+
+  if (basename === "index") return "/";
+
+  return "/" + (basename.endsWith("/index") ? basename.slice(0, -6) : basename);
 }
 
 export function routeToHtmlPath(routeName: string): string {
