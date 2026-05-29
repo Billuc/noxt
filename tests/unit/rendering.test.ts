@@ -35,7 +35,7 @@ describe("getRouteName", () => {
   });
 
   it("should handle index files in nested paths", () => {
-    expect(getRouteName("blog/index.md")).toBe("/blog/");
+    expect(getRouteName("blog/index.md")).toBe("/blog");
   });
 });
 
@@ -49,7 +49,9 @@ describe("routeToHtmlPath", () => {
   });
 
   it("should convert /blog/post to blog/post/index.html", () => {
-    expect(routeToHtmlPath("/blog/post")).toBe(path.join("blog", "post", "index.html"));
+    expect(routeToHtmlPath("/blog/post")).toBe(
+      path.join("blog", "post", "index.html"),
+    );
   });
 
   it("should handle trailing slash", () => {
@@ -57,7 +59,9 @@ describe("routeToHtmlPath", () => {
   });
 
   it("should handle deep nested routes", () => {
-    expect(routeToHtmlPath("/a/b/c")).toBe(path.join("a", "b", "c", "index.html"));
+    expect(routeToHtmlPath("/a/b/c")).toBe(
+      path.join("a", "b", "c", "index.html"),
+    );
   });
 });
 
