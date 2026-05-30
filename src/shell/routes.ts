@@ -4,7 +4,7 @@ import { prepareMarkdown, preparePreact } from "./prepare";
 import { getRouteName } from "../core/rendering";
 import { generateRouteMapCode } from "../core/code_generator";
 
-interface RouteData {
+export interface RouteData {
   routeName: string;
   filePath: string;
 }
@@ -24,6 +24,10 @@ export async function prepareRoutes(): Promise<string> {
   const routesMapCode = generateRouteMapCode(manifest);
   const routeMapFile = path.resolve(".cache", "routes.js");
   await writeFile(routeMapFile, routesMapCode);
+
+  const manifestFile = path.resolve(".cache", "manifest.json");
+  await writeFile(manifestFile, JSON.stringify(pages, null, 2));
+
   return routeMapFile;
 }
 
