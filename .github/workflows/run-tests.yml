@@ -10,4 +10,5 @@ jobs:
       - uses: oven-sh/setup-bun@v2
 
       - run: bun install
+      - run: rm -rf node_modules/noxt && ln -s $PWD node_modules/noxt
       - run: bun test
