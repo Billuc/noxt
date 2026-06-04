@@ -31,6 +31,12 @@ export async function readFile(filePath: string): Promise<string> {
   return await Bun.file(filePath).text();
 }
 
+/** Copy a file from `from` to `to`. */
+export async function copyFile(from: string, to: string) {
+  const content = await readFile(from);
+  await writeFile(to, content);
+}
+
 /** Recursively removes a folder and its contents. */
 export async function removeFolder(path: string) {
   await rm(path, { recursive: true, force: true });

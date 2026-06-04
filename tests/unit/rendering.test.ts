@@ -3,12 +3,14 @@
  */
 import {
   getRouteName,
+  routeToHtmlPath,
   parseMarkdown,
   renderPageToHtml,
   renderMarkdownToHtml,
 } from "../../src/core/rendering";
 import { h, type ComponentType } from "preact";
 import { describe, it, expect } from "bun:test";
+import path from "node:path";
 
 describe("getRouteName", () => {
   it("should convert index.md to /", () => {
@@ -33,7 +35,33 @@ describe("getRouteName", () => {
   });
 
   it("should handle index files in nested paths", () => {
-    expect(getRouteName("blog/index.md")).toBe("/blog/");
+    expect(getRouteName("blog/index.md")).toBe("/blog");
+  });
+});
+
+describe("routeToHtmlPath", () => {
+  it("should convert root route to index.html", () => {
+    expect(routeToHtmlPath("/")).toBe("index.html");
+  });
+
+  it("should convert /about to about/index.html", () => {
+    expect(routeToHtmlPath("/about")).toBe(path.join("about", "index.html"));
+  });
+
+  it("should convert /blog/post to blog/post/index.html", () => {
+    expect(routeToHtmlPath("/blog/post")).toBe(
+      path.join("blog", "post", "index.html"),
+    );
+  });
+
+  it("should handle trailing slash", () => {
+    expect(routeToHtmlPath("/blog/")).toBe(path.join("blog", "index.html"));
+  });
+
+  it("should handle deep nested routes", () => {
+    expect(routeToHtmlPath("/a/b/c")).toBe(
+      path.join("a", "b", "c", "index.html"),
+    );
   });
 });
 
