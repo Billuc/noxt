@@ -23,6 +23,7 @@ import { writeFile } from "./fs";
 import type { FunctionalComponent } from "preact";
 import { html } from "htm/preact";
 
+/** Prerenders an island component and returns a component that hydrates it at runtime. */
 export async function prepareIsland<T>(
   island: IslandComponent<T>,
 ): Promise<FunctionalComponent<T>> {

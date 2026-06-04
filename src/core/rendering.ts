@@ -106,6 +106,7 @@ function parseFrontmatter(frontmatterContent: string): Record<string, any> {
   }
 }
 
+/** Parses a markdown string into frontmatter data and body content. */
 export function parseMarkdown(markdown: string): MarkdownData {
   markdown = markdown.replaceAll("\r\n", "\n");
   if (!markdown.startsWith("---\n")) {

@@ -15,8 +15,10 @@
  **/
 import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
 
+/** Supported HTTP methods for fetch requests. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
+/** Represents a non-OK HTTP response (e.g. 4xx/5xx). */
 export class FetchError extends Error {
   status: number;
 
@@ -27,6 +29,7 @@ export class FetchError extends Error {
   }
 }
 
+/** Options to configure a useFetch request. */
 export interface UseFetchOptions<T> {
   method?: HttpMethod;
   body?: any;
@@ -34,6 +37,7 @@ export interface UseFetchOptions<T> {
   initial?: T;
 }
 
+/** Return type of the useFetch hook. */
 export interface UseFetchReturn<T> {
   data: T | null;
   loading: boolean;
@@ -41,6 +45,7 @@ export interface UseFetchReturn<T> {
   refresh: () => Promise<T | null>;
 }
 
+/** A hook that fetches JSON data from a URL with loading/error state and automatic re-fetch. */
 export function useFetch<T = any>(
   url: string,
   options?: UseFetchOptions<T>,

@@ -17,6 +17,7 @@ import { html } from "htm/preact";
 import { hydrate } from "preact";
 import type { ComponentType } from "preact";
 
+/** Hydrates all island elements matching the given hash with the given component. */
 export function renderComponent(Component: ComponentType<any>, hash: string) {
   const elements = document.querySelectorAll<HTMLElement>(
     `[data-island="${hash}"]`,
