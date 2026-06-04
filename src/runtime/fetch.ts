@@ -37,12 +37,79 @@ export interface UseFetchOptions<T> {
   initial?: T;
 }
 
+/** Options to configure a fetchJson request. */
+export interface FetchJsonOptions {
+  method?: HttpMethod;
+  body?: any;
+  headers?: Record<string, string>;
+  abortController?: AbortController;
+}
+
 /** Return type of the useFetch hook. */
 export interface UseFetchReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<T | null>;
+}
+
+/** Return type of the fetchJson function. */
+export type FetchJsonReturn<T> =
+  | { data: T | null; error: null }
+  | { data: null; error: Error };
+
+export async function fetchJson<T>(
+  url: string,
+  options?: FetchJsonOptions,
+): Promise<FetchJsonReturn<T>> {
+  try {
+    const {
+      method = "GET",
+      body,
+      headers: customHeaders = {},
+      abortController,
+    } = options ?? {};
+
+    const finalHeaders: Record<string, string> = { ...customHeaders };
+    const finalUrl =
+      url.startsWith("http://") || url.startsWith("https://")
+        ? new URL(url)
+        : new URL(url, window.location.origin);
+    let finalBody: BodyInit | null | undefined = undefined;
+
+    if (body != null) {
+      if (method === "GET") {
+        for (const [k, v] of Object.entries(body)) {
+          finalUrl.searchParams.append(k, String(v));
+        }
+      } else {
+        finalBody = JSON.stringify(body);
+        finalHeaders["Content-Type"] = "application/json";
+      }
+    }
+
+    const response = await fetch(finalUrl, {
+      method,
+      headers: finalHeaders,
+      body: finalBody,
+      signal: abortController?.signal,
+    });
+
+    if (!response.ok) {
+      throw new FetchError(response.status, response.statusText);
+    }
+
+    const json: T = await response.json();
+    return { data: json, error: null };
+  } catch (err) {
+    if (!(err instanceof Error)) {
+      return { data: null, error: Error(String(err)) };
+    }
+    if (err.name === "AbortError") {
+      return { data: null, error: null };
+    }
+    return { data: null, error: err };
+  }
 }
 
 /** A hook that fetches JSON data from a URL with loading/error state and automatic re-fetch. */
@@ -74,51 +141,20 @@ export function useFetch<T = any>(
     setError(null);
 
     try {
-      const { method = "GET", body, headers: customHeaders = {} } =
-        optionsRef.current ?? {};
-
-      const finalHeaders: Record<string, string> = { ...customHeaders };
-      const finalUrl = urlRef.current.startsWith("http://") || urlRef.current.startsWith("https://")
-        ? new URL(urlRef.current)
-        : new URL(urlRef.current, window.location.origin);
-      let finalBody: BodyInit | null | undefined = undefined;
-
-      if (body != null) {
-        if (method === "GET") {
-          for (const [k, v] of Object.entries(body)) {
-            finalUrl.searchParams.append(k, String(v));
-          }
-        } else {
-          finalBody = JSON.stringify(body);
-          finalHeaders["Content-Type"] = "application/json";
-        }
-      }
-
-      const response = await fetch(finalUrl, {
-        method,
-        headers: finalHeaders,
-        body: finalBody,
-        signal: abortController.signal,
+      const { data, error } = await fetchJson<T>(urlRef.current, {
+        ...optionsRef.current,
+        abortController: abortControllerRef.current,
       });
-
-      if (!response.ok) {
-        throw new FetchError(response.status, response.statusText);
+      if (!!error) {
+        if (mountedRef.current) {
+          setError(error);
+        }
+        throw error;
       }
-
-      const json: T = await response.json();
-      if (mountedRef.current) {
-        setData(json);
+      if (mountedRef.current && !!data) {
+        setData(data);
       }
-      return json;
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return null;
-      }
-      const errorObj = err instanceof Error ? err : new Error(String(err));
-      if (mountedRef.current) {
-        setError(errorObj);
-      }
-      throw errorObj;
+      return data;
     } finally {
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;
