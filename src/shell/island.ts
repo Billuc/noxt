@@ -22,6 +22,7 @@ import {
 import { writeFile } from "./fs";
 import type { FunctionalComponent } from "preact";
 import { html } from "htm/preact";
+import * as devalue from "devalue";
 
 /** Prerenders an island component and returns a component that hydrates it at runtime. */
 export async function prepareIsland<T>(
@@ -34,9 +35,12 @@ export async function prepareIsland<T>(
   const prerenderPath = path.resolve(".cache", hash + ".js");
   await writeFile(prerenderPath, script);
 
-  return (props: T) =>
-    html`<div data-island=${hash} data-props=${JSON.stringify(props)}>
+  return (props: T) => {
+    return html`
+      <div data-island=${hash} data-props=${devalue.stringify(props)}>
         <${island} ...${props} />
       </div>
-      <script src=${prerenderPath}></script>`;
+      <script src=${prerenderPath}></script>
+    `;
+  };
 }
