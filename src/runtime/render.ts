@@ -13,9 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { html } from "htm/preact";
-import { hydrate } from "preact";
+import { hydrate, h } from "preact";
 import type { ComponentType } from "preact";
+import * as devalue from "devalue";
 
 /** Hydrates all island elements matching the given hash with the given component. */
 export function renderComponent(Component: ComponentType<any>, hash: string) {
@@ -24,7 +24,7 @@ export function renderComponent(Component: ComponentType<any>, hash: string) {
   );
 
   for (const element of elements) {
-    const props = JSON.parse(element.getAttribute("data-props") || "{}");
-    hydrate(html`<${Component} ...${props} />`, element);
+    const props = devalue.parse(element.getAttribute("data-props") || "[{}]");
+    hydrate(h(Component, props, []), element);
   }
 }

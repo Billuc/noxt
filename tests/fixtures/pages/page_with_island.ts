@@ -5,5 +5,7 @@ import { prepareIsland } from "noxt";
 const CounterIsland = await prepareIsland(Counter);
 
 export default function IslandPage() {
-  return html`<${CounterIsland} />`;
+  return html`
+    <${CounterIsland} initialValue=${4} date=${new Date()} />
+  `;
 }
