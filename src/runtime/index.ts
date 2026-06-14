@@ -18,4 +18,8 @@ export {
   type UseFetchOptions,
   type UseFetchReturn,
   type FetchError,
+  fetchJson,
+  type FetchJsonOptions,
+  type FetchJsonReturn,
+  type HttpMethod,
 } from "./fetch";
