@@ -40,7 +40,7 @@ export async function prepareIsland<T>(
       <div data-island=${hash} data-props=${devalue.stringify(props)}>
         <${island} ...${props} />
       </div>
-      <script src=${prerenderPath}></script>
+      <script src=${path.basename(prerenderPath)}></script>
     `;
   };
 }
