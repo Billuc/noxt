@@ -1,13 +1,13 @@
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import { removeFolder, copyFile } from "./fs";
-import { prepareRoutes, type RouteData } from "./routes";
+import { build, type RouteData } from "./build";
 import { getRouteName, routeToHtmlPath } from "../core/rendering";
 
 export async function staticPrerender(): Promise<RouteData[]> {
   console.log("Exporting static site...");
 
-  await prepareRoutes();
+  await build();
   const manifestPath = path.join(".cache", "manifest.json");
   const manifest: RouteData[] = await Bun.file(manifestPath).json();
 

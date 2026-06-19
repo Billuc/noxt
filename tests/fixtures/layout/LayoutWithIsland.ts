@@ -1,9 +1,9 @@
 import { html } from "htm/preact";
 import type { ComponentChildren } from "preact";
 import Counter from "../islands/counter";
-import { prepareIsland } from "noxt";
+import { useIsland } from "noxt";
 
-const CounterIsland = await prepareIsland(Counter);
+const CounterIsland = useIsland(Counter);
 
 export default function Layout({ children }: { children: ComponentChildren }) {
   return html`

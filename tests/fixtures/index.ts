@@ -1,7 +1,4 @@
-import { prepareRoutes } from "noxt" with { type: "macro" };
-
-// @ts-ignore
-const routes = (await import(prepareRoutes())).default;
+import routes from "./routes.js";
 
 Bun.serve({
   port: 2101,

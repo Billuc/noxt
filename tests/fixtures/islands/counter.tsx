@@ -1,6 +1,5 @@
 import { useState } from "preact/hooks";
 import { html } from "htm/preact";
-import { defineIsland } from "noxt";
 
 function Counter({
   initialValue = 0,
@@ -17,4 +16,4 @@ function Counter({
   `;
 }
 
-export default defineIsland(Counter, import.meta.path);
+export default Counter;

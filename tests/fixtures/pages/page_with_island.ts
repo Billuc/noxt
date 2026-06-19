@@ -1,8 +1,8 @@
 import { html } from "htm/preact";
 import Counter from "../islands/counter";
-import { prepareIsland } from "noxt";
+import { useIsland } from "noxt";
 
-const CounterIsland = await prepareIsland(Counter);
+const CounterIsland = useIsland(Counter);
 
 export default function IslandPage() {
   return html`
