@@ -15,11 +15,7 @@
  **/
 import path from "node:path";
 import { rm } from "node:fs/promises";
-
-export interface RelativePath {
-  fromRoot: string;
-  absolute: string;
-}
+import type { RelativePath } from "../core/fs";
 
 /** Writes a string to a file using Bun.write. */
 export async function writeFile(path: string, content: string) {

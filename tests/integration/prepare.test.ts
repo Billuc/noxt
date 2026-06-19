@@ -37,8 +37,8 @@ describe("preparePreact", () => {
   it("should generate HTML file in .cache", async () => {
     const prerenderPath = await preparePreact(TestPreactComponent);
 
-    expect(prerenderPath).toContain(".cache");
-    expect(prerenderPath).toContain(".html");
+    expect(prerenderPath.fromRoot).toContain(".cache");
+    expect(prerenderPath.fromRoot).toContain(".html");
 
     const files = await readdir(CACHE_DIR);
     expect(files.length).toBeGreaterThan(0);
@@ -48,7 +48,7 @@ describe("preparePreact", () => {
   it("should generate file with component name in filename", async () => {
     const prerenderPath = await preparePreact(TestPreactComponent);
 
-    const fileName = path.basename(prerenderPath);
+    const fileName = path.basename(prerenderPath.fromRoot);
     expect(fileName).toContain("TestPreactComponent");
     expect(fileName).toContain(".html");
   });
@@ -56,7 +56,7 @@ describe("preparePreact", () => {
   it("should use displayName in filename when available", async () => {
     const prerenderPath = await preparePreact(NamedPreactComponent);
 
-    const fileName = path.basename(prerenderPath);
+    const fileName = path.basename(prerenderPath.fromRoot);
     expect(fileName).toContain("MyPage");
     expect(fileName).not.toContain("NamedPreactComponent");
   });
@@ -64,7 +64,7 @@ describe("preparePreact", () => {
   it("should generate file with hash in filename", async () => {
     const prerenderPath = await preparePreact(TestPreactComponent);
 
-    const fileName = path.basename(prerenderPath);
+    const fileName = path.basename(prerenderPath.fromRoot);
     // Should have format: Name.hash.html
     const parts = fileName.split(".");
     expect(parts.length).toBe(3);
@@ -77,7 +77,7 @@ describe("preparePreact", () => {
   it("should write valid HTML content to file", async () => {
     const prerenderPath = await preparePreact(TestPreactComponent);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     expect(content).toEqualIgnoringWhitespace(`
       <!DOCTYPE html>
@@ -98,8 +98,8 @@ describe("preparePreact", () => {
     await setupCacheDir();
     const prerenderPath2 = await preparePreact(TestPreactComponent);
 
-    const fileName1 = path.basename(prerenderPath1);
-    const fileName2 = path.basename(prerenderPath2);
+    const fileName1 = path.basename(prerenderPath1.fromRoot);
+    const fileName2 = path.basename(prerenderPath2.fromRoot);
 
     expect(fileName1).toBe(fileName2);
   });
@@ -111,8 +111,8 @@ describe("preparePreact", () => {
     const prerenderPath1 = await preparePreact(ComponentA);
     const prerenderPath2 = await preparePreact(ComponentB);
 
-    const fileName1 = path.basename(prerenderPath1);
-    const fileName2 = path.basename(prerenderPath2);
+    const fileName1 = path.basename(prerenderPath1.fromRoot);
+    const fileName2 = path.basename(prerenderPath2.fromRoot);
 
     expect(fileName1).not.toBe(fileName2);
   });
@@ -137,8 +137,8 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    expect(prerenderPath).toContain(".cache");
-    expect(prerenderPath).toContain(".html");
+    expect(prerenderPath.fromRoot).toContain(".cache");
+    expect(prerenderPath.fromRoot).toContain(".html");
 
     const files = await readdir(CACHE_DIR);
     expect(files.length).toBeGreaterThan(0);
@@ -151,7 +151,7 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const fileName = path.basename(prerenderPath);
+    const fileName = path.basename(prerenderPath.fromRoot);
     expect(fileName).toContain("about");
     expect(fileName).toContain(".html");
   });
@@ -162,7 +162,7 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const fileName = path.basename(prerenderPath);
+    const fileName = path.basename(prerenderPath.fromRoot);
     const parts = fileName.split(".");
     expect(parts.length).toBe(3);
     expect(parts[0]).toBe("test");
@@ -176,7 +176,7 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     expect(content).toEqualIgnoringWhitespace(`
       <!DOCTYPE html>
@@ -202,7 +202,7 @@ author: Test Author
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     expect(content).toEqualIgnoringWhitespace(`
       <!DOCTYPE html>
@@ -222,7 +222,7 @@ author: Test Author
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     // Should not contain \r\n
     expect(content).not.toContain("\r\n");
@@ -236,7 +236,7 @@ author: Test Author
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     // Default layout wraps content in html with head and body
     expect(content).toContain("<html>");
@@ -269,7 +269,7 @@ title: Custom Layout Page
     await writeFile(markdownPath, markdownContent);
 
     const prerenderPath = await prepareMarkdown(markdownPath);
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     expect(content).toEqualIgnoringWhitespace(`
       <!DOCTYPE html>
@@ -293,8 +293,8 @@ title: Custom Layout Page
     await writeFile(markdownPath, content);
     const prerenderPath2 = await prepareMarkdown(markdownPath);
 
-    const fileName1 = path.basename(prerenderPath1);
-    const fileName2 = path.basename(prerenderPath2);
+    const fileName1 = path.basename(prerenderPath1.fromRoot);
+    const fileName2 = path.basename(prerenderPath2.fromRoot);
 
     expect(fileName1).toBe(fileName2);
   });
@@ -309,8 +309,8 @@ title: Custom Layout Page
     await writeFile(markdownPath, "# Content 2");
     const prerenderPath2 = await prepareMarkdown(markdownPath);
 
-    const fileName1 = path.basename(prerenderPath1);
-    const fileName2 = path.basename(prerenderPath2);
+    const fileName1 = path.basename(prerenderPath1.fromRoot);
+    const fileName2 = path.basename(prerenderPath2.fromRoot);
 
     expect(fileName1).not.toBe(fileName2);
   });
@@ -327,7 +327,7 @@ not valid yaml
     // Should not throw
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     expect(content).toEqualIgnoringWhitespace(`
       <!DOCTYPE html>
@@ -351,7 +351,7 @@ title: Unclosed
     // Should not throw
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const content = await Bun.file(prerenderPath).text();
+    const content = await Bun.file(prerenderPath.absolute).text();
 
     expect(content).toEqualIgnoringWhitespace(`
       <!DOCTYPE html>

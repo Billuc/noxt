@@ -14,11 +14,12 @@
  *  limitations under the License.
  **/
 import type { FunctionComponent } from "preact";
+import type { RelativePath } from "./fs";
 
 export interface IslandEntry {
   component: FunctionComponent<any>;
   hash: string;
-  scriptPath: string;
+  path: RelativePath;
   publicPath: string;
 }
 
@@ -37,12 +38,12 @@ export function getIslandEntry<T>(
   return islandComponentMap.get(component);
 }
 
-const assetRoutes = new Map<string, string>();
+const assetRoutes = new Map<string, RelativePath>();
 
-export function addAssetRoute(publicPath: string, absolutePath: string) {
-  assetRoutes.set(publicPath, absolutePath);
+export function addAssetRoute(publicPath: string, path: RelativePath) {
+  assetRoutes.set(publicPath, path);
 }
 
-export function getAssetRoutes(): ReadonlyMap<string, string> {
+export function getAssetRoutes(): ReadonlyMap<string, RelativePath> {
   return assetRoutes;
 }

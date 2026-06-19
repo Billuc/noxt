@@ -1,35 +1,14 @@
 import path from "node:path";
-import { mkdir } from "node:fs/promises";
-import { removeFolder, copyFile } from "./fs";
 import { build, type RouteData } from "./build";
-import { getRouteName, routeToHtmlPath } from "../core/rendering";
+import { getRouteName } from "../core/rendering";
 
-export async function staticPrerender(): Promise<RouteData[]> {
+export async function staticPrerender(): Promise<Record<string, string>> {
   console.log("Exporting static site...");
 
-  await build();
-  const manifestPath = path.join(".cache", "manifest.json");
-  const manifest: RouteData[] = await Bun.file(manifestPath).json();
-
-  if (manifest.length === 0) {
-    console.log("No pages to export.");
-    return [];
-  }
-
-  const stagingDir = path.resolve(".export");
-  await removeFolder(stagingDir);
-  await mkdir(stagingDir, { recursive: true });
-
-  const entrypoints: string[] = [];
-  for (const { routeName, filePath: sourcePath } of manifest) {
-    const htmlPath = routeToHtmlPath(routeName);
-    const stagingPath = path.resolve(stagingDir, htmlPath);
-    await copyFile(sourcePath, stagingPath);
-    entrypoints.push(stagingPath);
-
-    console.log(`  Staged [${routeName}]`);
-  }
-
+  const { routes } = await build();
+  const entrypoints = routes
+    .map((r) => r.filePath.absolute)
+    .filter((path) => path.endsWith(".html"));
   console.log("Building with Bun...");
 
   let buildSuccess = false;
@@ -47,19 +26,17 @@ export async function staticPrerender(): Promise<RouteData[]> {
 
     console.log("Static export complete! Output in dist/");
 
-    const routeData = [];
+    const routeData: Record<string, string> = {};
     for (const output of result.outputs) {
       const pathFromDist = path.relative(path.resolve("dist"), output.path);
       const routeName = pathFromDist.endsWith(".html")
         ? getRouteName(pathFromDist)
         : "/" + pathFromDist;
-      routeData.push({ routeName, filePath: output.path });
+      routeData[routeName] = output.path;
     }
 
     return routeData;
   } catch {
-    return [];
-  } finally {
-    await removeFolder(stagingDir);
+    return {};
   }
 }

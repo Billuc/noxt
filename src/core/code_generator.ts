@@ -28,11 +28,21 @@ export function generateRouteMapCode(manifest: Record<string, string>): string {
   const mapCode: string[] = [];
 
   for (const route in manifest) {
-    const sanitizedRouteName = route.replace(/\W/g, "_");
-    imports.push(
-      `import ${sanitizedRouteName} from ${JSON.stringify(manifest[route])};`,
-    );
-    mapCode.push(`"${route}": ${sanitizedRouteName}`);
+    const filePath = manifest[route]!;
+    if (filePath.endsWith(".html")) {
+      // HTML pages are imported as modules (Bun handles these natively)
+      const sanitizedRouteName = route.replace(/\W/g, "_");
+      imports.push(
+        `import ${sanitizedRouteName} from ${JSON.stringify(filePath)};`,
+      );
+      mapCode.push(`"${route}": ${sanitizedRouteName}`);
+    } else {
+      // Static files (island scripts, assets) are served from disk via Bun.file()
+      // This avoids evaluating browser-only code at module load time.
+      mapCode.push(
+        `"${route}": () => new Response(Bun.file(${JSON.stringify(filePath)}))`,
+      );
+    }
   }
 
   return `

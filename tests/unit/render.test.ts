@@ -2,13 +2,19 @@
  * Unit tests for src/runtime/render.ts
  */
 import { Window } from "happy-dom";
+import * as devalue from "devalue";
 
 const window = new Window();
 
 // happy-dom v20 doesn't expose Error globals on the Window; patch them
 for (const ctor of [
-  "Error", "EvalError", "RangeError", "ReferenceError",
-  "SyntaxError", "TypeError", "URIError",
+  "Error",
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "TypeError",
+  "URIError",
 ]) {
   (window as any)[ctor] = globalThis[ctor as keyof typeof globalThis];
 }
@@ -35,7 +41,7 @@ describe("renderComponent", () => {
 
     const el = document.createElement("div");
     el.setAttribute("data-island", hash);
-    el.setAttribute("data-props", "{}");
+    el.setAttribute("data-props", "[{}]");
     document.body.appendChild(el);
 
     renderComponent(TestComponent, hash);
@@ -44,12 +50,13 @@ describe("renderComponent", () => {
   });
 
   it("should pass props from data-props attribute to component", () => {
-    const TestComponent = (props: { name: string }) => h("span", {}, props.name);
+    const TestComponent = (props: { name: string }) =>
+      h("span", {}, props.name);
     const hash = "def456";
 
     const el = document.createElement("div");
     el.setAttribute("data-island", hash);
-    el.setAttribute("data-props", JSON.stringify({ name: "World" }));
+    el.setAttribute("data-props", devalue.stringify({ name: "World" }));
     document.body.appendChild(el);
 
     renderComponent(TestComponent, hash);
@@ -85,12 +92,12 @@ describe("renderComponent", () => {
 
     const el1 = document.createElement("div");
     el1.setAttribute("data-island", hash);
-    el1.setAttribute("data-props", JSON.stringify({ index: 1 }));
+    el1.setAttribute("data-props", devalue.stringify({ index: 1 }));
     document.body.appendChild(el1);
 
     const el2 = document.createElement("div");
     el2.setAttribute("data-island", hash);
-    el2.setAttribute("data-props", JSON.stringify({ index: 2 }));
+    el2.setAttribute("data-props", devalue.stringify({ index: 2 }));
     document.body.appendChild(el2);
 
     renderComponent(TestComponent, hash);
@@ -108,7 +115,7 @@ describe("renderComponent", () => {
     el.setAttribute("data-island", hash);
     el.setAttribute(
       "data-props",
-      JSON.stringify({ items: ["a", "b", "c"], count: 3 }),
+      devalue.stringify({ items: ["a", "b", "c"], count: 3 }),
     );
     document.body.appendChild(el);
 

@@ -17,13 +17,7 @@ import * as path from "node:path";
 import type { FunctionComponent } from "preact";
 import { html } from "htm/preact";
 import * as devalue from "devalue";
-import {
-  getFilesMatchingGlob,
-  writeFile,
-  readFile,
-  copyFile,
-  type RelativePath,
-} from "./fs";
+import { getFilesMatchingGlob, writeFile, readFile, copyFile } from "./fs";
 import { prepareMarkdown, preparePreact } from "./prepare";
 import { getRouteName } from "../core/rendering";
 import { generateRouteMapCode } from "../core/code_generator";
@@ -35,21 +29,33 @@ import {
   type IslandEntry,
 } from "../core/registry";
 import { generateScriptForIsland } from "../core/island";
+import { RelativePath } from "../core/fs";
 
 export interface RouteData {
   routeName: string;
-  filePath: string;
+  filePath: RelativePath;
 }
 
 export type { IslandEntry } from "../core/registry";
 
 export async function prerenderIslands(): Promise<IslandEntry[]> {
-  const islandFiles = await getFilesMatchingGlob(
-    "*.{tsx,ts,jsx,js}",
-    path.resolve("islands"),
-  );
+  let islandFiles: RelativePath[];
+  try {
+    islandFiles = await getFilesMatchingGlob(
+      "*.{tsx,ts,jsx,js}",
+      path.resolve("islands"),
+    );
+  } catch {
+    console.log("No islands directory found, skipping island prerendering");
+    return [];
+  }
 
   const entries: IslandEntry[] = [];
+
+  if (islandFiles.length === 0) {
+    console.log("No islands found, skipping island prerendering");
+    return entries;
+  }
 
   for (const file of islandFiles) {
     const mod = await import(file.absolute);
@@ -71,11 +77,13 @@ export async function prerenderIslands(): Promise<IslandEntry[]> {
     entries.push({
       component,
       hash,
-      scriptPath,
+      path: RelativePath.fromCwd(scriptPath),
       publicPath: `/.cache/${hash}.js`,
     });
 
-    console.log(`Prerendered island [${component.displayName ?? component.name}] -> ${hash}.js`);
+    console.log(
+      `Prerendered island [${component.displayName ?? component.name}] -> ${hash}.js`,
+    );
   }
 
   return entries;
@@ -93,15 +101,15 @@ export async function prerenderPages(
 
   const pages = await Promise.all(pageFiles.map(prerenderPage));
 
+  // TODO: manifest isn't correct
+
   const manifestFile = path.resolve(".cache", "manifest.json");
   await writeFile(manifestFile, JSON.stringify(pages, null, 2));
 
   return pages;
 }
 
-async function prerenderPage(
-  pathFromPages: RelativePath,
-): Promise<RouteData> {
+async function prerenderPage(pathFromPages: RelativePath): Promise<RouteData> {
   const extension = path.extname(pathFromPages.fromRoot);
   const routeName = getRouteName(pathFromPages.fromRoot);
   console.log(`Prerendering page [${routeName}]`);
@@ -113,9 +121,7 @@ async function prerenderPage(
     const mod = await import(pathFromPages.absolute);
     const Page = mod.default as FunctionComponent<any> | undefined;
     if (!Page)
-      throw new Error(
-        `File ${pathFromPages.fromRoot} has no default export !`,
-      );
+      throw new Error(`File ${pathFromPages.fromRoot} has no default export !`);
     const prerenderedFile = await preparePreact(Page);
     return { routeName, filePath: prerenderedFile };
   }
@@ -149,58 +155,27 @@ export async function generateRouteMap(
   const manifest: Record<string, string> = {};
 
   for (const route of routes) {
-    manifest[route.routeName] =
-      `./${path.relative(process.cwd(), route.filePath)}`;
+    manifest[route.routeName] = route.filePath.fromRoot;
   }
 
-  for (const [url, absPath] of getAssetRoutes()) {
-    manifest[url] = `./${path.relative(process.cwd(), absPath)}`;
+  for (const [url, assetPath] of getAssetRoutes()) {
+    manifest[url] = assetPath.fromRoot;
   }
 
   for (const entry of islandEntries) {
-    manifest[entry.publicPath] =
-      `./${path.relative(process.cwd(), entry.scriptPath)}`;
+    manifest[entry.publicPath] = entry.path.fromRoot;
   }
 
   const code = generateRouteMapCode(manifest);
-  const routesFile = path.resolve("routes.js");
+  const routesFile = path.resolve(".cache", "routes.js");
   await writeFile(routesFile, code);
-  console.log("Generated route map at routes.js");
+  console.log("Generated route map at .cache/routes.js");
 }
 
 export async function generateRouteMapFromCache(): Promise<void> {
   const manifest: Record<string, string> = {};
 
-  const manifestPath = path.resolve(".cache", "manifest.json");
-  try {
-    const manifestContent = await readFile(manifestPath);
-    const pageRoutes: RouteData[] = JSON.parse(manifestContent);
-    for (const route of pageRoutes) {
-      manifest[route.routeName] =
-        `./${path.relative(process.cwd(), route.filePath)}`;
-    }
-  } catch {
-    console.warn("No manifest.json found in .cache/");
-  }
-
-  const scriptFiles = await getFilesMatchingGlob("*.js", path.resolve(".cache"));
-  for (const file of scriptFiles) {
-    if (file.fromRoot.includes("\\") || file.fromRoot.includes("/")) continue;
-    const publicPath = `/.cache/${file.fromRoot}`;
-    manifest[publicPath] =
-      `./${path.relative(process.cwd(), file.absolute)}`;
-  }
-
-  const assetFiles = await getFilesMatchingGlob(
-    "**/*",
-    path.resolve(".cache", "assets"),
-  );
-  for (const file of assetFiles) {
-    const publicPath =
-      `/.cache/assets/${file.fromRoot.replaceAll("\\", "/")}`;
-    manifest[publicPath] =
-      `./${path.relative(process.cwd(), file.absolute)}`;
-  }
+  // TODO
 
   const code = generateRouteMapCode(manifest);
   const routesFile = path.resolve("routes.js");
@@ -211,17 +186,22 @@ export async function generateRouteMapFromCache(): Promise<void> {
 export async function importAsset(sourcePath: string): Promise<string> {
   const absPath = path.resolve(sourcePath);
   const filename = path.basename(absPath);
-  const destDir = path.resolve(".cache", "assets");
-  const destPath = path.join(destDir, filename);
-  await copyFile(absPath, destPath);
+  const destPath = path.join(".cache", "assets", filename);
   const publicPath = `/.cache/assets/${filename}`;
-  addAssetRoute(publicPath, destPath);
+
+  await copyFile(absPath, destPath);
+  addAssetRoute(publicPath, RelativePath.fromCwd(destPath));
   console.log(`Copied asset ${sourcePath} -> .cache/assets/${filename}`);
+
   return publicPath;
 }
 
-export async function build(): Promise<void> {
+export async function build(): Promise<{
+  routes: RouteData[];
+  islands: IslandEntry[];
+}> {
   const islands = await prerenderIslands();
   const routes = await prerenderPages(islands);
   await generateRouteMap(routes, islands);
+  return { routes, islands };
 }

@@ -26,11 +26,12 @@ import type {
   FunctionComponent,
 } from "preact";
 import { html } from "htm/preact";
+import { RelativePath } from "../core/fs";
 
 /** Prerenders a Preact page component to HTML and caches it. */
 export async function preparePreact(
   Page: FunctionComponent<any>,
-): Promise<string> {
+): Promise<RelativePath> {
   const pageHash = new Bun.CryptoHasher("sha256")
     .update(Page.toString())
     .digest("base64url");
@@ -40,11 +41,13 @@ export async function preparePreact(
   const prerenderedPage = await renderPageToHtml(Page);
   await writeFile(prerenderPath, prerenderedPage);
 
-  return prerenderPath;
+  return RelativePath.fromCwd(prerenderPath);
 }
 
 /** Prerenders a markdown page to HTML using its frontmatter-defined layout. */
-export async function prepareMarkdown(markdownPath: string): Promise<string> {
+export async function prepareMarkdown(
+  markdownPath: string,
+): Promise<RelativePath> {
   const content = await readFile(markdownPath);
 
   const pageHash = new Bun.CryptoHasher("sha256")
@@ -62,16 +65,18 @@ export async function prepareMarkdown(markdownPath: string): Promise<string> {
   const prerenderedPage = await renderMarkdownToHtml(markdownData, Layout);
   await writeFile(prerenderPath, prerenderedPage);
 
-  return prerenderPath;
+  return RelativePath.fromCwd(prerenderPath);
 }
 
 function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {
-  return html`<html>
-    <head></head>
-    <body>
-      ${children}
-    </body>
-  </html>`;
+  return html`
+    <html>
+      <head></head>
+      <body>
+        ${children}
+      </body>
+    </html>
+  `;
 }
 
 async function findAndPrepareMarkdownLayout(
