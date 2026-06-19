@@ -2,40 +2,60 @@
 
 ## Goal
 
-Remove the "magic" of `prepareRoutes` by splitting the implicit macro-based build into an explicit two-step workflow. The new `buildRoutes` is a regular async function (no macro) with zero configuration. The `loadRoutes` macro is as simple as possible: no arguments, returns a hardcoded path string.
+Remove all "magic" from noxt by replacing the implicit macro-based build with explicit, composable build functions. The user writes a `build.ts` that calls noxt's functions step by step, and `index.ts` uses a plain static import — no macros at all.
 
 ## Problem
 
 Currently `prepareRoutes` is a Bun macro (`import ... with { type: "macro" }`) that does heavy filesystem work at compile time: scanning `pages/`, importing each page component, rendering to HTML, generating route maps. This imposes Bun macro limitations (no dynamic `import()` in macros, restricted context, harder debugging, opaque failure modes).
 
+The island system has the same problem in reverse: `prepareIsland` sneaks filesystem work (writing hydration scripts) into page modules that are imported during the build. The work happens implicitly rather than being declared upfront. `defineIsland` adds ceremony without providing meaningful value — an island is simply a component in the `islands/` directory.
+
 ## Solution
 
-Split into two explicit steps:
+Split every monolith into composable functions, each with a single responsibility. `routes.js` is generated at project root so `index.ts` can do a plain `import` — no macro needed.
 
-1. **`build.ts`** — user creates this, calls `buildRoutes()` (regular function, not a macro). All filesystem/prerendering work happens here.
-2. **`index.ts`** — uses a thin `loadRoutes()` macro that simply returns the path to the pre-generated manifest.
+### Functions Provided by Noxt
 
-## User-Facing API
+| Function | When called | What it does | Returns |
+|----------|-------------|-------------|---------|
+| `prerenderIslands()` | In `build.ts` | Scans `./islands/`, writes hydration scripts to `./.cache/` | `Promise<IslandEntry[]>` |
+| `prerenderPages(islands)` | In `build.ts` | Scans `./pages/`, prerenders each to `./.cache/` | `Promise<RouteData[]>` |
+| `generateRouteMap(routes, islands)` | In `build.ts` | Writes `routes.js` from explicit `RouteData[]` + `IslandEntry[]` | `Promise<void>` |
+| `generateRouteMapFromCache()` | In `build.ts` | Writes `routes.js` by scanning `.cache/` (reads `manifest.json`, globs scripts + assets) | `Promise<void>` |
+| `build()` | In `build.ts` | Convenience: calls `prerenderIslands` + `prerenderPages` + `generateRouteMap` | `Promise<void>` |
+| `useIsland(component)` | In page files | Looks up the island in the prerendered map, returns a wrapper component | `FunctionalComponent<T>` |
+| `importAsset(sourcePath)` | In page files | Copies asset to `./.cache/`, returns public URL, registers it for route map | `Promise<string>` |
+| `staticPrerender()` | In a script | Unchanged API; internally calls `build()` then exports | `Promise<RouteData[]>` |
 
-### `build.ts` (user creates)
+### User-Facing Files
 
+**`build.ts`** (user creates) — explicit data flow:
 ```typescript
-import { buildRoutes } from "noxt";
+import { prerenderIslands, prerenderPages, generateRouteMap } from "noxt";
 
-await buildRoutes();
+const islands = await prerenderIslands();
+const routes = await prerenderPages(islands);
+await generateRouteMap(routes, islands);
 ```
 
-- Always scans `./pages/` (hardcoded)
-- Always writes to `./.cache/` (hardcoded)
-- Throws on any failure (missing default export, rendering errors, etc.)
-- Returns `RouteData[]` for callers that need it (e.g. `staticPrerender`)
-
-### `index.ts` (user creates)
-
+Or scanning `.cache/` to infer what to serve:
 ```typescript
-import { loadRoutes } from "noxt" with { type: "macro" };
+import { prerenderIslands, prerenderPages, generateRouteMapFromCache } from "noxt";
 
-const routes = (await import(loadRoutes())).default;
+const islands = await prerenderIslands();
+await prerenderPages(islands);
+await generateRouteMapFromCache();  // Reads manifest.json, globs scripts + assets
+```
+
+Or using the convenience function:
+```typescript
+import { build } from "noxt";
+await build();
+```
+
+**`index.ts`** (user creates) — no macro at all:
+```typescript
+import routes from "./routes.js";
 
 Bun.serve({
   port: 3000,
@@ -43,146 +63,374 @@ Bun.serve({
 });
 ```
 
-- `loadRoutes()` — zero arguments, returns `"./.cache/routes.js"`
-- The entire macro is one line
+**`islands/counter.tsx`** (user creates) — just a Preact component, no `defineIsland`:
+```typescript
+import { useState } from "preact/hooks";
+import { html } from "htm/preact";
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  return html`<button onClick=${() => setCount((c) => c + 1)}>${count}</button>`;
+}
+
+export default Counter;
+```
+
+**`pages/counter-demo.ts`** (user creates):
+```typescript
+import { html } from "htm/preact";
+import { useIsland } from "noxt";
+import Counter from "../islands/counter";
+
+const CounterIsland = useIsland(Counter);
+
+export default function CounterPage() {
+  return html`<${CounterIsland} initialValue=${5} />`;
+}
+```
+
+**`pages/my-page.ts`** — with asset:
+```typescript
+import { html } from "htm/preact";
+import { importAsset } from "noxt";
+
+const logoUrl = await importAsset("../assets/logo.png");
+
+export default function MyPage() {
+  return html`<img src=${logoUrl} />`;
+}
+```
+
+### Generated Files
+
+**`.cache/`** (generated by `prerenderIslands()`, `prerenderPages()`, and `importAsset()`):
+```
+.cache/
+  IndexPage.abc123.html
+  AboutPage.def456.html
+  bcdef01.js                         # Island hydration script (hash = sha256 of island file path)
+  ghijkl2.js                         # Another island hydration script
+  assets/
+    logo.png
+  manifest.json
+```
+
+**`routes.js`** (generated at project root by `generateRouteMap`):
+```javascript
+import _ from "./.cache/IndexPage.abc123.html";
+import _about from "./.cache/AboutPage.def456.html";
+import _logo_png from "./.cache/assets/logo.png";
+import _bcdef01 from "./.cache/bcdef01.js";
+import _ghijkl2 from "./.cache/ghijkl2.js";
+
+export default {
+  "/": _,
+  "/about": _about,
+  "/logo.png": _logo_png,
+  "/.cache/bcdef01.js": _bcdef01,
+  "/.cache/ghijkl2.js": _ghijkl2,
+};
+```
 
 ## Workflows
 
 ### Development
 
 ```bash
-bun run build.ts          # Scans pages/, prerenders → .cache/
-bun run index.ts          # Starts server serving from .cache/routes.js
+bun run build.ts          # Scans islands/ + pages/, prerenders, copies assets → .cache/ + routes.js
+bun run index.ts          # Starts server serving from routes.js
 ```
 
 ### Production
 
 ```bash
-bun run build.ts                                          # Prerender pages
-bun build --target=bun --outdir=dist index.ts             # Bundle server
+bun run build.ts                                          # Prerender + generate routes
+bun build --target=bun --outdir=dist index.ts             # Bundle server (includes .cache/ + routes.js)
 cd dist && bun run index.js                               # Run production build
 ```
+
+## How Each Function Works
+
+### `prerenderIslands()`
+
+- Uses `getFilesMatchingGlob("*.{tsx,ts,jsx,js}", path.resolve("islands"))` to find all island files
+- Dynamically imports each file
+- Uses the default export as the island component (convention: every default export in `islands/` is an island)
+- Uses the file's absolute path (known from the scan) as the import path for hydration
+- Computes: `hash = sha256(filePath)`
+- Calls `generateScriptForIsland(hash, filePath)` to generate the hydration script code
+- Writes the script to `./.cache/<hash>.js`
+- Returns `IslandEntry[]` containing both the route data and the component reference — `prerenderPages` uses the component reference to build the lookup map for `useIsland`
+
+```typescript
+interface IslandEntry {
+  component: FunctionComponent<any>;  // Component reference (for useIsland lookup)
+  hash: string;                        // sha256 of island file path
+  scriptPath: string;                  // Absolute path to .cache/<hash>.js
+  publicPath: string;                  // "/.cache/<hash>.js"
+}
+```
+
+### `prerenderPages(islands)`
+
+- Accepts `IslandEntry[]` and calls `setIslandMap(entries)` on the island registry to populate the lookup map — this is what `useIsland` reads from
+- Clears and re-populates the registry with each call, so the map is always derived from the passed parameter
+- Same logic as current `prepareRoutes()`'s core:
+  - `getFilesMatchingGlob("**/*.{tsx,ts,jsx,js,md}", path.resolve("pages"))`
+  - For each file: determine `.md` vs Preact, dynamically import, call `preparePreact`/`prepareMarkdown`
+  - During dynamic imports, page files call `useIsland(component)` which reads from the map just built
+- Writes prerendered HTML to `./.cache/<ComponentName>.<hash>.html`
+- Writes `./.cache/manifest.json` with `RouteData[]`
+- Returns `RouteData[]`
+
+No route map generation — that's `generateRouteMap`'s job.
+
+### `useIsland(component)`
+
+Called at module level in page files. Pure function — no filesystem work:
+
+```typescript
+import { getIslandEntry } from "../core/registry";
+
+export function useIsland<T>(component: FunctionComponent<T>): FunctionalComponent<T> {
+  const entry = getIslandEntry(component);
+  if (!entry) {
+    throw new Error(
+      `Island "${component.name ?? "unknown"}" has not been prerendered. ` +
+      `Did you forget to call prerenderIslands() before prerenderPages() in your build.ts?`,
+    );
+  }
+  return (props: T) => html`
+    <div data-island=${entry.hash} data-props=${devalue.stringify(props)}>
+      <${component} ...${props} />
+    </div>
+    <script src=${entry.publicPath}></script>
+  `;
+}
+```
+
+- The registry is populated by `prerenderPages(islands)` calling `setIslandMap(entries)` — it builds the map from the `IslandEntry[].component` references
+- Component reference identity works because Node.js/Bun module caching ensures `import("../islands/counter")` from `prerenderIslands` and `import Counter from "../islands/counter"` from a page file resolve to the same module instance
+- The `data-island` hash matches between the wrapper div and the hydration script
+
+### `generateRouteMap(routes, islands)`
+
+- Takes `RouteData[]` (absolute file paths) and `IslandEntry[]`
+- Converts file paths to be relative to project root (`./.cache/...`)
+- Reads asset routes from the registry via `getAssetRoutes()` (populated by `importAsset`)
+- Adds each island script path as a route entry
+- Calls `generateRouteMapCode(manifest)` to generate JavaScript
+- Writes result to `./routes.js`
+
+```typescript
+export async function generateRouteMap(
+  routes: RouteData[],
+  islandEntries: IslandEntry[],
+): Promise<void> {
+  const manifest: Record<string, string> = {};
+  for (const r of routes) {
+    manifest[r.routeName] = `./${path.relative(process.cwd(), r.filePath)}`;
+  }
+  for (const [url, absPath] of assetRoutes) {
+    manifest[url] = `./${path.relative(process.cwd(), absPath)}`;
+  }
+  for (const entry of islandEntries) {
+    manifest[entry.publicPath] = `./${path.relative(process.cwd(), entry.scriptPath)}`;
+  }
+  const code = generateRouteMapCode(manifest);
+  await writeFile("./routes.js", code);
+}
+```
+
+### `generateRouteMapFromCache()`
+
+Alternative to `generateRouteMap` that discovers the route map from the filesystem instead of requiring explicit parameters. Useful when the full pipeline has already populated `.cache/`.
+
+- Reads `./.cache/manifest.json` to get page routes (route name → HTML file path)
+- Globs `./.cache/*.js` to find island hydration scripts
+- Globs `./.cache/assets/**` to find asset files
+- Builds the manifest and writes `./routes.js`
+
+```typescript
+export async function generateRouteMapFromCache(): Promise<void> {
+  const manifest: Record<string, string> = {};
+
+  // 1. Page routes from manifest.json
+  const manifestPath = path.resolve(".cache", "manifest.json");
+  const routes: RouteData[] = await Bun.file(manifestPath).json();
+  for (const r of routes) {
+    manifest[r.routeName] = `./${path.relative(process.cwd(), r.filePath)}`;
+  }
+
+  // 2. Island hydration scripts from .cache/*.js
+  const glob = new Bun.Glob("*.js");
+  for await (const file of glob.scan(path.resolve(".cache"))) {
+    const publicPath = "/.cache/" + file;
+    const absolutePath = path.resolve(".cache", file);
+    manifest[publicPath] = `./${path.relative(process.cwd(), absolutePath)}`;
+  }
+
+  // 3. Assets from .cache/assets/**
+  const assetGlob = new Bun.Glob("assets/**");
+  for await (const file of assetGlob.scan(path.resolve(".cache"))) {
+    const publicPath = "/.cache/" + file;
+    const absolutePath = path.resolve(".cache", file);
+    manifest[publicPath] = `./${path.relative(process.cwd(), absolutePath)}`;
+  }
+
+  const code = generateRouteMapCode(manifest);
+  await writeFile("./routes.js", code);
+}
+```
+
+Does not use the registry — everything is discovered from the filesystem. This means it can be called independently of whether `importAsset` used `addAssetRoute` or not.
+
+### `importAsset(sourcePath)`
+
+- Called from page files at module level
+- Resolves `sourcePath` relative to the calling file
+- Computes content hash, copies to `./.cache/assets/<filename>` (preserving original ext)
+- Records the route via `addAssetRoute(publicPath, absolutePath)` in the registry — `generateRouteMap` later reads these via `getAssetRoutes()`
+- Returns the public URL path (e.g. `/.cache/assets/logo.png`)
+- Since `prerenderPages()` dynamically imports page modules, `importAsset()` runs during that import, before the component is rendered to HTML — so the asset URL is baked into the prerendered HTML
+
+### Shared Module-Level State
+
+**`src/core/registry.ts`** — singleton that holds all build-time state:
+
+```typescript
+import type { FunctionComponent } from "preact";
+import type { IslandEntry } from "./types";
+
+// Island component map — keyed by component reference
+const islandComponentMap = new Map<FunctionComponent<any>, IslandEntry>();
+
+export function setIslandMap(entries: IslandEntry[]) {
+  islandComponentMap.clear();
+  for (const entry of entries) {
+    islandComponentMap.set(entry.component, entry);
+  }
+}
+
+export function getIslandEntry<T>(
+  component: FunctionComponent<T>,
+): IslandEntry | undefined {
+  return islandComponentMap.get(component);
+}
+
+// Asset routes — keyed by public URL path
+const assetRoutes = new Map<string, string>();
+
+export function addAssetRoute(publicPath: string, absolutePath: string) {
+  assetRoutes.set(publicPath, absolutePath);
+}
+
+export function getAssetRoutes(): ReadonlyMap<string, string> {
+  return assetRoutes;
+}
+```
+
+- `setIslandMap` / `getIslandEntry` — used by `prerenderPages` and `useIsland`
+- `addAssetRoute` — called by `importAsset` when copying assets
+- `getAssetRoutes` — called by `generateRouteMap` when building the route manifest
+- All state lives in one module to make the dependency graph clear and keep the registry independently testable
+- Safe because all calls happen in a single build process
+
+### `build()` Convenience Function
+
+```typescript
+export async function build(): Promise<void> {
+  const islands = await prerenderIslands();
+  const routes = await prerenderPages(islands);
+  await generateRouteMap(routes, islands);
+}
+```
+
+### Island Script Generation
+
+Instead of the current `generateScriptForIsland` which reads the import path from a component Symbol, the new version accepts parameters directly:
+
+```typescript
+function generateScriptForIsland(hash: string, importPath: string): string {
+  const renderScriptPath = path.join(__dirname, "..", "runtime", "render.ts");
+  return `
+    import { renderComponent } from ${JSON.stringify(renderScriptPath)};
+    import Island from ${JSON.stringify(importPath)};
+    renderComponent(Island, ${JSON.stringify(hash)});
+  `;
+}
+```
+
+The `importPath` is the island file's absolute path (known from the scan in `prerenderIslands`). The `hash` matches the hash in the wrapper div's `data-island` attribute.
+
+### Convention: `islands/` directory
+
+Every default export in `islands/` is treated as an island. There is no `defineIsland` marker — the directory convention is the marker. If a file in `islands/` has no default export, it is skipped. If a default export is not a valid Preact component, hydration errors will occur client-side (same as before).
 
 ## Files to Change
 
 | File | Action | Details |
 |------|--------|---------|
-| `src/shell/build.ts` | **NEW** | `buildRoutes()` — same logic as current `prepareRoutes()`. No config. Scans `./pages`. Writes to `./.cache`. Throws on failure. |
-| `src/shell/routes.ts` | **DELETE** | Logic moved to `build.ts`. Entire file removed. |
-| `index.macro.ts` | **REWRITE** | Export only `loadRoutes(): string` — one-liner returning `"./.cache/routes.js"` |
-| `index.ts` | **MODIFY** | Export `buildRoutes` from `./src/shell/build`. Remove `prepareRoutes`. Keep `prepareIsland`, `defineIsland`, `staticPrerender`. |
-| `src/shell/static.ts` | **MODIFY** | Change `import { prepareRoutes }` → `import { buildRoutes }` |
-| `tests/fixtures/build.ts` | **NEW** | Imports `buildRoutes` from noxt and calls it |
-| `tests/fixtures/index.ts` | **MODIFY** | Use `loadRoutes` macro instead of `prepareRoutes` |
+| `src/core/registry.ts` | **NEW** | Singleton holding all build-time state: island component map + asset routes. Exports `setIslandMap`, `getIslandEntry`, `addAssetRoute`, `getAssetRoutes`. |
+| `src/shell/build.ts` | **NEW** | Contains build functions: `prerenderIslands()`, `prerenderPages()`, `generateRouteMap()`, `generateRouteMapFromCache()`, `build()`, `importAsset()`, `useIsland()`. Also `RouteData`, `IslandEntry` types. |
+| `src/core/island.ts` | **MODIFY** | Update `generateScriptForIsland` to accept hash + importPath directly. Remove `defineIsland`, `getImportPath`, `getHash`. Keep or move `IslandComponent` type if still used. |
+| `src/shell/island.ts` | **DELETE** | `prepareIsland` replaced by `prerenderIslands` + `useIsland` |
+| `src/shell/routes.ts` | **DELETE** | Logic moved to `build.ts` |
+| `index.macro.ts` | **DELETE** | No macros needed at all |
+| `index.ts` | **MODIFY** | Export `prerenderIslands`, `prerenderPages`, `generateRouteMap`, `generateRouteMapFromCache`, `build`, `useIsland`, `importAsset`, `staticPrerender` |
+| `package.json` | **MODIFY** | Remove `"macro"` condition from exports |
+| `src/shell/static.ts` | **MODIFY** | Use `build()` instead of `prepareRoutes()` |
+| `src/shell/prepare.ts` | **No change** | `preparePreact` / `prepareMarkdown` still called by `prerenderPages()` |
+| `src/core/code_generator.ts` | **No change** | `generateRouteMapCode` still called by `generateRouteMap()` |
+| `tests/fixtures/islands/counter.tsx` | **MODIFY** | Remove `defineIsland` wrapper, just `export default Counter` |
+| `tests/fixtures/pages/page_with_island.ts` | **MODIFY** | Replace `prepareIsland` with `useIsland` |
+| `tests/fixtures/layout/LayoutWithIsland.ts` | **MODIFY** | Replace `prepareIsland` with `useIsland` |
+| `tests/fixtures/build.ts` | **NEW** | Calls `build()` |
+| `tests/fixtures/index.ts` | **MODIFY** | `import routes from "./routes.js"` — no macro |
+| `tests/fixtures/prerender.ts` | **No change** | Uses `staticPrerender` which handles internally |
 | `tests/e2e/fixtures.test.ts` | **MODIFY** | Restructure for two-step workflow |
-| `docs/*.md` | **UPDATE** | Reflect `buildRoutes`, `loadRoutes`, two-step workflow |
-
-## Implementation Details
-
-### `src/shell/build.ts` (new, ~50 lines)
-
-```typescript
-export interface RouteData {
-  routeName: string;
-  filePath: string;
-}
-
-/** Scans ./pages, prerenders each page to .cache/, generates routes.js + manifest.json. Throws on failure. */
-export async function buildRoutes(): Promise<RouteData[]>
-```
-
-Same logic as current `prepareRoutes()`:
-- `getFilesMatchingGlob("**/*.{tsx,ts,jsx,js,md}", path.resolve("pages"))`
-- `prerenderPage()` for each file (markdown vs Preact, `preparePreact`/`prepareMarkdown`)
-- `generateRouteMapCode(manifest)` to build routes.js
-- Writes `routes.js` and `manifest.json` to `./.cache/`
-- Returns `RouteData[]`
-
-### `index.macro.ts` (rewrite, ~8 lines)
-
-```typescript
-/** Returns the path to the pre-generated routes manifest. Runs at compile time (macro). */
-export function loadRoutes(): string {
-  return "./.cache/routes.js";
-}
-```
-
-### `index.ts` (modify)
-
-```typescript
-import { buildRoutes } from "./src/shell/build";
-import { loadRoutes } from "./index.macro";
-import { prepareIsland } from "./src/shell/island";
-import { defineIsland } from "./src/core/island";
-import { staticPrerender } from "./src/shell/static";
-
-export { buildRoutes, loadRoutes, prepareIsland, defineIsland, staticPrerender };
-```
-
-### `src/shell/static.ts` (modify)
-
-Change:
-```typescript
-import { prepareRoutes, type RouteData } from "./routes";
-```
-To:
-```typescript
-import { buildRoutes, type RouteData } from "./build";
-```
-
-Change `await prepareRoutes()` to `await buildRoutes()`.
-
-### `tests/fixtures/build.ts` (new)
-
-```typescript
-import { buildRoutes } from "noxt";
-
-await buildRoutes();
-```
-
-### `tests/fixtures/index.ts` (modify)
-
-Change:
-```typescript
-import { prepareRoutes } from "noxt" with { type: "macro" };
-const routes = (await import(prepareRoutes())).default;
-```
-To:
-```typescript
-import { loadRoutes } from "noxt" with { type: "macro" };
-const routes = (await import(loadRoutes())).default;
-```
+| `tests/integration/island.test.ts` | **MODIFY** | Update to test `prerenderIslands` + `useIsland` |
+| `tests/integration/static.test.ts` | **No change** | Uses `staticPrerender` directly |
+| `tests/integration/prepare.test.ts` | **No change** | Tests `preparePreact`/`prepareMarkdown` directly |
+| `docs/*.md` | **UPDATE** | Reflect new API |
 
 ## What Doesn't Change
 
 | Feature | Status |
 |---------|--------|
-| `prepareIsland` | No change — already not a macro, imported normally in page files |
-| `defineIsland` | No change |
-| `staticPrerender` | No API change — internally uses `buildRoutes()` instead of `prepareRoutes()` |
-| `generateRouteMapCode` | No change — still called by `buildRoutes()` |
-| `preparePreact` / `prepareMarkdown` | No change — still called by `buildRoutes()` |
-| Package.json exports | No change — `macro` condition still points to `index.macro.ts` |
+| `staticPrerender` | No API change — internally uses `build()` |
+| `generateRouteMapCode` | No change — still called by `generateRouteMap()` |
+| `preparePreact` / `prepareMarkdown` | No change |
+| `renderPageToHtml` / `renderMarkdownToHtml` | No change |
+| `src/runtime/render.ts` (client hydration) | No change |
+| `src/runtime/fetch.ts` | No change |
+| `package.json` dependencies | No change |
 
-## What the Macro Does Now vs Before
+## Comparison
 
-| Aspect | Before (`prepareRoutes` macro) | After (`loadRoutes` macro) |
-|--------|-------------------------------|----------------------------|
-| Filesystem scan (Bun.Glob) | Yes | No |
-| Dynamic import of page components | Yes | No |
-| HTML prerendering (renderToStringAsync) | Yes | No |
-| Code generation (generateRouteMapCode) | Yes | No |
-| File writing (Bun.write) | Yes | No |
-| Return value path | Generated at runtime | Hardcoded `"./.cache/routes.js"` |
-| Lines of code | ~65 | 3 |
+| Aspect | Before | After |
+|--------|--------|-------|
+| Macros used | 1 (`prepareRoutes`) | 0 |
+| Build step | Implicit (inside macro) | Explicit (`build.ts`) |
+| `index.ts` import | `import ... with { type: "macro" }` + dynamic `import()` | Plain `import routes from "./routes.js"` |
+| Island filesystem work | In `prepareIsland` (called from page modules) | In `prerenderIslands()` (called from `build.ts`) |
+| Island identification | `defineIsland(comp, import.meta.path)` | Convention: default export in `islands/` |
+| Island page-side function | `prepareIsland(comp)` — writes files + returns wrapper | `useIsland(comp)` — pure lookup, returns wrapper |
+| Island script routes | Not in route map (bug: scripts not served) | Added to route map by `generateRouteMap` |
+| Pages functions | Single monolith `prepareRoutes()` | `prerenderPages()` + `generateRouteMap()` + `importAsset()` |
+| Asset handling | Manual | `importAsset()` copies + registers |
+| `routes.js` location | `./.cache/routes.js` | `./routes.js` (project root) |
+| Ordering | Implicit (inside macro) | Explicit: `prerenderIslands` → `prerenderPages` → `generateRouteMap` |
+| Data flow | Hidden (side effects) | Visible: `islands` flows through all three functions |
+| Error handling | Throws on failure | Throws on failure |
 
 ## Revised Test Structure
 
 ### "generate command" (`bun run build.ts`)
 
 - Should exit successfully
-- Should generate `.cache` directory with HTML files
-- Should generate `routes.js` with all routes
+- Should generate `.cache` directory with HTML files and island JS files
+- Should generate `routes.js` at project root with page, asset, and island script routes
 - Should generate `manifest.json`
 - Should generate unique hashes
 
@@ -191,7 +439,7 @@ const routes = (await import(loadRoutes())).default;
 [beforeEach: `bun run build.ts`]
 - Should bundle successfully
 - Should generate `index.js` in `dist` directory
-- Should include `.cache` in `dist` output
+- Should include `.cache` and `routes.js` in `dist` output
 - Should contain `Bun.serve` in output
 
 ### "server" (`bun run index.ts`)
