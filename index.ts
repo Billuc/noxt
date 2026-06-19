@@ -13,9 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { prepareIsland } from "./src/shell/island";
-import { prepareRoutes } from "./index.macro";
-import { defineIsland } from "./src/core/island";
+import { build } from "./src/shell/build";
+import {
+  prerenderIslands,
+  prerenderPages,
+  generateRouteMap,
+  generateRouteMapFromCache,
+  useIsland,
+  importAsset,
+} from "./src/shell/build";
 import { staticPrerender } from "./src/shell/static";
 
-export { prepareIsland, prepareRoutes, defineIsland, staticPrerender };
+export {
+  build,
+  prerenderIslands,
+  prerenderPages,
+  generateRouteMap,
+  generateRouteMapFromCache,
+  useIsland,
+  importAsset,
+  staticPrerender,
+};

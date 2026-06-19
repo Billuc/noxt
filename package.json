@@ -14,7 +14,6 @@
   "homepage": "https://github.com/Billuc/noxt#readme",
   "files": [
     "index.ts",
-    "index.macro.ts",
     "src/",
     "LICENSE"
   ],
@@ -22,8 +21,7 @@
     ".": {
       "import": "./index.ts",
       "require": "./index.ts",
-      "default": "./index.ts",
-      "macro": "./index.macro.ts"
+      "default": "./index.ts"
     },
     "./runtime": "./src/runtime/index.ts"
   },
