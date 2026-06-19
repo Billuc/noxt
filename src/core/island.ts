@@ -14,43 +14,17 @@
  *  limitations under the License.
  **/
 import * as path from "node:path";
-import type { FunctionComponent } from "preact";
-
-const IMPORT_PATH = Symbol("Island import path");
-
-export type IslandComponent<T> = FunctionComponent<T> & {
-  [IMPORT_PATH]: string;
-};
-
-/** Marks a Preact component as an island with a client-side import path. */
-export function defineIsland<T>(
-  component: FunctionComponent<T>,
-  importPath: string,
-): IslandComponent<T> {
-  let islandComponent: IslandComponent<T> = component as IslandComponent<T>;
-  islandComponent[IMPORT_PATH] = importPath;
-  return islandComponent;
-}
-
-/** Returns the client-side import path for an island component. */
-export function getImportPath<T>(component: IslandComponent<T>): string {
-  return component[IMPORT_PATH];
-}
-
-/** Returns a SHA-256 hash (base64url) uniquely identifying an island. */
-export function getHash<T>(component: IslandComponent<T>): string {
-  return new Bun.CryptoHasher("sha256")
-    .update(component[IMPORT_PATH])
-    .digest("base64url");
-}
 
 /** Generates a JS import script that hydrates the given island at runtime. */
-export function generateScriptForIsland<T>(island: IslandComponent<T>): string {
+export function generateScriptForIsland(
+  hash: string,
+  importPath: string,
+): string {
   const renderScriptPath = path.join(__dirname, "..", "runtime", "render.ts");
 
   return `
     import { renderComponent } from ${JSON.stringify(renderScriptPath)};
-    import Island from ${JSON.stringify(getImportPath(island))};
-    renderComponent(Island, ${JSON.stringify(getHash(island))}); 
+    import Island from ${JSON.stringify(importPath)};
+    renderComponent(Island, ${JSON.stringify(hash)});
   `;
 }
