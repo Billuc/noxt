@@ -100,12 +100,6 @@ export async function prerenderPages(
   );
 
   const pages = await Promise.all(pageFiles.map(prerenderPage));
-
-  // TODO: manifest isn't correct
-
-  const manifestFile = path.resolve(".cache", "manifest.json");
-  await writeFile(manifestFile, JSON.stringify(pages, null, 2));
-
   return pages;
 }
 

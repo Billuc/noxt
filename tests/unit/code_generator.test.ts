@@ -6,7 +6,7 @@ import { describe, it, expect } from "bun:test";
 
 describe("generateRouteMapCode", () => {
   it("should generate code with single route", () => {
-    const manifest = { "/": "./index.html" };
+    const manifest = { "/": "./.cache/index.html" };
     const result = generateRouteMapCode(manifest);
     expect(result).toEqualIgnoringWhitespace(`
       import _ from "./index.html";
@@ -18,7 +18,10 @@ describe("generateRouteMapCode", () => {
   });
 
   it("should generate code with multiple routes", () => {
-    const manifest = { "/": "./index.html", "/about": "./about.html" };
+    const manifest = {
+      "/": "./.cache/index.html",
+      "/about": "./.cache/about.html",
+    };
     const result = generateRouteMapCode(manifest);
     expect(result).toEqualIgnoringWhitespace(`
       import _ from "./index.html";
@@ -32,7 +35,7 @@ describe("generateRouteMapCode", () => {
   });
 
   it("should sanitize route names with special characters", () => {
-    const manifest = { "/about-us": "./about-us.html" };
+    const manifest = { "/about-us": "./.cache/about-us.html" };
     const result = generateRouteMapCode(manifest);
     expect(result).toEqualIgnoringWhitespace(`
       import _about_us from "./about-us.html";
