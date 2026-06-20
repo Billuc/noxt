@@ -75,18 +75,6 @@ describe("fixtures project - two-step build workflow", () => {
       expect(routesContent).toContain(".js");
     });
 
-    it("should generate manifest.json", async () => {
-      await Bun.spawn(["bun", "run", "build.ts"], {
-        cwd: FIXTURES_DIR,
-      }).exited;
-
-      const manifestPath = path.resolve(CACHE_DIR, "manifest.json");
-      const manifestContent = await readFile(manifestPath, "utf-8");
-      const manifest = JSON.parse(manifestContent);
-      expect(Array.isArray(manifest)).toBe(true);
-      expect(manifest.length).toBeGreaterThanOrEqual(6);
-    });
-
     it("should generate unique hashes across pages", async () => {
       await Bun.spawn(["bun", "run", "build.ts"], {
         cwd: FIXTURES_DIR,

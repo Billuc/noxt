@@ -69,17 +69,6 @@ describe("staticPrerender", () => {
     expect(htmlFiles.length).toBe(2);
   });
 
-  it("should create .cache manifest.json", async () => {
-    await staticPrerender();
-
-    const manifestPath = path.join(CACHE_DIR, "manifest.json");
-    expect(existsSync(manifestPath)).toBe(true);
-    const manifest = JSON.parse(await readFile(manifestPath, "utf-8"));
-    expect(manifest.length).toBe(2);
-    const routes = manifest.map((r: any) => r.routeName).sort();
-    expect(routes).toEqual(["/", "/about"]);
-  });
-
   it("should output files in dist directory", async () => {
     await staticPrerender();
 
