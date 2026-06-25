@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { html } from "htm/preact";
+import { h, Fragment } from "preact";
 
 function Counter({
   initialValue = 0,
@@ -10,10 +10,12 @@ function Counter({
 }) {
   const [count, setCount] = useState(initialValue);
   const dateLabel = date?.toLocaleString() ?? "undefined";
-  return html`
-    <button onClick=${() => setCount((c) => c + 1)}>${count}</button>
-    <div>Prepared at ${dateLabel}</div>
-  `;
+  return (
+    <>
+      <button onClick={() => setCount((c) => c + 1)}>{count}</button>
+      <div>Prepared at ${dateLabel}</div>
+    </>
+  );
 }
 
 export default Counter;

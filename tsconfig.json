@@ -6,7 +6,9 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "allowJs": true,
-    "jsx": "preserve",
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
 
     // Bundler mode
     "moduleResolution": "bundler",
