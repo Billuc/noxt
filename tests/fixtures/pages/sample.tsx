@@ -1,5 +1,5 @@
-import { html } from "htm/preact";
+import { h } from "preact";
 
 export default function SamplePage() {
-  return html`<h1>Sample Page</h1>`;
+  return <h1>Sample Page</h1>;
 }

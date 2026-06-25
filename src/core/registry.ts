@@ -19,8 +19,7 @@ import type { RelativePath } from "./fs";
 export interface IslandEntry {
   component: FunctionComponent<any>;
   hash: string;
-  path: RelativePath;
-  publicPath: string;
+  files: RelativePath[];
 }
 
 const islandComponentMap = new Map<FunctionComponent<any>, IslandEntry>();

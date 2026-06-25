@@ -19,6 +19,7 @@ import {
   renderMarkdownToHtml,
 } from "../core/rendering";
 import path, { basename } from "node:path";
+import * as crypto from "node:crypto";
 import { readFile, writeFile } from "./fs";
 import type {
   ComponentChildren,
@@ -27,14 +28,42 @@ import type {
 } from "preact";
 import { html } from "htm/preact";
 import { RelativePath } from "../core/fs";
+import { generateScriptForIsland } from "../core/island";
+import type { IslandEntry } from "./build";
+
+export async function prepareIsland(
+  islandPath: string,
+): Promise<IslandEntry | null> {
+  const mod = await import(islandPath);
+  const Island = mod.default as FunctionComponent<any>;
+  if (!Island) {
+    console.warn(`Island file ${islandPath} has no default export, skipping`);
+    return null;
+  }
+
+  const hash = crypto.hash("sha256", islandPath, "base64url");
+  const fileName = (Island.displayName ?? Island.name) + "." + hash + ".js";
+  const scriptPath = path.resolve(".cache", fileName);
+
+  const scriptContent = generateScriptForIsland(hash, islandPath);
+  await writeFile(scriptPath, scriptContent);
+
+  const relPath = RelativePath.fromCwd(scriptPath);
+
+  return {
+    component: Island,
+    hash,
+    files: [relPath],
+  };
+}
 
 /** Prerenders a Preact page component to HTML and caches it. */
-export async function preparePreact(
-  Page: FunctionComponent<any>,
-): Promise<RelativePath> {
-  const pageHash = new Bun.CryptoHasher("sha256")
-    .update(Page.toString())
-    .digest("base64url");
+export async function preparePreact(pagePath: string): Promise<RelativePath> {
+  const mod = await import(pagePath);
+  const Page = mod.default as FunctionComponent<any> | undefined;
+  if (!Page) throw new Error(`File ${pagePath} has no default export !`);
+
+  const pageHash = crypto.hash("sha256", pagePath, "base64url");
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 
@@ -50,9 +79,7 @@ export async function prepareMarkdown(
 ): Promise<RelativePath> {
   const content = await readFile(markdownPath);
 
-  const pageHash = new Bun.CryptoHasher("sha256")
-    .update(content)
-    .digest("base64url");
+  const pageHash = crypto.hash("sha256", markdownPath, "base64url");
   const fileName = basename(markdownPath, ".md") + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 

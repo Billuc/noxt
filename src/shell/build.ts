@@ -14,22 +14,17 @@
  *  limitations under the License.
  **/
 import * as path from "node:path";
-import type { FunctionComponent } from "preact";
-import { html } from "htm/preact";
-import * as devalue from "devalue";
-import { getFilesMatchingGlob, writeFile, readFile, copyFile } from "./fs";
-import { prepareMarkdown, preparePreact } from "./prepare";
-import { getRouteName } from "../core/rendering";
-import { generateRouteMapCode } from "../core/code_generator";
+import { getFilesMatchingGlob, writeFile } from "./fs";
+import { prepareIsland, prepareMarkdown, preparePreact } from "./prepare";
+import { getRouteName, toPublicPath } from "../core/rendering";
 import {
   setIslandMap,
-  getIslandEntry,
-  addAssetRoute,
   getAssetRoutes,
   type IslandEntry,
 } from "../core/registry";
-import { generateScriptForIsland } from "../core/island";
 import { RelativePath } from "../core/fs";
+import * as esbuild from "esbuild";
+import { isDev } from "./env";
 
 export interface RouteData {
   routeName: string;
@@ -58,35 +53,50 @@ export async function prerenderIslands(): Promise<IslandEntry[]> {
   }
 
   for (const file of islandFiles) {
-    const mod = await import(file.absolute);
-    const component = mod.default as FunctionComponent<any>;
-    if (!component) {
-      console.warn(
-        `Island file ${file.fromRoot} has no default export, skipping`,
-      );
-      continue;
-    }
+    const entry = await prepareIsland(file.absolute);
 
-    const hash = new Bun.CryptoHasher("sha256")
-      .update(file.absolute)
-      .digest("base64url");
-    const scriptContent = generateScriptForIsland(hash, file.absolute);
-    const scriptPath = path.resolve(".cache", hash + ".js");
-    await writeFile(scriptPath, scriptContent);
+    if (entry === null) continue;
 
-    entries.push({
-      component,
-      hash,
-      path: RelativePath.fromCwd(scriptPath),
-      publicPath: `/.cache/${hash}.js`,
-    });
-
+    entries.push(entry);
     console.log(
-      `Prerendered island [${component.displayName ?? component.name}] -> ${hash}.js`,
+      `Prerendered island [${entry.component.displayName ?? entry.component.name}]`,
     );
   }
 
   return entries;
+}
+
+export async function bundleIslands(
+  islands: IslandEntry[],
+): Promise<IslandEntry[]> {
+  const devMode = isDev();
+  const entrypoints = islands.flatMap((ie) => ie.files.map((f) => f.fromRoot));
+
+  const result = await esbuild.build({
+    entryPoints: entrypoints,
+    outdir: "dist",
+    minify: !devMode,
+    sourcemap: devMode,
+    splitting: !devMode,
+    jsxImportSource: "preact",
+    jsx: "automatic",
+    jsxDev: devMode,
+    jsxFactory: "h",
+    bundle: true,
+    format: "esm",
+    logLevel: "info",
+    metafile: true,
+  });
+
+  for (const output in result.metafile.outputs) {
+    console.log(output);
+    const inputs = result.metafile.outputs[output]?.inputs ?? {};
+    for (const input in inputs) {
+      console.log(" <- " + input);
+    }
+  }
+
+  return [];
 }
 
 export async function prerenderPages(
@@ -112,40 +122,15 @@ async function prerenderPage(pathFromPages: RelativePath): Promise<RouteData> {
     const prerenderedFile = await prepareMarkdown(pathFromPages.absolute);
     return { routeName, filePath: prerenderedFile };
   } else {
-    const mod = await import(pathFromPages.absolute);
-    const Page = mod.default as FunctionComponent<any> | undefined;
-    if (!Page)
-      throw new Error(`File ${pathFromPages.fromRoot} has no default export !`);
-    const prerenderedFile = await preparePreact(Page);
+    const prerenderedFile = await preparePreact(pathFromPages.absolute);
     return { routeName, filePath: prerenderedFile };
   }
-}
-
-export function useIsland<T>(
-  component: FunctionComponent<T>,
-): FunctionComponent<T> {
-  const entry = getIslandEntry(component);
-  if (!entry) {
-    throw new Error(
-      `Component "${component.displayName ?? component.name}" has not been prerendered as an island. ` +
-        "Make sure prerenderIslands() is called before prerenderPages().",
-    );
-  }
-
-  return (props: T) => {
-    return html`
-      <div data-island=${entry.hash} data-props=${devalue.stringify(props)}>
-        <${component} ...${props} />
-      </div>
-      <script src=${entry.publicPath}></script>
-    `;
-  };
 }
 
 export async function generateRouteMap(
   routes: RouteData[],
   islandEntries: IslandEntry[],
-): Promise<void> {
+): Promise<RelativePath> {
   const manifest: Record<string, string> = {};
 
   for (const route of routes) {
@@ -157,45 +142,25 @@ export async function generateRouteMap(
   }
 
   for (const entry of islandEntries) {
-    manifest[entry.publicPath] = entry.path.fromRoot;
+    for (const file of entry.files) {
+      manifest[toPublicPath(file.fromRoot)] = file.fromRoot;
+    }
   }
 
-  const code = generateRouteMapCode(manifest);
-  const routesFile = path.resolve(".cache", "routes.js");
-  await writeFile(routesFile, code);
-  console.log("Generated route map at .cache/routes.js");
-}
+  const routesFile = path.resolve(".cache", "routes.json");
+  await writeFile(routesFile, JSON.stringify(manifest));
+  console.log("Generated route map at .cache/routes.json");
 
-export async function generateRouteMapFromCache(): Promise<void> {
-  const manifest: Record<string, string> = {};
-
-  // TODO
-
-  const code = generateRouteMapCode(manifest);
-  const routesFile = path.resolve("routes.js");
-  await writeFile(routesFile, code);
-  console.log("Generated route map from cache at routes.js");
-}
-
-export async function importAsset(sourcePath: string): Promise<string> {
-  const absPath = path.resolve(sourcePath);
-  const filename = path.basename(absPath);
-  const destPath = path.join(".cache", "assets", filename);
-  const publicPath = `/.cache/assets/${filename}`;
-
-  await copyFile(absPath, destPath);
-  addAssetRoute(publicPath, RelativePath.fromCwd(destPath));
-  console.log(`Copied asset ${sourcePath} -> .cache/assets/${filename}`);
-
-  return publicPath;
+  return RelativePath.fromCwd(routesFile);
 }
 
 export async function build(): Promise<{
   routes: RouteData[];
   islands: IslandEntry[];
+  routeMap: RelativePath;
 }> {
   const islands = await prerenderIslands();
   const routes = await prerenderPages(islands);
-  await generateRouteMap(routes, islands);
-  return { routes, islands };
+  const routeMap = await generateRouteMap(routes, islands);
+  return { routes, islands, routeMap };
 }

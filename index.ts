@@ -18,10 +18,9 @@ import {
   prerenderIslands,
   prerenderPages,
   generateRouteMap,
-  generateRouteMapFromCache,
-  useIsland,
-  importAsset,
+  bundleIslands,
 } from "./src/shell/build";
+import { importAsset, Island } from "./src/shell/pages";
 import { staticPrerender } from "./src/shell/static";
 
 export {
@@ -29,8 +28,8 @@ export {
   prerenderIslands,
   prerenderPages,
   generateRouteMap,
-  generateRouteMapFromCache,
-  useIsland,
+  bundleIslands,
+  Island,
   importAsset,
   staticPrerender,
 };

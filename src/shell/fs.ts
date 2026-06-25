@@ -14,17 +14,24 @@
  *  limitations under the License.
  **/
 import path from "node:path";
-import { rm } from "node:fs/promises";
+import {
+  rm,
+  writeFile as write,
+  readFile as read,
+  glob,
+} from "node:fs/promises";
 import type { RelativePath } from "../core/fs";
+import { mkdir } from "node:fs/promises";
 
 /** Writes a string to a file using Bun.write. */
-export async function writeFile(path: string, content: string) {
-  await Bun.write(path, content);
+export async function writeFile(filepath: string, content: string) {
+  await mkdir(path.dirname(filepath), { recursive: true });
+  await write(filepath, content);
 }
 
 /** Reads a file's contents as a string using Bun.file. */
 export async function readFile(filePath: string): Promise<string> {
-  return await Bun.file(filePath).text();
+  return (await read(filePath)).toString("utf8");
 }
 
 /** Copy a file from `from` to `to`. */
@@ -43,10 +50,10 @@ export async function getFilesMatchingGlob(
   globPattern: string,
   root: string,
 ): Promise<RelativePath[]> {
-  const glob = new Bun.Glob(globPattern);
+  const globFiles = glob(globPattern, { cwd: root });
   const results: RelativePath[] = [];
 
-  for await (const file of glob.scan(root)) {
+  for await (const file of globFiles) {
     results.push({
       fromRoot: file,
       absolute: path.resolve(root, file),

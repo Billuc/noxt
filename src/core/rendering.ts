@@ -41,6 +41,10 @@ export function routeToHtmlPath(routeName: string): string {
   return path.join(relative, "index.html");
 }
 
+export function toPublicPath(cwdRelativePath: string): string {
+  return "/" + cwdRelativePath.replaceAll("\\", "/");
+}
+
 function sanitizeHtml(htmlContent: string) {
   if (htmlContent.startsWith("<html")) {
     return htmlContent;
