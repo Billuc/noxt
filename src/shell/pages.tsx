@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import type { FunctionComponent } from "preact";
-import { addAssetRoute, getIslandEntry } from "../core/registry";
+import { addAssetRoute, getIslandEntry, getIslandFiles } from "../core/registry";
 import { h, Fragment } from "preact";
 import * as devalue from "devalue";
 import { copyFile } from "./fs";
@@ -32,15 +32,15 @@ export function Island<T>(props: Props<T>) {
   if (!entry) {
     throw new Error(
       `Component "${Component.displayName ?? Component.name}" has not been prerendered as an island. ` +
-        "Make sure prerenderIslands() is called before prerenderPages().",
+      "Make sure prerenderIslands() is called before prerenderPages().",
     );
   }
 
   const scripts = [];
   const cssLinks = [];
 
-  for (const file of entry.files) {
-    if (/.*\.{js,jsx,ts,tsx}$/.test(file.fromRoot)) {
+  for (const file of getIslandFiles(entry)) {
+    if (/.*\.(js|jsx|ts|tsx)$/.test(file.fromRoot)) {
       scripts.push(<script src={toPublicPath(file.fromRoot)}></script>);
     } else if (file.fromRoot.endsWith(".css")) {
       cssLinks.push(

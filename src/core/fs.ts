@@ -19,9 +19,13 @@ export class RelativePath {
   constructor(
     public fromRoot: string,
     public absolute: string,
-  ) {}
+  ) { }
 
   static fromCwd(absolute: string): RelativePath {
     return new RelativePath(path.relative(process.cwd(), absolute), absolute);
+  }
+
+  static fromRelative(rel: string): RelativePath {
+    return new RelativePath(rel, path.resolve(rel));
   }
 }

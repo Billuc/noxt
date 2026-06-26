@@ -16,10 +16,14 @@
 import type { FunctionComponent } from "preact";
 import type { RelativePath } from "./fs";
 
+/// ISLANDS
+
+type IslandFiles = { type: "source", file: RelativePath } | { type: "bundle", files: RelativePath[] };
+
 export interface IslandEntry {
   component: FunctionComponent<any>;
   hash: string;
-  files: RelativePath[];
+  files: IslandFiles;
 }
 
 const islandComponentMap = new Map<FunctionComponent<any>, IslandEntry>();
@@ -37,6 +41,17 @@ export function getIslandEntry<T>(
   return islandComponentMap.get(component);
 }
 
+export function getIslandFiles(entry: IslandEntry): RelativePath[] {
+  switch (entry.files.type) {
+    case "source":
+      return [entry.files.file];
+    case "bundle":
+      return entry.files.files;
+  }
+}
+
+/// ASSETS
+
 const assetRoutes = new Map<string, RelativePath>();
 
 export function addAssetRoute(publicPath: string, path: RelativePath) {
@@ -46,3 +61,4 @@ export function addAssetRoute(publicPath: string, path: RelativePath) {
 export function getAssetRoutes(): ReadonlyMap<string, RelativePath> {
   return assetRoutes;
 }
+

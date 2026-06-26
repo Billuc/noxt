@@ -1,5 +1,10 @@
-//@ts-ignore: This file will be created by the build step
-import routes from "./.cache/routes.js";
+import routeMap from "./.cache/routes.json";
+
+const routes: Bun.Serve.Routes<any, any> = {};
+
+for (let route in routeMap) {
+  routes[route] = new Response(Bun.file(routeMap[route]!));
+}
 
 Bun.serve({
   port: 2101,

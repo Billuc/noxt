@@ -53,7 +53,10 @@ export async function prepareIsland(
   return {
     component: Island,
     hash,
-    files: [relPath],
+    files: {
+      type: "source",
+      file: relPath
+    },
   };
 }
 

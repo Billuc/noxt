@@ -9,11 +9,11 @@ function Counter({
   date?: Date;
 }) {
   const [count, setCount] = useState(initialValue);
-  const dateLabel = date?.toLocaleString() ?? "undefined";
+  const dateLabel = (date ?? new Date()).toLocaleString();
   return (
     <>
       <button onClick={() => setCount((c) => c + 1)}>{count}</button>
-      <div>Prepared at ${dateLabel}</div>
+      <div>Prepared at {dateLabel}</div>
     </>
   );
 }

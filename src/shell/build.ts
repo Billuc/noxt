@@ -14,13 +14,14 @@
  *  limitations under the License.
  **/
 import * as path from "node:path";
-import { getFilesMatchingGlob, writeFile } from "./fs";
+import { copyFile, getFilesMatchingGlob, writeFile } from "./fs";
 import { prepareIsland, prepareMarkdown, preparePreact } from "./prepare";
 import { getRouteName, toPublicPath } from "../core/rendering";
 import {
   setIslandMap,
   getAssetRoutes,
   type IslandEntry,
+  getIslandFiles,
 } from "../core/registry";
 import { RelativePath } from "../core/fs";
 import * as esbuild from "esbuild";
@@ -70,7 +71,12 @@ export async function bundleIslands(
   islands: IslandEntry[],
 ): Promise<IslandEntry[]> {
   const devMode = isDev();
-  const entrypoints = islands.flatMap((ie) => ie.files.map((f) => f.fromRoot));
+  const entrypoints = islands.flatMap((ie) => {
+    if (ie.files.type === "source") {
+      return [ie.files.file.fromRoot];
+    }
+    return [];
+  });
 
   const result = await esbuild.build({
     entryPoints: entrypoints,
@@ -88,15 +94,32 @@ export async function bundleIslands(
     metafile: true,
   });
 
+  const entriesToKeep = islands.filter(ie => ie.files.type === "bundle");
+  const newEntriesMap: Record<string, IslandEntry> = {};
+
+  islands.forEach(ie => {
+    if (ie.files.type !== "source") return;
+
+    newEntriesMap[ie.files.file.fromRoot] = {
+      component: ie.component,
+      hash: ie.hash,
+      files: {
+        type: "bundle",
+        files: []
+      }
+    }
+  });
+
   for (const output in result.metafile.outputs) {
-    console.log(output);
     const inputs = result.metafile.outputs[output]?.inputs ?? {};
     for (const input in inputs) {
-      console.log(" <- " + input);
+      if (input in newEntriesMap && newEntriesMap[input]?.files.type === "bundle") {
+        newEntriesMap[input]!.files.files.push(RelativePath.fromRelative(output));
+      }
     }
   }
 
-  return [];
+  return [...entriesToKeep, ...Object.values(newEntriesMap)];
 }
 
 export async function prerenderPages(
@@ -118,13 +141,44 @@ async function prerenderPage(pathFromPages: RelativePath): Promise<RouteData> {
   const routeName = getRouteName(pathFromPages.fromRoot);
   console.log(`Prerendering page [${routeName}]`);
 
+  let prerenderedFile: RelativePath;
   if (extension === ".md") {
-    const prerenderedFile = await prepareMarkdown(pathFromPages.absolute);
-    return { routeName, filePath: prerenderedFile };
+    prerenderedFile = await prepareMarkdown(pathFromPages.absolute);
   } else {
-    const prerenderedFile = await preparePreact(pathFromPages.absolute);
-    return { routeName, filePath: prerenderedFile };
+    prerenderedFile = await preparePreact(pathFromPages.absolute);
   }
+  return { routeName, filePath: prerenderedFile };
+}
+
+export async function generateStaticPages(
+  routes: RouteData[],
+  islandEntries: IslandEntry[],
+): Promise<Record<string, string>> {
+  const manifest: Record<string, string> = {};
+
+  for (const route of routes) {
+    const routeName = route.routeName === "/" ? "" : route.routeName;
+    let distPath = "dist" + routeName + "/index.html";
+    distPath = distPath.replaceAll("/", path.sep);
+    await copyFile(route.filePath.fromRoot, distPath);
+    manifest[route.routeName] = distPath;
+  }
+
+  for (const [url, assetPath] of getAssetRoutes()) {
+    const distUrl = url.replace("/.cache", "");
+    const distAssetPath = assetPath.fromRoot.replace(".cache", "dist");
+    await copyFile(assetPath.fromRoot, distAssetPath);
+    manifest[distUrl] = distAssetPath;
+  }
+
+  for (const entry of islandEntries) {
+    for (const file of getIslandFiles(entry)) {
+      const distPath = file.fromRoot.replace("dist/", "");
+      manifest[toPublicPath(distPath)] = "dist/" + distPath;
+    }
+  }
+
+  return manifest;
 }
 
 export async function generateRouteMap(
@@ -142,7 +196,7 @@ export async function generateRouteMap(
   }
 
   for (const entry of islandEntries) {
-    for (const file of entry.files) {
+    for (const file of getIslandFiles(entry)) {
       manifest[toPublicPath(file.fromRoot)] = file.fromRoot;
     }
   }
@@ -159,7 +213,8 @@ export async function build(): Promise<{
   islands: IslandEntry[];
   routeMap: RelativePath;
 }> {
-  const islands = await prerenderIslands();
+  let islands = await prerenderIslands();
+  islands = await bundleIslands(islands);
   const routes = await prerenderPages(islands);
   const routeMap = await generateRouteMap(routes, islands);
   return { routes, islands, routeMap };
