@@ -9,3 +9,4 @@ Ideas of things that could be implemented:
 - Remote Procedure Call by defining APIs files
 - State helper ? To share data between islands using signals
 - Remove Bun references
+- Base path

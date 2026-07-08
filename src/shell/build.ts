@@ -124,17 +124,16 @@ export async function bundleIslands(
 }
 
 export async function prerenderPages(
-  pageFiles: RelativePath[],
+  pageFiles: [string, RelativePath][],
   islands: IslandEntry[],
 ): Promise<RouteData[]> {
   setIslandMap(islands);
-  const pages = await Promise.all(pageFiles.map(prerenderPage));
+  const pages = await Promise.all(pageFiles.map(([routeName, file]) => prerenderPage(routeName, file)));
   return pages;
 }
 
-async function prerenderPage(pathFromPages: RelativePath): Promise<RouteData> {
+async function prerenderPage(routeName: string, pathFromPages: RelativePath): Promise<RouteData> {
   const extension = path.extname(pathFromPages.fromRoot);
-  const routeName = getRouteName(pathFromPages.fromRoot);
   console.log(`Prerendering page [${routeName}]`);
 
   let prerenderedFile: RelativePath;
@@ -205,21 +204,21 @@ export async function generateRouteMap(
 }
 
 export async function generateLinkUtils(
-  pageFiles: RelativePath[],
+  pageFiles: [string, RelativePath][],
 ): Promise<void> {
-  const routeNames = pageFiles.map(file => getRouteName(file.fromRoot));
+  const routeNames = pageFiles.map(([routeName]) => routeName);
   const code = generateLinkUtilsCode(routeNames);
   const utilsFile = path.resolve(".cache", "utils.ts");
   await writeFile(utilsFile, code);
   console.log("Generated link utils at .cache/utils.ts");
 }
 
-export async function discoverRouteFiles(): Promise<RelativePath[]> {
+export async function discoverRouteFiles(): Promise<[string, RelativePath][]> {
   const pageFiles = await getFilesMatchingGlob(
     "**/*.{tsx,ts,jsx,js,md}",
     path.resolve("pages"),
   );
-  return pageFiles;
+  return pageFiles.map(file => [getRouteName(file.fromRoot), file]);
 }
 
 export async function build(): Promise<{
