@@ -18,6 +18,8 @@ import {
   prerenderIslands,
   prerenderPages,
   generateRouteMap,
+  generateLinkUtils,
+  discoverRouteFiles,
   bundleIslands,
   generateStaticPages,
 } from "./src/shell/build";
@@ -29,6 +31,8 @@ export {
   prerenderIslands,
   prerenderPages,
   generateRouteMap,
+  generateLinkUtils,
+  discoverRouteFiles,
   bundleIslands,
   Island,
   importAsset,
