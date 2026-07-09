@@ -1,10 +1,9 @@
 import * as path from "node:path";
 import type { FunctionComponent } from "preact";
-import { addAssetRoute, getIslandEntry, getIslandFiles } from "../core/registry";
+import { getIslandEntry, getIslandFiles } from "../core/registry";
 import { h, Fragment } from "preact";
 import * as devalue from "devalue";
 import { copyFile } from "./fs";
-import { RelativePath } from "../core/fs";
 import { toPublicPath } from "../core/rendering";
 
 export async function importAsset(sourcePath: string): Promise<string> {
@@ -14,7 +13,6 @@ export async function importAsset(sourcePath: string): Promise<string> {
   const publicPath = `/.cache/assets/${filename}`;
 
   await copyFile(absPath, destPath);
-  addAssetRoute(publicPath, RelativePath.fromCwd(destPath));
   console.log(`Copied asset ${sourcePath} -> .cache/assets/${filename}`);
 
   return publicPath;

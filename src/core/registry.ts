@@ -52,13 +52,3 @@ export function getIslandFiles(entry: IslandEntry): RelativePath[] {
 
 /// ASSETS
 
-const assetRoutes = new Map<string, RelativePath>();
-
-export function addAssetRoute(publicPath: string, path: RelativePath) {
-  assetRoutes.set(publicPath, path);
-}
-
-export function getAssetRoutes(): ReadonlyMap<string, RelativePath> {
-  return assetRoutes;
-}
-

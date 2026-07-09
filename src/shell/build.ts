@@ -16,11 +16,10 @@
 import * as path from "node:path";
 import { copyFile, getFilesMatchingGlob, writeFile } from "./fs";
 import { prepareIsland, prepareMarkdown, preparePreact } from "./prepare";
-import { generateLinkUtilsCode } from "../core/code_generator";
+import { generateAssetUtilsCode, generateLinkUtilsCode } from "../core/code_generator";
 import { getRouteName, toPublicPath } from "../core/rendering";
 import {
   setIslandMap,
-  getAssetRoutes,
   type IslandEntry,
   getIslandFiles,
 } from "../core/registry";
@@ -159,13 +158,6 @@ export async function generateStaticPages(
     manifest[route.routeName] = distPath;
   }
 
-  for (const [url, assetPath] of getAssetRoutes()) {
-    const distUrl = url.replace("/.cache", "");
-    const distAssetPath = assetPath.fromRoot.replace(".cache", "dist");
-    await copyFile(assetPath.fromRoot, distAssetPath);
-    manifest[distUrl] = distAssetPath;
-  }
-
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
       const distPath = file.fromRoot.replace("dist/", "");
@@ -186,10 +178,6 @@ export async function generateRouteMap(
     manifest[route.routeName] = route.filePath.fromRoot;
   }
 
-  for (const [url, assetPath] of getAssetRoutes()) {
-    manifest[url] = assetPath.fromRoot;
-  }
-
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
       manifest[toPublicPath(file.fromRoot)] = file.fromRoot;
@@ -203,14 +191,26 @@ export async function generateRouteMap(
   return RelativePath.fromCwd(routesFile);
 }
 
-export async function generateLinkUtils(
+export async function discoverAssets(): Promise<[string, RelativePath][]> {
+  const assetFiles = await getFilesMatchingGlob(
+    "**/*",
+    path.resolve("assets"),
+  );
+  return assetFiles.map(file => [toPublicPath(file.fromRoot), file]);
+}
+
+export async function generateUtils(
   pageFiles: [string, RelativePath][],
+  assetFiles: [string, RelativePath][],
 ): Promise<void> {
   const routeNames = pageFiles.map(([routeName]) => routeName);
-  const code = generateLinkUtilsCode(routeNames);
+  const assetIds = assetFiles.map(([assetId]) => assetId);
+  const linkCode = generateLinkUtilsCode(routeNames);
+  const assetCode = generateAssetUtilsCode(assetIds);
+  const code = `${linkCode}\n${assetCode}`;
   const utilsFile = path.resolve(".cache", "utils.ts");
   await writeFile(utilsFile, code);
-  console.log("Generated link utils at .cache/utils.ts");
+  console.log("Generated utils at .cache/utils.ts");
 }
 
 export async function discoverRouteFiles(): Promise<[string, RelativePath][]> {
@@ -230,7 +230,8 @@ export async function build(): Promise<{
   islands = await bundleIslands(islands);
 
   const pageFiles = await discoverRouteFiles();
-  await generateLinkUtils(pageFiles);
+  const assetFiles = await discoverAssets();
+  await generateUtils(pageFiles, assetFiles);
 
   const routes = await prerenderPages(pageFiles, islands);
   const routeMap = await generateRouteMap(routes, islands);
