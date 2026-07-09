@@ -171,11 +171,16 @@ export async function generateStaticPages(
 export async function generateRouteMap(
   routes: RouteData[],
   islandEntries: IslandEntry[],
+  assetFiles: [string, RelativePath][],
 ): Promise<RelativePath> {
   const manifest: Record<string, string> = {};
 
   for (const route of routes) {
     manifest[route.routeName] = route.filePath.fromRoot;
+  }
+
+  for (const [url, assetPath] of assetFiles) {
+    manifest[url] = assetPath.fromRoot;
   }
 
   for (const entry of islandEntries) {
@@ -243,6 +248,6 @@ export async function build(): Promise<{
   await copyAssets(assetFiles);
 
   const routes = await prerenderPages(pageFiles, islands);
-  const routeMap = await generateRouteMap(routes, islands);
+  const routeMap = await generateRouteMap(routes, islands, assetFiles);
   return { routes, islands, routeMap };
 }
