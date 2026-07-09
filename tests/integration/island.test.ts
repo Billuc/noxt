@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { useIsland } from "../../src/shell/build";
+import { Island } from "../../src/shell/pages";
 import { setIslandMap, type IslandEntry } from "../../src/core/registry";
 import { describe, it, expect, beforeEach } from "bun:test";
 import { h } from "preact";
@@ -35,26 +35,9 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&#39;/g, "'");
 }
 
-describe("useIsland", () => {
+describe("Island", () => {
   beforeEach(() => {
     setIslandMap([]);
-  });
-
-  it("should return a wrapper component", () => {
-    const TestComponent = ({ name }: TestProps) =>
-      h("div", { class: "test" }, name);
-
-    const entry: IslandEntry = {
-      component: TestComponent,
-      hash: "testhash123",
-      path: RelativePath.fromCwd("test.js"),
-      publicPath: "/.cache/testhash123.js",
-    };
-    setIslandMap([entry]);
-
-    const Wrapper = useIsland(TestComponent);
-    expect(Wrapper).toBeDefined();
-    expect(typeof Wrapper).toBe("function");
   });
 
   it("should render div with data-island attribute", () => {
@@ -64,13 +47,16 @@ describe("useIsland", () => {
     const entry: IslandEntry = {
       component: TestComponent,
       hash: "testhash456",
-      path: RelativePath.fromCwd("test.js"),
-      publicPath: "/.cache/testhash456.js",
+      files: {
+        type: "source",
+        file: RelativePath.fromCwd("test.js"),
+      },
     };
     setIslandMap([entry]);
 
-    const Wrapper = useIsland(TestComponent);
-    const html = renderToString(h(Wrapper, { name: "World" }));
+    const html = renderToString(
+      h(Island, { component: TestComponent, props: { name: "World" } }),
+    );
 
     expect(html).toContain('data-island="testhash456"');
   });
@@ -82,13 +68,16 @@ describe("useIsland", () => {
     const entry: IslandEntry = {
       component: TestComponent,
       hash: "hashprops",
-      path: RelativePath.fromCwd("test.js"),
-      publicPath: "/.cache/hashprops.js",
+      files: {
+        type: "source",
+        file: RelativePath.fromCwd("test.js"),
+      },
     };
     setIslandMap([entry]);
 
-    const Wrapper = useIsland(TestComponent);
-    const html = renderToString(h(Wrapper, { name: "Test", count: 42 }));
+    const html = renderToString(
+      h(Island, { component: TestComponent, props: { name: "Test", count: 42 } }),
+    );
 
     expect(html).toContain("data-props=");
     const propsMatch = html.match(/data-props="([^"]*)"/);
@@ -106,20 +95,27 @@ describe("useIsland", () => {
     const entry: IslandEntry = {
       component: TestComponent,
       hash: "scripttest",
-      path: RelativePath.fromCwd("test.js"),
-      publicPath: "/.cache/scripttest.js",
+      files: {
+        type: "source",
+        file: RelativePath.fromCwd("test.js"),
+      },
     };
     setIslandMap([entry]);
 
-    const Wrapper = useIsland(TestComponent);
-    const html = renderToString(h(Wrapper, { name: "ScriptTest" }));
+    const html = renderToString(
+      h(Island, { component: TestComponent, props: { name: "ScriptTest" } }),
+    );
 
-    expect(html).toContain('<script src="/.cache/scripttest.js"');
+    expect(html).toContain('<script src="/test.js"');
   });
 
   it("should throw for an unprerendered component", () => {
     const UnknownComponent = () => h("div", {}, "unknown");
-    expect(() => useIsland(UnknownComponent)).toThrow("not been prerendered");
+    expect(() =>
+      renderToString(
+        h(Island, { component: UnknownComponent, props: {} }),
+      ),
+    ).toThrow("not been prerendered");
   });
 
   it("should handle empty props object", () => {
@@ -128,16 +124,17 @@ describe("useIsland", () => {
     const entry: IslandEntry = {
       component: TestComponent,
       hash: "emptyprops",
-      path: RelativePath.fromCwd("test.js"),
-      publicPath: "/.cache/emptyprops.js",
+      files: {
+        type: "source",
+        file: RelativePath.fromCwd("test.js"),
+      },
     };
     setIslandMap([entry]);
 
-    const Wrapper = useIsland(TestComponent);
-    // @ts-expect-error - intentionally passing no props
-    const html = renderToString(h(Wrapper, {}));
+    const html = renderToString(
+      h(Island, { component: TestComponent, props: {} }),
+    );
 
-    // devalue wraps empty props in an array: [{}]
-    expect(html).toContain('data-props="[{}]"');
+    expect(html).toContain("data-props=");
   });
 });

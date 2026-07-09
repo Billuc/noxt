@@ -20,12 +20,11 @@ import { rm, readdir, readFile } from "node:fs/promises";
 const FIXTURES_DIR = path.resolve("tests/fixtures");
 const DIST_DIR = path.resolve(FIXTURES_DIR, "dist");
 const CACHE_DIR = path.resolve(FIXTURES_DIR, ".cache");
-const ROUTES_FILE = path.resolve(FIXTURES_DIR, ".cache", "routes.js");
+const ROUTES_FILE = path.resolve(FIXTURES_DIR, ".cache", "routes.json");
 
 async function cleanupFixtures() {
   await rm(DIST_DIR, { recursive: true, force: true }).catch(() => {});
   await rm(CACHE_DIR, { recursive: true, force: true }).catch(() => {});
-  await rm(ROUTES_FILE, { recursive: true, force: true }).catch(() => {});
 }
 
 describe("fixtures project - two-step build workflow", () => {
@@ -57,22 +56,26 @@ describe("fixtures project - two-step build workflow", () => {
       expect(htmlFiles.length).toBeGreaterThanOrEqual(6);
     });
 
-    it("should generate routes.js in .cache directory", async () => {
+    it("should generate routes.json in .cache directory", async () => {
       await Bun.spawn(["bun", "run", "build.ts"], {
         cwd: FIXTURES_DIR,
       }).exited;
 
       const routesContent = await readFile(ROUTES_FILE, "utf-8");
-      expect(routesContent).toContain("export default");
+      const parsed = JSON.parse(routesContent);
+      expect(parsed).toHaveProperty("/");
+      expect(parsed).toHaveProperty("/sample");
     });
 
-    it("should generate routes.js with island script entries", async () => {
+    it("should generate routes.json with page and asset entries", async () => {
       await Bun.spawn(["bun", "run", "build.ts"], {
         cwd: FIXTURES_DIR,
       }).exited;
 
       const routesContent = await readFile(ROUTES_FILE, "utf-8");
-      expect(routesContent).toContain(".js");
+      const parsed = JSON.parse(routesContent);
+      expect(parsed["/"]).toEqual("dist");
+      expect(parsed["/assets/test.png"]).toEqual("test");
     });
 
     it("should generate unique hashes across pages", async () => {
@@ -278,7 +281,7 @@ describe("fixtures project - two-step build workflow", () => {
       await Bun.write(indexPath, builtContent);
 
       serverProcess = Bun.spawn(["bun", "run", "index.js"], {
-        cwd: DIST_DIR,
+        cwd: FIXTURES_DIR,
       });
       await Bun.sleep(300);
 
