@@ -16,7 +16,10 @@
 import * as path from "node:path";
 import { copyFile, getFilesMatchingGlob, writeFile } from "./fs";
 import { prepareIsland, prepareMarkdown, preparePreact } from "./prepare";
-import { generateAssetUtilsCode, generateLinkUtilsCode } from "../core/code_generator";
+import {
+  generateAssetUtilsCode,
+  generateLinkUtilsCode,
+} from "../core/code_generator";
 import { getRouteName, toPublicPath } from "../core/rendering";
 import {
   setIslandMap,
@@ -94,10 +97,10 @@ export async function bundleIslands(
     metafile: true,
   });
 
-  const entriesToKeep = islands.filter(ie => ie.files.type === "bundle");
+  const entriesToKeep = islands.filter((ie) => ie.files.type === "bundle");
   const newEntriesMap: Record<string, IslandEntry> = {};
 
-  islands.forEach(ie => {
+  islands.forEach((ie) => {
     if (ie.files.type !== "source") return;
 
     newEntriesMap[ie.files.file.fromRoot] = {
@@ -105,16 +108,21 @@ export async function bundleIslands(
       hash: ie.hash,
       files: {
         type: "bundle",
-        files: []
-      }
-    }
+        files: [],
+      },
+    };
   });
 
   for (const output in result.metafile.outputs) {
     const inputs = result.metafile.outputs[output]?.inputs ?? {};
     for (const input in inputs) {
-      if (input in newEntriesMap && newEntriesMap[input]?.files.type === "bundle") {
-        newEntriesMap[input]!.files.files.push(RelativePath.fromRelative(output));
+      if (
+        input in newEntriesMap &&
+        newEntriesMap[input]?.files.type === "bundle"
+      ) {
+        newEntriesMap[input]!.files.files.push(
+          RelativePath.fromRelative(output),
+        );
       }
     }
   }
@@ -127,11 +135,16 @@ export async function prerenderPages(
   islands: IslandEntry[],
 ): Promise<RouteData[]> {
   setIslandMap(islands);
-  const pages = await Promise.all(pageFiles.map(([routeName, file]) => prerenderPage(routeName, file)));
+  const pages = await Promise.all(
+    pageFiles.map(([routeName, file]) => prerenderPage(routeName, file)),
+  );
   return pages;
 }
 
-async function prerenderPage(routeName: string, pathFromPages: RelativePath): Promise<RouteData> {
+async function prerenderPage(
+  routeName: string,
+  pathFromPages: RelativePath,
+): Promise<RouteData> {
   const extension = path.extname(pathFromPages.fromRoot);
   console.log(`Prerendering page [${routeName}]`);
 
@@ -197,14 +210,22 @@ export async function generateRouteMap(
 }
 
 export async function discoverAssets(): Promise<[string, RelativePath][]> {
-  const assetFiles = await getFilesMatchingGlob(
-    "**/*",
-    path.resolve("assets"),
-  );
-  return assetFiles.map(file => ["/assets" + toPublicPath(file.fromRoot), file]);
+  let assetFiles: RelativePath[];
+  try {
+    assetFiles = await getFilesMatchingGlob("**/*", path.resolve("assets"));
+  } catch {
+    console.log("No assets folder found");
+    return [];
+  }
+  return assetFiles.map((file) => [
+    "/assets" + toPublicPath(file.fromRoot),
+    file,
+  ]);
 }
 
-export async function copyAssets(assetFiles: [string, RelativePath][]): Promise<void> {
+export async function copyAssets(
+  assetFiles: [string, RelativePath][],
+): Promise<void> {
   for (const [, file] of assetFiles) {
     const destPath = path.join("dist", "assets", file.fromRoot);
     await copyFile(file.absolute, destPath);
@@ -231,7 +252,7 @@ export async function discoverRouteFiles(): Promise<[string, RelativePath][]> {
     "**/*.{tsx,ts,jsx,js,md}",
     path.resolve("pages"),
   );
-  return pageFiles.map(file => [getRouteName(file.fromRoot), file]);
+  return pageFiles.map((file) => [getRouteName(file.fromRoot), file]);
 }
 
 export async function build(): Promise<{
