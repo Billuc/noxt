@@ -19,6 +19,7 @@ import {
   writeFile as write,
   readFile as read,
   glob,
+  copyFile as copy,
 } from "node:fs/promises";
 import type { RelativePath } from "../core/fs";
 import { mkdir } from "node:fs/promises";
@@ -36,8 +37,8 @@ export async function readFile(filePath: string): Promise<string> {
 
 /** Copy a file from `from` to `to`. */
 export async function copyFile(from: string, to: string) {
-  const content = await readFile(from);
-  await writeFile(to, content);
+  await mkdir(path.dirname(to), { recursive: true });
+  await copy(from, to);
 }
 
 /** Recursively removes a folder and its contents. */

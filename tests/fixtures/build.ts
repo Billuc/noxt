@@ -1,11 +1,11 @@
 import {
-  build,
   prerenderIslands,
   prerenderPages,
   generateRouteMap,
   generateUtils,
   discoverRouteFiles,
   discoverAssets,
+  copyAssets,
   bundleIslands,
   generateStaticPages,
 } from "noxt";
@@ -19,6 +19,7 @@ islands = await bundleIslands(islands);
 const pageFiles = await discoverRouteFiles();
 const assetFiles = await discoverAssets();
 await generateUtils(pageFiles, assetFiles);
+await copyAssets(assetFiles);
 
 const routes = await prerenderPages(pageFiles, islands);
 const routeMap = await generateRouteMap(routes, islands);

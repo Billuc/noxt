@@ -1,9 +1,10 @@
 import { html } from "htm/preact";
-import { link } from "../.cache/utils";
+import { link, asset } from "../.cache/utils";
 
 export default function IndexPage() {
   return html`
     <h1>Index Page</h1>
+    <img src="${asset("/test.png")}" alt="Test" />
     <br />
     <a href="${link("/sample")}">Sample Page</a><br />
     <a href="${link("/sample2")}">Sample Page #2</a><br />

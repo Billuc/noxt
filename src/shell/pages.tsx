@@ -1,22 +1,8 @@
-import * as path from "node:path";
 import type { FunctionComponent } from "preact";
 import { getIslandEntry, getIslandFiles } from "../core/registry";
 import { h, Fragment } from "preact";
 import * as devalue from "devalue";
-import { copyFile } from "./fs";
 import { toPublicPath } from "../core/rendering";
-
-export async function importAsset(sourcePath: string): Promise<string> {
-  const absPath = path.resolve(sourcePath);
-  const filename = path.basename(absPath);
-  const destPath = path.join(".cache", "assets", filename);
-  const publicPath = `/.cache/assets/${filename}`;
-
-  await copyFile(absPath, destPath);
-  console.log(`Copied asset ${sourcePath} -> .cache/assets/${filename}`);
-
-  return publicPath;
-}
 
 type Props<T> = h.JSX.IntrinsicAttributes & {
   component: FunctionComponent<T>;

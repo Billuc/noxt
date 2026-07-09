@@ -21,10 +21,11 @@ import {
   generateUtils,
   discoverRouteFiles,
   discoverAssets,
+  copyAssets,
   bundleIslands,
   generateStaticPages,
 } from "./src/shell/build";
-import { importAsset, Island } from "./src/shell/pages";
+import { Island } from "./src/shell/pages";
 import { staticPrerender } from "./src/shell/static";
 
 export {
@@ -35,9 +36,9 @@ export {
   generateUtils,
   discoverRouteFiles,
   discoverAssets,
+  copyAssets,
   bundleIslands,
   Island,
-  importAsset,
   staticPrerender,
   generateStaticPages
 };

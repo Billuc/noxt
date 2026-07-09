@@ -196,7 +196,15 @@ export async function discoverAssets(): Promise<[string, RelativePath][]> {
     "**/*",
     path.resolve("assets"),
   );
-  return assetFiles.map(file => [toPublicPath(file.fromRoot), file]);
+  return assetFiles.map(file => ["/assets" + toPublicPath(file.fromRoot), file]);
+}
+
+export async function copyAssets(assetFiles: [string, RelativePath][]): Promise<void> {
+  for (const [, file] of assetFiles) {
+    const destPath = path.join("dist", "assets", file.fromRoot);
+    await copyFile(file.absolute, destPath);
+  }
+  console.log(`Copied ${assetFiles.length} asset(s) to dist/assets/`);
 }
 
 export async function generateUtils(
@@ -232,6 +240,7 @@ export async function build(): Promise<{
   const pageFiles = await discoverRouteFiles();
   const assetFiles = await discoverAssets();
   await generateUtils(pageFiles, assetFiles);
+  await copyAssets(assetFiles);
 
   const routes = await prerenderPages(pageFiles, islands);
   const routeMap = await generateRouteMap(routes, islands);
