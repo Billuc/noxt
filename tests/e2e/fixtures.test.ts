@@ -74,8 +74,10 @@ describe("fixtures project - two-step build workflow", () => {
 
       const routesContent = await readFile(ROUTES_FILE, "utf-8");
       const parsed = JSON.parse(routesContent);
-      expect(parsed["/"]).toEqual("dist");
-      expect(parsed["/assets/test.png"]).toEqual("test");
+      expect(parsed["/"]).toMatch(/\.cache[/\\].+\.html$/);
+      expect(parsed["/assets/test.png"]).toMatch(
+        /\.cache[/\\]assets[/\\]test\.png$/,
+      );
     });
 
     it("should generate unique hashes across pages", async () => {
@@ -251,7 +253,6 @@ describe("fixtures project - two-step build workflow", () => {
 
   describe("build and run integration", () => {
     let serverProcess: Bun.Subprocess | null = null;
-    const BUILD_TEST_PORT = 2102;
 
     afterEach(async () => {
       if (serverProcess) {
@@ -275,17 +276,12 @@ describe("fixtures project - two-step build workflow", () => {
       await bundleCmd.exited;
       expect(bundleCmd.exitCode).toBe(0);
 
-      const indexPath = path.resolve(DIST_DIR, "index.js");
-      let builtContent = await readFile(indexPath, "utf-8");
-      builtContent = builtContent.replace("2101", String(BUILD_TEST_PORT));
-      await Bun.write(indexPath, builtContent);
-
-      serverProcess = Bun.spawn(["bun", "run", "index.js"], {
+      serverProcess = Bun.spawn(["bun", "run", "index.ts"], {
         cwd: FIXTURES_DIR,
       });
       await Bun.sleep(300);
 
-      const response = await fetch(`http://localhost:${BUILD_TEST_PORT}/`);
+      const response = await fetch(`http://localhost:2101/`);
       expect(response.status).toBe(200);
       const body = await response.text();
       expect(body).toContain("Index Page");

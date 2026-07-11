@@ -83,7 +83,7 @@ export async function bundleIslands(
 
   const result = await esbuild.build({
     entryPoints: entrypoints,
-    outdir: "dist",
+    outdir: ".cache/_islands",
     minify: !devMode,
     sourcemap: devMode,
     splitting: !devMode,
@@ -116,18 +116,30 @@ export async function bundleIslands(
   for (const output in result.metafile.outputs) {
     const inputs = result.metafile.outputs[output]?.inputs ?? {};
     for (const input in inputs) {
-      if (
-        input in newEntriesMap &&
-        newEntriesMap[input]?.files.type === "bundle"
-      ) {
-        newEntriesMap[input]!.files.files.push(
-          RelativePath.fromRelative(output),
-        );
+      const entry = getMapFileInput(newEntriesMap, input);
+      if (entry?.files.type === "bundle") {
+        entry.files.files.push(RelativePath.fromRelative(output));
       }
     }
   }
 
   return [...entriesToKeep, ...Object.values(newEntriesMap)];
+}
+
+function getMapFileInput<T>(
+  map: Record<string, T>,
+  inputFile: string,
+): T | undefined {
+  const sanitizedInput = inputFile.replaceAll("\\", "/");
+
+  for (const key in map) {
+    const sanitizedKey = key.replaceAll("\\", "/");
+    if (sanitizedInput === sanitizedKey) {
+      return map[key];
+    }
+  }
+
+  return undefined;
 }
 
 export async function prerenderPages(
@@ -173,8 +185,8 @@ export async function generateStaticPages(
 
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
-      const distPath = file.fromRoot.replace("dist/", "");
-      manifest[toPublicPath(distPath)] = "dist/" + distPath;
+      const distPath = file.fromRoot.replace(".cache/_islands/", "");
+      manifest[toPublicPath(distPath)] = ".cache/_islands/" + distPath;
     }
   }
 
@@ -193,7 +205,7 @@ export async function generateRouteMap(
   }
 
   for (const [url, assetPath] of assetFiles) {
-    manifest[url] = assetPath.fromRoot;
+    manifest[url] = path.join(".cache", "assets", assetPath.fromRoot);
   }
 
   for (const entry of islandEntries) {
@@ -225,12 +237,17 @@ export async function discoverAssets(): Promise<[string, RelativePath][]> {
 
 export async function copyAssets(
   assetFiles: [string, RelativePath][],
-): Promise<void> {
-  for (const [, file] of assetFiles) {
-    const destPath = path.join("dist", "assets", file.fromRoot);
+): Promise<[string, RelativePath][]> {
+  const newFiles: [string, RelativePath][] = [];
+
+  for (const [route, file] of assetFiles) {
+    const destPath = path.join(".cache", "assets", file.fromRoot);
     await copyFile(file.absolute, destPath);
+    newFiles.push([route, RelativePath.fromRelative(destPath)]);
   }
-  console.log(`Copied ${assetFiles.length} asset(s) to dist/assets/`);
+  console.log(`Copied ${assetFiles.length} asset(s) to .cache/assets/`);
+
+  return newFiles;
 }
 
 export async function generateUtils(
@@ -263,10 +280,11 @@ export async function build(): Promise<{
   let islands = await prerenderIslands();
   islands = await bundleIslands(islands);
 
+  let assetFiles = await discoverAssets();
+  assetFiles = await copyAssets(assetFiles);
+
   const pageFiles = await discoverRouteFiles();
-  const assetFiles = await discoverAssets();
   await generateUtils(pageFiles, assetFiles);
-  await copyAssets(assetFiles);
 
   const routes = await prerenderPages(pageFiles, islands);
   const routeMap = await generateRouteMap(routes, islands, assetFiles);
