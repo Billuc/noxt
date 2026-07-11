@@ -20,7 +20,12 @@ import {
 } from "../../src/shell/build";
 import { setIslandMap, type IslandEntry } from "../../src/core/registry";
 
-const SANDBOX_DIR = path.resolve(import.meta.dir, "..", "..", "test-build-temp");
+const SANDBOX_DIR = path.resolve(
+  import.meta.dir,
+  "..",
+  "..",
+  "test-build-temp",
+);
 const ORIGINAL_CWD = process.cwd();
 
 async function setupSandbox() {
@@ -56,10 +61,7 @@ async function createAsset(
   return filePath;
 }
 
-async function createIsland(
-  name: string,
-  content: string,
-): Promise<string> {
+async function createIsland(name: string, content: string): Promise<string> {
   const dir = path.join(SANDBOX_DIR, "islands");
   await mkdir(dir, { recursive: true });
   const filePath = path.join(dir, name);
@@ -117,16 +119,8 @@ export default function Sample() { return html\`<h1>Sample</h1>\`; }`,
   });
 
   it("should handle nested page directories", async () => {
-    await createPage(
-      "post1.md",
-      "# Post 1",
-      "blog",
-    );
-    await createPage(
-      "post2.md",
-      "# Post 2",
-      "blog",
-    );
+    await createPage("post1.md", "# Post 1", "blog");
+    await createPage("post2.md", "# Post 2", "blog");
 
     const result = await discoverRouteFiles();
 
@@ -228,7 +222,9 @@ describe("discoverAssets", () => {
     const result = await discoverAssets();
 
     expect(result.length).toBeGreaterThanOrEqual(1);
-    const photoEntry = result.find(([url]) => url === "/assets/images/photo.jpg");
+    const photoEntry = result.find(
+      ([url]) => url === "/assets/images/photo.jpg",
+    );
     expect(photoEntry).toBeDefined();
   });
 
@@ -281,7 +277,8 @@ export default function Widget() { return h("div", {}, "widget"); }`,
     const entries = await prerenderIslands();
 
     expect(entries).toHaveLength(1);
-    const file = entries[0]!.files.type === "source" ? entries[0]!.files.file : null;
+    const file =
+      entries[0]!.files.type === "source" ? entries[0]!.files.file : null;
     expect(file).not.toBeNull();
     expect(file!.fromRoot).toContain(".cache");
     expect(file!.fromRoot).toContain(".js");
@@ -337,7 +334,9 @@ describe("bundleIslands", () => {
   beforeEach(async () => {
     await setupSandbox();
     process.chdir(SANDBOX_DIR);
-    await mkdir(path.join(SANDBOX_DIR, ".cache", "_islands"), { recursive: true });
+    await mkdir(path.join(SANDBOX_DIR, ".cache", "_islands"), {
+      recursive: true,
+    });
     await mkdir(path.join(SANDBOX_DIR, "dist"), { recursive: true });
   });
 
@@ -350,7 +349,9 @@ describe("bundleIslands", () => {
 export default function Counter() { return h("div", {}, "0"); }`,
     );
 
-    const relFromRoot = path.relative(SANDBOX_DIR, islandPath).replaceAll("\\", "/");
+    const relFromRoot = path
+      .relative(SANDBOX_DIR, islandPath)
+      .replaceAll("\\", "/");
     const entry: IslandEntry = {
       component: () => null,
       hash: "testhash",
@@ -364,7 +365,9 @@ export default function Counter() { return h("div", {}, "0"); }`,
 
     expect(result).toHaveLength(1);
     expect(result[0]!.files.type).toBe("bundle");
-    expect(existsSync(path.join(SANDBOX_DIR, ".cache", "_islands", "counter.js"))).toBe(true);
+    expect(
+      existsSync(path.join(SANDBOX_DIR, ".cache", "_islands", "counter.js")),
+    ).toBe(true);
   });
 
   it("should keep bundle-type entries unchanged", async () => {
@@ -400,7 +403,9 @@ export default function Counter() { return h("div", {}, "0"); }`,
 export default function Counter() { return h("div", {}, "0"); }`,
     );
 
-    const relFromRoot = path.relative(SANDBOX_DIR, islandPath).replaceAll("\\", "/");
+    const relFromRoot = path
+      .relative(SANDBOX_DIR, islandPath)
+      .replaceAll("\\", "/");
     const sourceEntry: IslandEntry = {
       component: () => null,
       hash: "sourcehash",
@@ -635,9 +640,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const routes: RouteData[] = [
       { routeName: "/", filePath: RelativePath.fromCwd(pagePath) },
     ];
-    const assets: [string, RelativePath][] = [
-      ["/assets/img.png", assetFile],
-    ];
+    const assets: [string, RelativePath][] = [["/assets/img.png", assetFile]];
 
     const result = await generateRouteMap(routes, [], assets);
     const content = JSON.parse(await readFile(result.absolute, "utf-8"));
@@ -652,7 +655,9 @@ describe("generateStaticPages", () => {
   beforeEach(async () => {
     await setupSandbox();
     process.chdir(SANDBOX_DIR);
-    await mkdir(path.join(SANDBOX_DIR, ".cache", "_islands"), { recursive: true });
+    await mkdir(path.join(SANDBOX_DIR, ".cache", "_islands"), {
+      recursive: true,
+    });
     await mkdir(path.join(SANDBOX_DIR, "dist"), { recursive: true });
   });
 
@@ -669,7 +674,7 @@ describe("generateStaticPages", () => {
       },
     ];
 
-    const manifest = await generateStaticPages(routes, []);
+    const manifest = await generateStaticPages(routes, [], []);
 
     expect(manifest["/test"]).toBeDefined();
     expect(manifest["/test"]).toContain("dist");
@@ -688,7 +693,7 @@ describe("generateStaticPages", () => {
       },
     ];
 
-    const manifest = await generateStaticPages(routes, []);
+    const manifest = await generateStaticPages(routes, [], []);
 
     expect(manifest["/"]).toBe(
       path.join("dist", "index.html").replaceAll("/", path.sep),
@@ -706,7 +711,7 @@ describe("generateStaticPages", () => {
       },
     ];
 
-    const manifest = await generateStaticPages(routes, []);
+    const manifest = await generateStaticPages(routes, [], []);
 
     expect(manifest["/blog/post1"]).toContain("dist");
     expect(manifest["/blog/post1"]).toContain("blog");
@@ -729,17 +734,121 @@ describe("generateStaticPages", () => {
       },
     };
 
-    const manifest = await generateStaticPages([], [entry]);
+    const manifest = await generateStaticPages([], [entry], []);
 
     const keys = Object.keys(manifest);
     expect(keys.length).toBe(1);
     expect(keys[0]).toContain("Counter");
-    expect(manifest[keys[0]!]).toContain(".cache/_islands");
+    expect(manifest[keys[0]!]).toContain(path.join("dist", "_islands"));
+  });
+
+  it("should copy asset files from .cache/assets to dist/assets", async () => {
+    const cacheAssetPath = path.join(
+      SANDBOX_DIR,
+      ".cache",
+      "assets",
+      "style.css",
+    );
+    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), { recursive: true });
+    await writeFile(cacheAssetPath, "body { color: red; }");
+
+    const assetFile = RelativePath.fromCwd(cacheAssetPath);
+    const assetFiles: [string, RelativePath][] = [
+      ["/assets/style.css", assetFile],
+    ];
+
+    const manifest = await generateStaticPages([], [], assetFiles);
+
+    const key = "/dist/assets/style.css";
+    expect(manifest[key]).toBeDefined();
+    expect(manifest[key]).toContain(path.join("dist", "assets"));
+    const distFilePath = path.join(SANDBOX_DIR, manifest[key]!);
+    expect(existsSync(distFilePath)).toBe(true);
+    const content = await readFile(distFilePath, "utf-8");
+    expect(content).toBe("body { color: red; }");
+  });
+
+  it("should handle nested asset paths", async () => {
+    const cacheAssetDir = path.join(
+      SANDBOX_DIR,
+      ".cache",
+      "assets",
+      "images",
+    );
+    const cacheAssetPath = path.join(cacheAssetDir, "photo.jpg");
+    await mkdir(cacheAssetDir, { recursive: true });
+    await writeFile(cacheAssetPath, "jpg data");
+
+    const assetFile = RelativePath.fromCwd(cacheAssetPath);
+    const assetFiles: [string, RelativePath][] = [
+      ["/assets/images/photo.jpg", assetFile],
+    ];
+
+    const manifest = await generateStaticPages([], [], assetFiles);
+
+    const key = "/dist/assets/images/photo.jpg";
+    expect(manifest[key]).toBeDefined();
+    expect(manifest[key]).toContain(path.join("dist", "assets", "images"));
+    const distFilePath = path.join(SANDBOX_DIR, manifest[key]!);
+    expect(existsSync(distFilePath)).toBe(true);
+  });
+
+  it("should combine pages, islands, and assets in manifest", async () => {
+    const cachePage = path.join(SANDBOX_DIR, ".cache", "Index.abc.html");
+    await writeFile(cachePage, "<!DOCTYPE html><html><body>Home</body></html>");
+
+    const cacheIsland = path.join(
+      SANDBOX_DIR,
+      ".cache",
+      "_islands",
+      "Button.xyz.js",
+    );
+    await writeFile(cacheIsland, "console.log('button');");
+
+    const cacheAsset = path.join(SANDBOX_DIR, ".cache", "assets", "img.png");
+    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), { recursive: true });
+    await writeFile(cacheAsset, "png data");
+
+    const routes: RouteData[] = [
+      { routeName: "/", filePath: RelativePath.fromCwd(cachePage) },
+    ];
+    const islandEntry: IslandEntry = {
+      component: () => null,
+      hash: "xyz",
+      files: {
+        type: "bundle",
+        files: [RelativePath.fromCwd(cacheIsland)],
+      },
+    };
+    const assetEntry: [string, RelativePath] = [
+      "/assets/img.png",
+      RelativePath.fromCwd(cacheAsset),
+    ];
+
+    const manifest = await generateStaticPages(
+      routes,
+      [islandEntry],
+      [assetEntry],
+    );
+
+    expect(Object.keys(manifest)).toHaveLength(3);
+    expect(manifest["/"]).toBeDefined();
+    expect(manifest["/"]).toContain(path.join("dist", "index.html"));
+    const islandManifestValue = Object.values(manifest).find(
+      (v) => typeof v === "string" && v.includes("Button"),
+    );
+    expect(islandManifestValue).toBeDefined();
+    expect(islandManifestValue).toContain(path.join("dist", "_islands"));
+    expect(manifest["/dist/assets/img.png"]).toBeDefined();
+    expect(manifest["/dist/assets/img.png"]).toContain(path.join("dist", "assets"));
   });
 
   it("should handle multiple routes", async () => {
     const cacheFile1 = path.join(SANDBOX_DIR, ".cache", "Home.abc.html");
-    await writeFile(cacheFile1, "<!DOCTYPE html><html><body>Home</body></html>");
+    await writeFile(
+      cacheFile1,
+      "<!DOCTYPE html><html><body>Home</body></html>",
+    );
     const cacheFile2 = path.join(SANDBOX_DIR, ".cache", "About.def.html");
     await writeFile(
       cacheFile2,
@@ -751,7 +860,7 @@ describe("generateStaticPages", () => {
       { routeName: "/about", filePath: RelativePath.fromCwd(cacheFile2) },
     ];
 
-    const manifest = await generateStaticPages(routes, []);
+    const manifest = await generateStaticPages(routes, [], []);
 
     expect(Object.keys(manifest)).toHaveLength(2);
     expect(manifest["/"]).toContain("index.html");
@@ -797,12 +906,12 @@ describe("copyAssets", () => {
       ["/assets/b.css", asset2],
     ]);
 
-    expect(existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "a.png"))).toBe(
-      true,
-    );
-    expect(existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "b.css"))).toBe(
-      true,
-    );
+    expect(
+      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "a.png")),
+    ).toBe(true);
+    expect(
+      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "b.css")),
+    ).toBe(true);
   });
 
   it("should handle nested asset paths", async () => {
@@ -919,7 +1028,11 @@ describe("build", () => {
 
   afterEach(cleanupSandbox);
 
-  async function runBuildAsSubprocess(): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  async function runBuildAsSubprocess(): Promise<{
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+  }> {
     const buildScript = `
 const originalLog = console.log;
 console.log = () => {};
@@ -976,7 +1089,9 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const { exitCode } = await runBuildAsSubprocess();
 
     expect(exitCode).toBe(0);
-    expect(existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "logo.png"))).toBe(true);
+    expect(
+      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "logo.png")),
+    ).toBe(true);
   });
 
   it("should complete full build pipeline with islands", async () => {
@@ -1020,7 +1135,9 @@ export default function Button() { return h("button", {}, "Click"); }`,
     expect(result.routes).toHaveLength(2);
     expect(result.islands).toBe(1);
     expect(result.routes.sort()).toEqual(["/", "/about"]);
-    expect(existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "style.css"))).toBe(true);
+    expect(
+      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "style.css")),
+    ).toBe(true);
   });
 
   it("should generate valid routes.json", async () => {
@@ -1067,7 +1184,10 @@ export default function Index() { return h("h1", {}, "Home"); }`,
       f.filter((f) => f.endsWith(".html")).sort(),
     );
 
-    await rm(path.join(SANDBOX_DIR, ".cache"), { recursive: true, force: true });
+    await rm(path.join(SANDBOX_DIR, ".cache"), {
+      recursive: true,
+      force: true,
+    });
     await rm(path.join(SANDBOX_DIR, "dist"), { recursive: true, force: true });
 
     const result2 = await runBuildAsSubprocess();

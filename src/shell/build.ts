@@ -14,7 +14,22 @@
  *  limitations under the License.
  **/
 import * as path from "node:path";
-import { copyFile, getFilesMatchingGlob, writeFile } from "./fs";
+import {
+  CACHE_DIR,
+  ISLANDS_CACHE_DIR,
+  ASSETS_CACHE_DIR,
+  ISLANDS_DIR,
+  ASSETS_DIR,
+  PAGES_DIR,
+  DIST_DIR,
+  assetsCachePath,
+  distPath,
+  copyFile,
+  getFilesMatchingGlob,
+  writeFile,
+  ROUTES_CACHE_FILE,
+  UTILS_CACHE_FILE,
+} from "./fs";
 import { prepareIsland, prepareMarkdown, preparePreact } from "./prepare";
 import {
   generateAssetUtilsCode,
@@ -42,7 +57,7 @@ export async function prerenderIslands(): Promise<IslandEntry[]> {
   try {
     islandFiles = await getFilesMatchingGlob(
       "*.{tsx,ts,jsx,js}",
-      path.resolve("islands"),
+      path.resolve(ISLANDS_DIR),
     );
   } catch {
     console.log("No islands directory found, skipping island prerendering");
@@ -83,7 +98,7 @@ export async function bundleIslands(
 
   const result = await esbuild.build({
     entryPoints: entrypoints,
-    outdir: ".cache/_islands",
+    outdir: ISLANDS_CACHE_DIR,
     minify: !devMode,
     sourcemap: devMode,
     splitting: !devMode,
@@ -178,32 +193,26 @@ export async function generateStaticPages(
 
   for (const route of routes) {
     const routeName = route.routeName === "/" ? "" : route.routeName;
-    let distPath = "dist" + routeName + "/index.html";
-    distPath = distPath.replaceAll("/", path.sep);
-    await copyFile(route.filePath.fromRoot, distPath);
-    manifest[route.routeName] = distPath;
+    let outputPath = DIST_DIR + routeName + "/index.html";
+    outputPath = outputPath.replaceAll("/", path.sep);
+    await copyFile(route.filePath.fromRoot, outputPath);
+    manifest[route.routeName] = outputPath;
   }
 
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
-      const islandPath = path.relative(
-        path.join(".cache", "_islands"),
-        file.fromRoot,
-      );
-      let distPath = path.join("dist", "_islands", islandPath);
-      await copyFile(file.fromRoot, distPath);
-      manifest[toPublicPath(distPath)] = distPath;
+      const islandRelPath = path.relative(ISLANDS_CACHE_DIR, file.fromRoot);
+      let outputPath = distPath("_islands", islandRelPath);
+      await copyFile(file.fromRoot, outputPath);
+      manifest[toPublicPath(outputPath)] = outputPath;
     }
   }
 
   for (const [, assetPath] of assetFiles) {
-    const pathFromAssets = path.relative(
-      path.join(".cache", "assets"),
-      assetPath.fromRoot,
-    );
-    let distPath = path.join("dist", "assets", pathFromAssets);
-    await copyFile(assetPath.fromRoot, distPath);
-    manifest[toPublicPath(distPath)] = distPath;
+    const assetRelPath = path.relative(ASSETS_CACHE_DIR, assetPath.fromRoot);
+    let outputPath = distPath("assets", assetRelPath);
+    await copyFile(assetPath.fromRoot, outputPath);
+    manifest[toPublicPath(outputPath)] = outputPath;
   }
 
   return manifest;
@@ -221,7 +230,7 @@ export async function generateRouteMap(
   }
 
   for (const [url, assetPath] of assetFiles) {
-    manifest[url] = path.join(".cache", "assets", assetPath.fromRoot);
+    manifest[url] = assetsCachePath(assetPath.fromRoot);
   }
 
   for (const entry of islandEntries) {
@@ -230,7 +239,7 @@ export async function generateRouteMap(
     }
   }
 
-  const routesFile = path.resolve(".cache", "routes.json");
+  const routesFile = path.resolve(ROUTES_CACHE_FILE);
   await writeFile(routesFile, JSON.stringify(manifest));
   console.log("Generated route map at .cache/routes.json");
 
@@ -240,7 +249,7 @@ export async function generateRouteMap(
 export async function discoverAssets(): Promise<[string, RelativePath][]> {
   let assetFiles: RelativePath[];
   try {
-    assetFiles = await getFilesMatchingGlob("**/*", path.resolve("assets"));
+    assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
   } catch {
     console.log("No assets folder found");
     return [];
@@ -257,7 +266,7 @@ export async function copyAssets(
   const newFiles: [string, RelativePath][] = [];
 
   for (const [route, file] of assetFiles) {
-    const destPath = path.join(".cache", "assets", file.fromRoot);
+    const destPath = assetsCachePath(file.fromRoot);
     await copyFile(file.absolute, destPath);
     newFiles.push([route, RelativePath.fromRelative(destPath)]);
   }
@@ -275,7 +284,7 @@ export async function generateUtils(
   const linkCode = generateLinkUtilsCode(routeNames);
   const assetCode = generateAssetUtilsCode(assetIds);
   const code = `${linkCode}\n${assetCode}`;
-  const utilsFile = path.resolve(".cache", "utils.ts");
+  const utilsFile = path.resolve(UTILS_CACHE_FILE);
   await writeFile(utilsFile, code);
   console.log("Generated utils at .cache/utils.ts");
 }
@@ -283,7 +292,7 @@ export async function generateUtils(
 export async function discoverRouteFiles(): Promise<[string, RelativePath][]> {
   const pageFiles = await getFilesMatchingGlob(
     "**/*.{tsx,ts,jsx,js,md}",
-    path.resolve("pages"),
+    path.resolve(PAGES_DIR),
   );
   return pageFiles.map((file) => [getRouteName(file.fromRoot), file]);
 }
