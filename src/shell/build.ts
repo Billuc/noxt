@@ -172,6 +172,7 @@ async function prerenderPage(
 export async function generateStaticPages(
   routes: RouteData[],
   islandEntries: IslandEntry[],
+  assetFiles: [string, RelativePath][],
 ): Promise<Record<string, string>> {
   const manifest: Record<string, string> = {};
 
@@ -185,9 +186,24 @@ export async function generateStaticPages(
 
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
-      const distPath = file.fromRoot.replace(".cache/_islands/", "");
-      manifest[toPublicPath(distPath)] = ".cache/_islands/" + distPath;
+      const islandPath = path.relative(
+        path.join(".cache", "_islands"),
+        file.fromRoot,
+      );
+      let distPath = path.join("dist", "_islands", islandPath);
+      await copyFile(file.fromRoot, distPath);
+      manifest[toPublicPath(distPath)] = distPath;
     }
+  }
+
+  for (const [, assetPath] of assetFiles) {
+    const pathFromAssets = path.relative(
+      path.join(".cache", "assets"),
+      assetPath.fromRoot,
+    );
+    let distPath = path.join("dist", "assets", pathFromAssets);
+    await copyFile(assetPath.fromRoot, distPath);
+    manifest[toPublicPath(distPath)] = distPath;
   }
 
   return manifest;

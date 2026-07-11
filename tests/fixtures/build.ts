@@ -23,6 +23,6 @@ await copyAssets(assetFiles);
 
 const routes = await prerenderPages(pageFiles, islands);
 const routeMap = await generateRouteMap(routes, islands, assetFiles);
-const staticManifest = await generateStaticPages(routes, islands);
+const staticManifest = await generateStaticPages(routes, islands, assetFiles);
 
 console.log(staticManifest);
