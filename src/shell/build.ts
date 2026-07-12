@@ -94,14 +94,14 @@ export async function bundleIslands(
   const devMode = isDev();
   const entrypoints = islands.flatMap((ie) => {
     if (ie.files.type === "source") {
-      return [ie.files.file.relativeToCwd()];
+      return [ie.files.file.absolute];
     }
     return [];
   });
 
   const result = await esbuild.build({
     entryPoints: entrypoints,
-    outdir: ISLANDS_CACHE_DIR,
+    outdir: path.resolve(ISLANDS_CACHE_DIR),
     minify: !devMode,
     sourcemap: devMode,
     splitting: !devMode,
@@ -113,6 +113,7 @@ export async function bundleIslands(
     format: "esm",
     logLevel: "info",
     metafile: true,
+    absPaths: ["metafile"],
   });
 
   const entriesToKeep = islands.filter((ie) => ie.files.type === "bundle");

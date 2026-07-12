@@ -361,7 +361,10 @@ export default function Counter() { return h("div", {}, "0"); }`,
       },
     };
 
+    const currentDir = process.cwd();
+    process.chdir(SANDBOX_DIR);
     const result = await bundleIslands([entry]);
+    process.chdir(currentDir);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.files.type).toBe("bundle");
@@ -385,7 +388,10 @@ export default function Counter() { return h("div", {}, "0"); }`,
       },
     };
 
+    const currentDir = process.cwd();
+    process.chdir(SANDBOX_DIR);
     const result = await bundleIslands([entry]);
+    process.chdir(currentDir);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.files.type).toBe("bundle");
@@ -425,8 +431,10 @@ export default function Counter() { return h("div", {}, "0"); }`,
       },
     };
 
+    const currentDir = process.cwd();
     process.chdir(SANDBOX_DIR);
     const result = await bundleIslands([sourceEntry, bundleEntry]);
+    process.chdir(currentDir);
 
     expect(result).toHaveLength(2);
     const types = result.map((e) => e.files.type).sort();
