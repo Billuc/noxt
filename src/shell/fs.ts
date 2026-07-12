@@ -50,7 +50,6 @@ export async function removeFolder(path: string) {
 // ─── Directory Constants ─────────────────────────────────────
 export const CACHE_DIR = ".cache";
 export const ISLANDS_CACHE_DIR = path.join(CACHE_DIR, "_islands");
-export const ASSETS_CACHE_DIR = path.join(CACHE_DIR, "assets");
 export const ROUTES_CACHE_FILE = path.join(CACHE_DIR, "routes.json");
 export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
 
@@ -65,11 +64,6 @@ export const DIST_DIR = "dist";
 /** Builds a path inside .cache. */
 export function cachePath(...segments: string[]): string {
   return path.join(CACHE_DIR, ...segments);
-}
-
-/** Builds a path inside .cache/assets. */
-export function assetsCachePath(...segments: string[]): string {
-  return path.join(ASSETS_CACHE_DIR, ...segments);
 }
 
 /** Builds a path inside dist. */

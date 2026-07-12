@@ -17,12 +17,10 @@ import * as path from "node:path";
 import {
   CACHE_DIR,
   ISLANDS_CACHE_DIR,
-  ASSETS_CACHE_DIR,
   ISLANDS_DIR,
   ASSETS_DIR,
   PAGES_DIR,
   DIST_DIR,
-  assetsCachePath,
   distPath,
   copyFile,
   getFilesMatchingGlob,
@@ -214,7 +212,7 @@ export async function generateStaticPages(
   }
 
   for (const { filePath: assetPath } of assetFiles) {
-    const assetRelPath = path.relative(ASSETS_CACHE_DIR, assetPath.fromRoot);
+    const assetRelPath = path.relative(ASSETS_DIR, assetPath.fromRoot);
     let outputPath = distPath("assets", assetRelPath);
     await copyFile(assetPath.fromRoot, outputPath);
     manifest[toPublicPath(outputPath)] = outputPath;
@@ -235,7 +233,7 @@ export async function generateRouteMap(
   }
 
   for (const { url, filePath: assetPath } of assetFiles) {
-    manifest[url] = assetsCachePath(assetPath.fromRoot);
+    manifest[url] = assetPath.fromRoot;
   }
 
   for (const entry of islandEntries) {
@@ -259,26 +257,10 @@ export async function collectAssets(): Promise<FileEntry[]> {
     console.log("No assets folder found");
     return [];
   }
-  const files = assetFiles.map((file) => ({
+  return assetFiles.map((file) => ({
     url: "/assets" + toPublicPath(file.fromRoot),
-    filePath: file,
+    filePath: RelativePath.fromCwd(file.absolute),
   }));
-  return copyAssetsToCache(files);
-}
-
-async function copyAssetsToCache(
-  assetFiles: FileEntry[],
-): Promise<FileEntry[]> {
-  const newFiles: FileEntry[] = [];
-
-  for (const { url, filePath: file } of assetFiles) {
-    const destPath = assetsCachePath(file.fromRoot);
-    await copyFile(file.absolute, destPath);
-    newFiles.push({ url, filePath: RelativePath.fromRelative(destPath) });
-  }
-  console.log(`Copied ${assetFiles.length} asset(s) to .cache/assets/`);
-
-  return newFiles;
 }
 
 export async function generateUtils(

@@ -190,7 +190,7 @@ describe("collectAssets", () => {
 
   afterEach(cleanupSandbox);
 
-  it("should discover and copy asset files", async () => {
+  it("should discover asset files", async () => {
     await createAsset("logo.png", "png data");
     await createAsset("style.css", "body { color: red; }");
 
@@ -199,13 +199,9 @@ describe("collectAssets", () => {
     expect(result).toHaveLength(2);
     const urls = result.map(({ url }) => url).sort();
     expect(urls).toEqual(["/assets/logo.png", "/assets/style.css"]);
-
-    const destDir = path.join(SANDBOX_DIR, ".cache", "assets");
-    expect(existsSync(path.join(destDir, "logo.png"))).toBe(true);
-    expect(existsSync(path.join(destDir, "style.css"))).toBe(true);
   });
 
-  it("should return RelativePath objects pointing to cache", async () => {
+  it("should return RelativePath objects pointing to source", async () => {
     await createAsset("test.png");
 
     const result = await collectAssets();
@@ -214,7 +210,7 @@ describe("collectAssets", () => {
     const { filePath: file } = result[0]!;
     expect(file).toHaveProperty("fromRoot");
     expect(file).toHaveProperty("absolute");
-    expect(file.fromRoot).toContain(path.join(".cache", "assets", "test.png"));
+    expect(file.fromRoot).toContain(path.join("assets", "test.png"));
     expect(existsSync(file.absolute)).toBe(true);
   });
 
@@ -230,15 +226,9 @@ describe("collectAssets", () => {
       ({ url }) => url === "/assets/images/photo.jpg",
     );
     expect(photoEntry).toBeDefined();
-
-    const destPath = path.join(
-      SANDBOX_DIR,
-      ".cache",
-      "assets",
-      "images",
-      "photo.jpg",
-    );
-    expect(existsSync(destPath)).toBe(true);
+    const { filePath: file } = photoEntry!;
+    expect(file.fromRoot).toContain(path.join("assets", "images", "photo.jpg"));
+    expect(existsSync(file.absolute)).toBe(true);
   });
 
   it("should return empty array when no assets directory exists", async () => {
@@ -612,7 +602,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const result = await generateRouteMap([], [], assetFiles);
     const content = JSON.parse(await readFile(result.absolute, "utf-8"));
 
-    expect(content["/assets/test.png"]).toContain(".cache");
+    expect(content["/assets/test.png"]).toContain("assets");
     expect(content["/assets/test.png"]).toContain("test.png");
   });
 
@@ -662,7 +652,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
 
     expect(Object.keys(content)).toHaveLength(2);
     expect(content["/"]).toContain("index.tsx");
-    expect(content["/assets/img.png"]).toContain(".cache");
+    expect(content["/assets/img.png"]).toContain("img.png");
   });
 });
 
@@ -757,19 +747,18 @@ describe("generateStaticPages", () => {
     expect(manifest[keys[0]!]).toContain(path.join("dist", "_islands"));
   });
 
-  it("should copy asset files from .cache/assets to dist/assets", async () => {
-    const cacheAssetPath = path.join(
+  it("should copy asset files from assets to dist/assets", async () => {
+    const sourceAssetPath = path.join(
       SANDBOX_DIR,
-      ".cache",
       "assets",
       "style.css",
     );
-    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), {
+    await mkdir(path.join(SANDBOX_DIR, "assets"), {
       recursive: true,
     });
-    await writeFile(cacheAssetPath, "body { color: red; }");
+    await writeFile(sourceAssetPath, "body { color: red; }");
 
-    const assetFile = RelativePath.fromCwd(cacheAssetPath);
+    const assetFile = RelativePath.fromCwd(sourceAssetPath);
     const assetFiles: FileEntry[] = [
       { url: "/assets/style.css", filePath: assetFile },
     ];
@@ -786,12 +775,12 @@ describe("generateStaticPages", () => {
   });
 
   it("should handle nested asset paths", async () => {
-    const cacheAssetDir = path.join(SANDBOX_DIR, ".cache", "assets", "images");
-    const cacheAssetPath = path.join(cacheAssetDir, "photo.jpg");
-    await mkdir(cacheAssetDir, { recursive: true });
-    await writeFile(cacheAssetPath, "jpg data");
+    const sourceAssetDir = path.join(SANDBOX_DIR, "assets", "images");
+    const sourceAssetPath = path.join(sourceAssetDir, "photo.jpg");
+    await mkdir(sourceAssetDir, { recursive: true });
+    await writeFile(sourceAssetPath, "jpg data");
 
-    const assetFile = RelativePath.fromCwd(cacheAssetPath);
+    const assetFile = RelativePath.fromCwd(sourceAssetPath);
     const assetFiles: FileEntry[] = [
       { url: "/assets/images/photo.jpg", filePath: assetFile },
     ];
@@ -817,11 +806,11 @@ describe("generateStaticPages", () => {
     );
     await writeFile(cacheIsland, "console.log('button');");
 
-    const cacheAsset = path.join(SANDBOX_DIR, ".cache", "assets", "img.png");
-    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), {
+    const sourceAsset = path.join(SANDBOX_DIR, "assets", "img.png");
+    await mkdir(path.join(SANDBOX_DIR, "assets"), {
       recursive: true,
     });
-    await writeFile(cacheAsset, "png data");
+    await writeFile(sourceAsset, "png data");
 
     const routes: RouteData[] = [
       { routeName: "/", filePath: RelativePath.fromCwd(cachePage) },
@@ -836,7 +825,7 @@ describe("generateStaticPages", () => {
     };
     const assetEntry: FileEntry = {
       url: "/assets/img.png",
-      filePath: RelativePath.fromCwd(cacheAsset),
+      filePath: RelativePath.fromCwd(sourceAsset),
     };
 
     const manifest = await generateStaticPages(
@@ -1044,7 +1033,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
 
     expect(exitCode).toBe(0);
     expect(
-      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "logo.png")),
+      existsSync(path.join(SANDBOX_DIR, "assets", "logo.png")),
     ).toBe(true);
   });
 
@@ -1090,7 +1079,7 @@ export default function Button() { return h("button", {}, "Click"); }`,
     expect(result.islands).toBe(1);
     expect(result.routes.sort()).toEqual(["/", "/about"]);
     expect(
-      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "style.css")),
+      existsSync(path.join(SANDBOX_DIR, "assets", "style.css")),
     ).toBe(true);
   });
 
