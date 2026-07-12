@@ -15,17 +15,22 @@
  **/
 import path from "node:path";
 
-export class RelativePath {
-  constructor(
-    public fromRoot: string,
-    public absolute: string,
-  ) { }
+export class Path {
+  constructor(public absolute: string) {}
 
-  static fromCwd(absolute: string): RelativePath {
-    return new RelativePath(path.relative(process.cwd(), absolute), absolute);
+  static create(absolute: string): Path {
+    return new Path(absolute);
   }
 
-  static fromRelative(rel: string): RelativePath {
-    return new RelativePath(rel, path.resolve(rel));
+  static resolve(relative: string): Path {
+    return new Path(path.resolve(relative));
+  }
+
+  relativeToCwd(): string {
+    return path.relative(process.cwd(), this.absolute);
+  }
+
+  relativeTo(base: string): string {
+    return path.relative(path.resolve(base), this.absolute);
   }
 }

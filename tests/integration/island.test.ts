@@ -19,7 +19,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { h } from "preact";
 import renderToString from "preact-render-to-string";
 import * as devalue from "devalue";
-import { RelativePath } from "../../src/core/fs";
+import { Path } from "../../src/core/fs";
 
 interface TestProps {
   name: string;
@@ -49,7 +49,7 @@ describe("Island", () => {
       hash: "testhash456",
       files: {
         type: "source",
-        file: RelativePath.fromCwd("test.js"),
+        file: Path.create("test.js"),
       },
     };
     setIslandMap([entry]);
@@ -70,13 +70,16 @@ describe("Island", () => {
       hash: "hashprops",
       files: {
         type: "source",
-        file: RelativePath.fromCwd("test.js"),
+        file: Path.create("test.js"),
       },
     };
     setIslandMap([entry]);
 
     const html = renderToString(
-      h(Island, { component: TestComponent, props: { name: "Test", count: 42 } }),
+      h(Island, {
+        component: TestComponent,
+        props: { name: "Test", count: 42 },
+      }),
     );
 
     expect(html).toContain("data-props=");
@@ -97,7 +100,7 @@ describe("Island", () => {
       hash: "scripttest",
       files: {
         type: "source",
-        file: RelativePath.fromCwd("test.js"),
+        file: Path.resolve(".cache/test.js"),
       },
     };
     setIslandMap([entry]);
@@ -112,9 +115,7 @@ describe("Island", () => {
   it("should throw for an unprerendered component", () => {
     const UnknownComponent = () => h("div", {}, "unknown");
     expect(() =>
-      renderToString(
-        h(Island, { component: UnknownComponent, props: {} }),
-      ),
+      renderToString(h(Island, { component: UnknownComponent, props: {} })),
     ).toThrow("not been prerendered");
   });
 
@@ -126,7 +127,7 @@ describe("Island", () => {
       hash: "emptyprops",
       files: {
         type: "source",
-        file: RelativePath.fromCwd("test.js"),
+        file: Path.create("test.js"),
       },
     };
     setIslandMap([entry]);

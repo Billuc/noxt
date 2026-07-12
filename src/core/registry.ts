@@ -14,11 +14,11 @@
  *  limitations under the License.
  **/
 import type { FunctionComponent } from "preact";
-import type { RelativePath } from "./fs";
+import type { Path } from "./fs";
 
 /// ISLANDS
 
-type IslandFiles = { type: "source", file: RelativePath } | { type: "bundle", files: RelativePath[] };
+type IslandFiles = { type: "source", file: Path } | { type: "bundle", files: Path[] };
 
 export interface IslandEntry {
   component: FunctionComponent<any>;
@@ -41,7 +41,7 @@ export function getIslandEntry<T>(
   return islandComponentMap.get(component);
 }
 
-export function getIslandFiles(entry: IslandEntry): RelativePath[] {
+export function getIslandFiles(entry: IslandEntry): Path[] {
   switch (entry.files.type) {
     case "source":
       return [entry.files.file];

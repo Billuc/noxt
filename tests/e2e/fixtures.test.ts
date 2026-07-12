@@ -76,7 +76,7 @@ describe("fixtures project - two-step build workflow", () => {
       const parsed = JSON.parse(routesContent);
       expect(parsed["/"]).toMatch(/\.cache[/\\].+\.html$/);
       expect(parsed["/assets/test.png"]).toMatch(
-        /\.cache[/\\]assets[/\\]test\.png$/,
+        /^assets[/\\]test\.png$/,
       );
     });
 

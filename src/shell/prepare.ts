@@ -27,7 +27,7 @@ import type {
   FunctionComponent,
 } from "preact";
 import { html } from "htm/preact";
-import { RelativePath } from "../core/fs";
+import { Path } from "../core/fs";
 import { generateScriptForIsland } from "../core/island";
 import type { IslandEntry } from "./build";
 
@@ -48,7 +48,7 @@ export async function prepareIsland(
   const scriptContent = generateScriptForIsland(hash, islandPath);
   await writeFile(scriptPath, scriptContent);
 
-  const relPath = RelativePath.fromCwd(scriptPath);
+  const relPath = Path.create(scriptPath);
 
   return {
     component: Island,
@@ -61,7 +61,7 @@ export async function prepareIsland(
 }
 
 /** Prerenders a Preact page component to HTML and caches it. */
-export async function preparePreact(pagePath: string): Promise<RelativePath> {
+export async function preparePreact(pagePath: string): Promise<Path> {
   const mod = await import(pagePath);
   const Page = mod.default as FunctionComponent<any> | undefined;
   if (!Page) throw new Error(`File ${pagePath} has no default export !`);
@@ -73,13 +73,13 @@ export async function preparePreact(pagePath: string): Promise<RelativePath> {
   const prerenderedPage = await renderPageToHtml(Page);
   await writeFile(prerenderPath, prerenderedPage);
 
-  return RelativePath.fromCwd(prerenderPath);
+  return Path.create(prerenderPath);
 }
 
 /** Prerenders a markdown page to HTML using its frontmatter-defined layout. */
 export async function prepareMarkdown(
   markdownPath: string,
-): Promise<RelativePath> {
+): Promise<Path> {
   const content = await readFile(markdownPath);
 
   const pageHash = crypto.hash("sha256", markdownPath, "base64url");
@@ -95,7 +95,7 @@ export async function prepareMarkdown(
   const prerenderedPage = await renderMarkdownToHtml(markdownData, Layout);
   await writeFile(prerenderPath, prerenderedPage);
 
-  return RelativePath.fromCwd(prerenderPath);
+  return Path.create(prerenderPath);
 }
 
 function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {

@@ -7,8 +7,8 @@ import {
   copyFile,
   removeFolder,
   getFilesMatchingGlob,
-  type RelativePath,
 } from "../../src/shell/fs";
+import { Path } from "../../src/core/fs";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import { existsSync, lstatSync } from "node:fs";
@@ -205,7 +205,7 @@ describe("fs module", () => {
       const results = await getFilesMatchingGlob("**/*.txt", TEST_DIR);
 
       expect(results.length).toBe(3);
-      const fileNames = results.map((r) => r.fromRoot);
+      const fileNames = results.map((r) => r.relativeTo(TEST_DIR));
       expect(fileNames).toContain("file1.txt");
       expect(fileNames).toContain("file2.txt");
       expect(fileNames).toContain(path.join("subdir", "file3.txt"));
@@ -220,13 +220,13 @@ describe("fs module", () => {
       expect(results[0]!.absolute).toBe(path.resolve(TEST_DIR, "test.txt"));
     });
 
-    it("should return RelativePath objects with fromRoot and absolute", async () => {
+    it("should return Path objects with absolute path", async () => {
       await Bun.write(path.join(TEST_DIR, "test.txt"), "");
 
       const results = await getFilesMatchingGlob("*.txt", TEST_DIR);
 
       expect(results.length).toBe(1);
-      expect(results[0]!.fromRoot).toBe("test.txt");
+      expect(results[0]!.relativeTo(TEST_DIR)).toBe("test.txt");
       expect(results[0]!.absolute).toBe(path.join(TEST_DIR, "test.txt"));
     });
 
@@ -243,7 +243,7 @@ describe("fs module", () => {
       const results = await getFilesMatchingGlob("a/**/*.txt", TEST_DIR);
 
       expect(results.length).toBe(1);
-      expect(results[0]!.fromRoot).toBe(path.join("a", "b", "c", "deep.txt"));
+      expect(results[0]!.relativeTo(TEST_DIR)).toBe(path.join("a", "b", "c", "deep.txt"));
     });
   });
 });

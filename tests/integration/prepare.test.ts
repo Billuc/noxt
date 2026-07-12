@@ -50,8 +50,8 @@ describe("preparePreact", () => {
 
     const prerenderPath = await preparePreact(filePath);
 
-    expect(prerenderPath.fromRoot).toContain(".cache");
-    expect(prerenderPath.fromRoot).toContain(".html");
+    expect(prerenderPath.relativeToCwd()).toContain(".cache");
+    expect(prerenderPath.relativeToCwd()).toContain(".html");
 
     const files = await readdir(CACHE_DIR);
     expect(files.length).toBeGreaterThan(0);
@@ -71,7 +71,7 @@ describe("preparePreact", () => {
 
     const prerenderPath = await preparePreact(filePath);
 
-    const fileName = path.basename(prerenderPath.fromRoot);
+    const fileName = path.basename(prerenderPath.relativeToCwd());
     expect(fileName).toContain("TestComponent");
     expect(fileName).toContain(".html");
   });
@@ -91,7 +91,7 @@ describe("preparePreact", () => {
 
     const prerenderPath = await preparePreact(filePath);
 
-    const fileName = path.basename(prerenderPath.fromRoot);
+    const fileName = path.basename(prerenderPath.relativeToCwd());
     expect(fileName).toContain("MyPage");
   });
 
@@ -108,7 +108,7 @@ describe("preparePreact", () => {
 
     const prerenderPath = await preparePreact(filePath);
 
-    const fileName = path.basename(prerenderPath.fromRoot);
+    const fileName = path.basename(prerenderPath.relativeToCwd());
     const parts = fileName.split(".");
     expect(parts.length).toBe(3);
     expect(parts[0]).toBe("TestComponent");
@@ -151,8 +151,8 @@ describe("preparePreact", () => {
     await setupCacheDir();
     const prerenderPath2 = await preparePreact(filePath);
 
-    const fileName1 = path.basename(prerenderPath1.fromRoot);
-    const fileName2 = path.basename(prerenderPath2.fromRoot);
+    const fileName1 = path.basename(prerenderPath1.relativeToCwd());
+    const fileName2 = path.basename(prerenderPath2.relativeToCwd());
 
     expect(fileName1).toBe(fileName2);
   });
@@ -180,8 +180,8 @@ describe("preparePreact", () => {
     const prerenderPath1 = await preparePreact(filePathA);
     const prerenderPath2 = await preparePreact(filePathB);
 
-    const fileName1 = path.basename(prerenderPath1.fromRoot);
-    const fileName2 = path.basename(prerenderPath2.fromRoot);
+    const fileName1 = path.basename(prerenderPath1.relativeToCwd());
+    const fileName2 = path.basename(prerenderPath2.relativeToCwd());
 
     expect(fileName1).not.toBe(fileName2);
   });
@@ -206,8 +206,8 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    expect(prerenderPath.fromRoot).toContain(".cache");
-    expect(prerenderPath.fromRoot).toContain(".html");
+    expect(prerenderPath.relativeToCwd()).toContain(".cache");
+    expect(prerenderPath.relativeToCwd()).toContain(".html");
 
     const files = await readdir(CACHE_DIR);
     expect(files.length).toBeGreaterThan(0);
@@ -220,7 +220,7 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const fileName = path.basename(prerenderPath.fromRoot);
+    const fileName = path.basename(prerenderPath.relativeToCwd());
     expect(fileName).toContain("about");
     expect(fileName).toContain(".html");
   });
@@ -231,7 +231,7 @@ describe("prepareMarkdown", () => {
 
     const prerenderPath = await prepareMarkdown(markdownPath);
 
-    const fileName = path.basename(prerenderPath.fromRoot);
+    const fileName = path.basename(prerenderPath.relativeToCwd());
     const parts = fileName.split(".");
     expect(parts.length).toBe(3);
     expect(parts[0]).toBe("test");
@@ -362,8 +362,8 @@ title: Custom Layout Page
     await writeFile(markdownPath, content);
     const prerenderPath2 = await prepareMarkdown(markdownPath);
 
-    const fileName1 = path.basename(prerenderPath1.fromRoot);
-    const fileName2 = path.basename(prerenderPath2.fromRoot);
+    const fileName1 = path.basename(prerenderPath1.relativeToCwd());
+    const fileName2 = path.basename(prerenderPath2.relativeToCwd());
 
     expect(fileName1).toBe(fileName2);
   });
@@ -379,8 +379,8 @@ title: Custom Layout Page
 
     const prerenderPath2 = await prepareMarkdown(markdownPath2);
 
-    const fileName1 = path.basename(prerenderPath1.fromRoot);
-    const fileName2 = path.basename(prerenderPath2.fromRoot);
+    const fileName1 = path.basename(prerenderPath1.relativeToCwd());
+    const fileName2 = path.basename(prerenderPath2.relativeToCwd());
 
     expect(fileName1).not.toBe(fileName2);
   });

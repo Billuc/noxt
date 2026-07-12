@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import { rm, mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { RelativePath } from "../../src/core/fs";
+import { Path } from "../../src/core/fs";
 import {
   discoverRouteFiles,
   collectAssets,
@@ -92,7 +92,7 @@ export default function About() { return h("h1", {}, "About"); }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(2);
-    const routeNames = result.map(([name]) => name).sort();
+    const routeNames = result.map(({ url }) => url).sort();
     expect(routeNames).toEqual(["/", "/about"]);
   });
 
@@ -102,7 +102,7 @@ export default function About() { return h("h1", {}, "About"); }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(1);
-    expect(result[0]![0]).toBe("/contact");
+    expect(result[0]!.url).toBe("/contact");
   });
 
   it("should discover ts pages (htm/preact)", async () => {
@@ -115,7 +115,7 @@ export default function Sample() { return html\`<h1>Sample</h1>\`; }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(1);
-    expect(result[0]![0]).toBe("/sample");
+    expect(result[0]!.url).toBe("/sample");
   });
 
   it("should handle nested page directories", async () => {
@@ -125,7 +125,7 @@ export default function Sample() { return html\`<h1>Sample</h1>\`; }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(2);
-    const routeNames = result.map(([name]) => name).sort();
+    const routeNames = result.map(({ url }) => url).sort();
     expect(routeNames).toEqual(["/blog/post1", "/blog/post2"]);
   });
 
@@ -139,7 +139,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(1);
-    expect(result[0]![0]).toBe("/");
+    expect(result[0]!.url).toBe("/");
   });
 
   it("should map nested index files to directory route", async () => {
@@ -153,10 +153,10 @@ export default function BlogIndex() { return h("h1", {}, "Blog"); }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(1);
-    expect(result[0]![0]).toBe("/blog");
+    expect(result[0]!.url).toBe("/blog");
   });
 
-  it("should return RelativePath objects with valid paths", async () => {
+  it("should return Path objects with valid paths", async () => {
     await createPage(
       "page.tsx",
       `import { h } from "preact";
@@ -166,11 +166,10 @@ export default function Page() { return h("h1", {}, "Page"); }`,
     const result = await discoverRouteFiles();
 
     expect(result).toHaveLength(1);
-    const [, file] = result[0]!;
-    expect(file).toHaveProperty("fromRoot");
-    expect(file).toHaveProperty("absolute");
-    expect(file.fromRoot).toContain("page.tsx");
-    expect(existsSync(file.absolute)).toBe(true);
+    const { filePath } = result[0]!;
+    expect(filePath).toBeInstanceOf(Path);
+    expect(filePath.relativeToCwd()).toContain("page.tsx");
+    expect(existsSync(filePath.absolute)).toBe(true);
   });
 
   it("should return empty array when no pages exist", async () => {
@@ -201,16 +200,15 @@ describe("collectAssets", () => {
     expect(urls).toEqual(["/assets/logo.png", "/assets/style.css"]);
   });
 
-  it("should return RelativePath objects pointing to source", async () => {
+  it("should return Path objects pointing to source", async () => {
     await createAsset("test.png");
 
     const result = await collectAssets();
 
     expect(result).toHaveLength(1);
     const { filePath: file } = result[0]!;
-    expect(file).toHaveProperty("fromRoot");
-    expect(file).toHaveProperty("absolute");
-    expect(file.fromRoot).toContain(path.join("assets", "test.png"));
+    expect(file).toBeInstanceOf(Path);
+    expect(file.relativeToCwd()).toContain(path.join("assets", "test.png"));
     expect(existsSync(file.absolute)).toBe(true);
   });
 
@@ -227,7 +225,9 @@ describe("collectAssets", () => {
     );
     expect(photoEntry).toBeDefined();
     const { filePath: file } = photoEntry!;
-    expect(file.fromRoot).toContain(path.join("assets", "images", "photo.jpg"));
+    expect(file.relativeToCwd()).toContain(
+      path.join("assets", "images", "photo.jpg"),
+    );
     expect(existsSync(file.absolute)).toBe(true);
   });
 
@@ -283,8 +283,8 @@ export default function Widget() { return h("div", {}, "widget"); }`,
     const file =
       entries[0]!.files.type === "source" ? entries[0]!.files.file : null;
     expect(file).not.toBeNull();
-    expect(file!.fromRoot).toContain(".cache");
-    expect(file!.fromRoot).toContain(".js");
+    expect(file!.relativeToCwd()).toContain(".cache");
+    expect(file!.relativeToCwd()).toContain(".js");
     expect(existsSync(file!.absolute)).toBe(true);
   });
 
@@ -352,15 +352,12 @@ describe("bundleIslands", () => {
 export default function Counter() { return h("div", {}, "0"); }`,
     );
 
-    const relFromRoot = path
-      .relative(SANDBOX_DIR, islandPath)
-      .replaceAll("\\", "/");
     const entry: IslandEntry = {
       component: () => null,
       hash: "testhash",
       files: {
         type: "source",
-        file: new RelativePath(relFromRoot, islandPath),
+        file: new Path(islandPath),
       },
     };
 
@@ -374,8 +371,7 @@ export default function Counter() { return h("div", {}, "0"); }`,
   });
 
   it("should keep bundle-type entries unchanged", async () => {
-    const bundleFile = new RelativePath(
-      "dist/already-bundled.js",
+    const bundleFile = new Path(
       path.join(SANDBOX_DIR, "dist", "already-bundled.js"),
     );
     await writeFile(bundleFile.absolute, "console.log('bundled');");
@@ -396,7 +392,7 @@ export default function Counter() { return h("div", {}, "0"); }`,
     const files =
       result[0]!.files.type === "bundle" ? result[0]!.files.files : [];
     expect(files).toHaveLength(1);
-    expect(files[0]!.fromRoot).toBe(bundleFile.fromRoot);
+    expect(files[0]!.absolute).toBe(bundleFile.absolute);
   });
 
   it("should handle mixed source and bundle entries", async () => {
@@ -406,20 +402,16 @@ export default function Counter() { return h("div", {}, "0"); }`,
 export default function Counter() { return h("div", {}, "0"); }`,
     );
 
-    const relFromRoot = path
-      .relative(SANDBOX_DIR, islandPath)
-      .replaceAll("\\", "/");
     const sourceEntry: IslandEntry = {
       component: () => null,
       hash: "sourcehash",
       files: {
         type: "source",
-        file: new RelativePath(relFromRoot, islandPath),
+        file: new Path(islandPath),
       },
     };
 
-    const bundleFile = new RelativePath(
-      "dist/pre-bundled.js",
+    const bundleFile = new Path(
       path.join(SANDBOX_DIR, "dist", "pre-bundled.js"),
     );
     await writeFile(bundleFile.absolute, "console.log('pre-bundled');");
@@ -433,6 +425,7 @@ export default function Counter() { return h("div", {}, "0"); }`,
       },
     };
 
+    process.chdir(SANDBOX_DIR);
     const result = await bundleIslands([sourceEntry, bundleEntry]);
 
     expect(result).toHaveLength(2);
@@ -457,36 +450,33 @@ describe("prerenderPages", () => {
 export default function Index() { return h("h1", {}, "Home"); }`,
     );
 
-    const pageFile: [string, RelativePath] = [
-      "/",
-      RelativePath.fromCwd(filePath),
-    ];
+    const pageFile: FileEntry = { url: "/", filePath: Path.create(filePath) };
     setIslandMap([]);
 
     const result = await prerenderPages([pageFile], []);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.routeName).toBe("/");
-    expect(result[0]!.filePath.fromRoot).toContain(".cache");
-    expect(result[0]!.filePath.fromRoot).toContain(".html");
+    expect(result[0]!.filePath.relativeToCwd()).toContain(".cache");
+    expect(result[0]!.filePath.relativeToCwd()).toContain(".html");
     expect(existsSync(result[0]!.filePath.absolute)).toBe(true);
   });
 
   it("should prerender markdown pages", async () => {
     const filePath = await createPage("about.md", "# About Us");
 
-    const pageFile: [string, RelativePath] = [
-      "/about",
-      RelativePath.fromCwd(filePath),
-    ];
+    const pageFile: FileEntry = {
+      url: "/about",
+      filePath: Path.create(filePath),
+    };
     setIslandMap([]);
 
     const result = await prerenderPages([pageFile], []);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.routeName).toBe("/about");
-    expect(result[0]!.filePath.fromRoot).toContain(".cache");
-    expect(result[0]!.filePath.fromRoot).toContain(".html");
+    expect(result[0]!.filePath.relativeToCwd()).toContain(".cache");
+    expect(result[0]!.filePath.relativeToCwd()).toContain(".html");
   });
 
   it("should prerender mixed page types", async () => {
@@ -497,9 +487,9 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     );
     const mdPath = await createPage("contact.md", "# Contact");
 
-    const pages: [string, RelativePath][] = [
-      ["/", RelativePath.fromCwd(tsxPath)],
-      ["/contact", RelativePath.fromCwd(mdPath)],
+    const pages: FileEntry[] = [
+      { url: "/", filePath: Path.create(tsxPath) },
+      { url: "/contact", filePath: Path.create(mdPath) },
     ];
     setIslandMap([]);
 
@@ -521,17 +511,17 @@ export default function Page${i}() { return h("h1", {}, "Page ${i}"); }`,
       paths.push(p);
     }
 
-    const pages: [string, RelativePath][] = paths.map((p, i) => [
-      `/page${i}`,
-      RelativePath.fromCwd(p),
-    ]);
+    const pages: FileEntry[] = paths.map((p, i) => ({
+      url: `/page${i}`,
+      filePath: Path.create(p),
+    }));
     setIslandMap([]);
 
     const result = await prerenderPages(pages, []);
 
     expect(result).toHaveLength(5);
     for (const route of result) {
-      expect(route.filePath.fromRoot).toContain(".html");
+      expect(route.filePath.relativeToCwd()).toContain(".html");
       expect(existsSync(route.filePath.absolute)).toBe(true);
     }
   });
@@ -556,14 +546,14 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const routes: RouteData[] = [
       {
         routeName: "/",
-        filePath: RelativePath.fromCwd(filePath),
+        filePath: Path.create(filePath),
       },
     ];
 
     const result = await generateRouteMap(routes, [], []);
 
-    expect(result.fromRoot).toContain(".cache");
-    expect(result.fromRoot).toContain("routes.json");
+    expect(result.relativeToCwd()).toContain(".cache");
+    expect(result.relativeToCwd()).toContain("routes.json");
     expect(existsSync(result.absolute)).toBe(true);
   });
 
@@ -577,7 +567,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const routes: RouteData[] = [
       {
         routeName: "/",
-        filePath: RelativePath.fromCwd(filePath),
+        filePath: Path.create(filePath),
       },
     ];
 
@@ -589,9 +579,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
   });
 
   it("should include asset routes in manifest", async () => {
-    const assetFile = RelativePath.fromCwd(
-      path.join(SANDBOX_DIR, "assets", "test.png"),
-    );
+    const assetFile = Path.create(path.join(SANDBOX_DIR, "assets", "test.png"));
     await mkdir(path.dirname(assetFile.absolute), { recursive: true });
     await writeFile(assetFile.absolute, "png data");
 
@@ -607,7 +595,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
   });
 
   it("should include island files in manifest", async () => {
-    const islandFile = RelativePath.fromCwd(
+    const islandFile = Path.create(
       path.join(SANDBOX_DIR, ".cache", "Counter.abc123.js"),
     );
     await writeFile(islandFile.absolute, "console.log('counter');");
@@ -634,14 +622,12 @@ export default function Index() { return h("h1", {}, "Home"); }`,
       `import { h } from "preact";
 export default function Index() { return h("h1", {}, "Home"); }`,
     );
-    const assetFile = RelativePath.fromCwd(
-      path.join(SANDBOX_DIR, "assets", "img.png"),
-    );
+    const assetFile = Path.create(path.join(SANDBOX_DIR, "assets", "img.png"));
     await mkdir(path.dirname(assetFile.absolute), { recursive: true });
     await writeFile(assetFile.absolute, "data");
 
     const routes: RouteData[] = [
-      { routeName: "/", filePath: RelativePath.fromCwd(pagePath) },
+      { routeName: "/", filePath: Path.create(pagePath) },
     ];
     const assets: FileEntry[] = [
       { url: "/assets/img.png", filePath: assetFile },
@@ -675,7 +661,7 @@ describe("generateStaticPages", () => {
     const routes: RouteData[] = [
       {
         routeName: "/test",
-        filePath: RelativePath.fromCwd(cacheFile),
+        filePath: Path.create(cacheFile),
       },
     ];
 
@@ -694,7 +680,7 @@ describe("generateStaticPages", () => {
     const routes: RouteData[] = [
       {
         routeName: "/",
-        filePath: RelativePath.fromCwd(cacheFile),
+        filePath: Path.create(cacheFile),
       },
     ];
 
@@ -712,7 +698,7 @@ describe("generateStaticPages", () => {
     const routes: RouteData[] = [
       {
         routeName: "/blog/post1",
-        filePath: RelativePath.fromCwd(cacheFile),
+        filePath: Path.create(cacheFile),
       },
     ];
 
@@ -725,7 +711,7 @@ describe("generateStaticPages", () => {
   });
 
   it("should include island files in manifest", async () => {
-    const islandDistFile = RelativePath.fromCwd(
+    const islandDistFile = Path.create(
       path.join(SANDBOX_DIR, ".cache", "_islands", "Counter.abc.js"),
     );
     await writeFile(islandDistFile.absolute, "console.log('counter');");
@@ -748,17 +734,13 @@ describe("generateStaticPages", () => {
   });
 
   it("should copy asset files from assets to dist/assets", async () => {
-    const sourceAssetPath = path.join(
-      SANDBOX_DIR,
-      "assets",
-      "style.css",
-    );
+    const sourceAssetPath = path.join(SANDBOX_DIR, "assets", "style.css");
     await mkdir(path.join(SANDBOX_DIR, "assets"), {
       recursive: true,
     });
     await writeFile(sourceAssetPath, "body { color: red; }");
 
-    const assetFile = RelativePath.fromCwd(sourceAssetPath);
+    const assetFile = Path.create(sourceAssetPath);
     const assetFiles: FileEntry[] = [
       { url: "/assets/style.css", filePath: assetFile },
     ];
@@ -780,7 +762,7 @@ describe("generateStaticPages", () => {
     await mkdir(sourceAssetDir, { recursive: true });
     await writeFile(sourceAssetPath, "jpg data");
 
-    const assetFile = RelativePath.fromCwd(sourceAssetPath);
+    const assetFile = Path.create(sourceAssetPath);
     const assetFiles: FileEntry[] = [
       { url: "/assets/images/photo.jpg", filePath: assetFile },
     ];
@@ -813,19 +795,19 @@ describe("generateStaticPages", () => {
     await writeFile(sourceAsset, "png data");
 
     const routes: RouteData[] = [
-      { routeName: "/", filePath: RelativePath.fromCwd(cachePage) },
+      { routeName: "/", filePath: Path.create(cachePage) },
     ];
     const islandEntry: IslandEntry = {
       component: () => null,
       hash: "xyz",
       files: {
         type: "bundle",
-        files: [RelativePath.fromCwd(cacheIsland)],
+        files: [Path.create(cacheIsland)],
       },
     };
     const assetEntry: FileEntry = {
       url: "/assets/img.png",
-      filePath: RelativePath.fromCwd(sourceAsset),
+      filePath: Path.create(sourceAsset),
     };
 
     const manifest = await generateStaticPages(
@@ -861,8 +843,8 @@ describe("generateStaticPages", () => {
     );
 
     const routes: RouteData[] = [
-      { routeName: "/", filePath: RelativePath.fromCwd(cacheFile1) },
-      { routeName: "/about", filePath: RelativePath.fromCwd(cacheFile2) },
+      { routeName: "/", filePath: Path.create(cacheFile1) },
+      { routeName: "/about", filePath: Path.create(cacheFile2) },
     ];
 
     const manifest = await generateStaticPages(routes, [], []);
@@ -890,9 +872,9 @@ describe("generateUtils", () => {
   });
 
   it("should include link function with route names", async () => {
-    const pageFiles: [string, RelativePath][] = [
-      ["/", RelativePath.fromCwd("pages/index.tsx")],
-      ["/about", RelativePath.fromCwd("pages/about.tsx")],
+    const pageFiles: FileEntry[] = [
+      { url: "/", filePath: Path.create("pages/index.tsx") },
+      { url: "/about", filePath: Path.create("pages/about.tsx") },
     ];
 
     await generateUtils(pageFiles, []);
@@ -909,7 +891,7 @@ describe("generateUtils", () => {
     const assetFiles: FileEntry[] = [
       {
         url: "/assets/logo.png",
-        filePath: RelativePath.fromCwd("assets/logo.png"),
+        filePath: Path.create("assets/logo.png"),
       },
     ];
 
@@ -923,13 +905,13 @@ describe("generateUtils", () => {
   });
 
   it("should include both link and asset code", async () => {
-    const pageFiles: [string, RelativePath][] = [
-      ["/", RelativePath.fromCwd("pages/index.tsx")],
+    const pageFiles: FileEntry[] = [
+      { url: "/", filePath: Path.create("pages/index.tsx") },
     ];
     const assetFiles: FileEntry[] = [
       {
         url: "/assets/style.css",
-        filePath: RelativePath.fromCwd("assets/style.css"),
+        filePath: Path.create("assets/style.css"),
       },
     ];
 
@@ -944,11 +926,11 @@ describe("generateUtils", () => {
 
   it("should generate valid TypeScript", async () => {
     await generateUtils(
-      [["/", RelativePath.fromCwd("pages/index.tsx")]],
+      [{ url: "/", filePath: Path.create("pages/index.tsx") }],
       [
         {
           url: "/assets/img.png",
-          filePath: RelativePath.fromCwd("assets/img.png"),
+          filePath: Path.create("assets/img.png"),
         },
       ],
     );
@@ -1032,9 +1014,7 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const { exitCode } = await runBuildAsSubprocess();
 
     expect(exitCode).toBe(0);
-    expect(
-      existsSync(path.join(SANDBOX_DIR, "assets", "logo.png")),
-    ).toBe(true);
+    expect(existsSync(path.join(SANDBOX_DIR, "assets", "logo.png"))).toBe(true);
   });
 
   it("should complete full build pipeline with islands", async () => {
@@ -1078,9 +1058,9 @@ export default function Button() { return h("button", {}, "Click"); }`,
     expect(result.routes).toHaveLength(2);
     expect(result.islands).toBe(1);
     expect(result.routes.sort()).toEqual(["/", "/about"]);
-    expect(
-      existsSync(path.join(SANDBOX_DIR, "assets", "style.css")),
-    ).toBe(true);
+    expect(existsSync(path.join(SANDBOX_DIR, "assets", "style.css"))).toBe(
+      true,
+    );
   });
 
   it("should generate valid routes.json", async () => {

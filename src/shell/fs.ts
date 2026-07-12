@@ -22,7 +22,7 @@ import {
   copyFile as copy,
   stat,
 } from "node:fs/promises";
-import type { RelativePath } from "../core/fs";
+import { Path } from "../core/fs";
 import { mkdir } from "node:fs/promises";
 
 /** Writes a string to a file using Bun.write. */
@@ -75,18 +75,15 @@ export function distPath(...segments: string[]): string {
 export async function getFilesMatchingGlob(
   globPattern: string,
   root: string,
-): Promise<RelativePath[]> {
+): Promise<Path[]> {
   const globFiles = glob(globPattern, { cwd: root });
-  const results: RelativePath[] = [];
+  const results: Path[] = [];
 
   for await (const file of globFiles) {
     const absolute = path.resolve(root, file);
     const stats = await stat(absolute);
     if (stats.isDirectory()) continue;
-    results.push({
-      fromRoot: file,
-      absolute,
-    });
+    results.push(Path.create(absolute));
   }
 
   return results;
