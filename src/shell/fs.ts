@@ -20,6 +20,7 @@ import {
   readFile as read,
   glob,
   copyFile as copy,
+  stat,
 } from "node:fs/promises";
 import type { RelativePath } from "../core/fs";
 import { mkdir } from "node:fs/promises";
@@ -85,9 +86,12 @@ export async function getFilesMatchingGlob(
   const results: RelativePath[] = [];
 
   for await (const file of globFiles) {
+    const absolute = path.resolve(root, file);
+    const stats = await stat(absolute);
+    if (stats.isDirectory()) continue;
     results.push({
       fromRoot: file,
-      absolute: path.resolve(root, file),
+      absolute,
     });
   }
 

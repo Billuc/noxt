@@ -4,8 +4,7 @@ import {
   generateRouteMap,
   generateUtils,
   discoverRouteFiles,
-  discoverAssets,
-  copyAssets,
+  collectAssets,
   bundleIslands,
   generateStaticPages,
 } from "noxt";
@@ -16,10 +15,9 @@ let islands = await prerenderIslands();
 islands = await bundleIslands(islands);
 
 // Generate utils.ts before prerendering so pages can import link() and asset()
+const assetFiles = await collectAssets();
 const pageFiles = await discoverRouteFiles();
-const assetFiles = await discoverAssets();
 await generateUtils(pageFiles, assetFiles);
-await copyAssets(assetFiles);
 
 const routes = await prerenderPages(pageFiles, islands);
 const routeMap = await generateRouteMap(routes, islands, assetFiles);

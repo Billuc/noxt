@@ -8,15 +8,15 @@ import { existsSync } from "node:fs";
 import { RelativePath } from "../../src/core/fs";
 import {
   discoverRouteFiles,
-  discoverAssets,
+  collectAssets,
   prerenderIslands,
   bundleIslands,
   prerenderPages,
   generateRouteMap,
   generateStaticPages,
-  copyAssets,
   generateUtils,
   type RouteData,
+  type FileEntry,
 } from "../../src/shell/build";
 import { setIslandMap, type IslandEntry } from "../../src/core/registry";
 
@@ -182,7 +182,7 @@ export default function Page() { return h("h1", {}, "Page"); }`,
   });
 });
 
-describe("discoverAssets", () => {
+describe("collectAssets", () => {
   beforeEach(async () => {
     await setupSandbox();
     process.chdir(SANDBOX_DIR);
@@ -190,46 +190,59 @@ describe("discoverAssets", () => {
 
   afterEach(cleanupSandbox);
 
-  it("should discover asset files", async () => {
+  it("should discover and copy asset files", async () => {
     await createAsset("logo.png", "png data");
     await createAsset("style.css", "body { color: red; }");
 
-    const result = await discoverAssets();
+    const result = await collectAssets();
 
     expect(result).toHaveLength(2);
-    const urls = result.map(([url]) => url).sort();
+    const urls = result.map(({ url }) => url).sort();
     expect(urls).toEqual(["/assets/logo.png", "/assets/style.css"]);
+
+    const destDir = path.join(SANDBOX_DIR, ".cache", "assets");
+    expect(existsSync(path.join(destDir, "logo.png"))).toBe(true);
+    expect(existsSync(path.join(destDir, "style.css"))).toBe(true);
   });
 
-  it("should return RelativePath objects", async () => {
+  it("should return RelativePath objects pointing to cache", async () => {
     await createAsset("test.png");
 
-    const result = await discoverAssets();
+    const result = await collectAssets();
 
     expect(result).toHaveLength(1);
-    const [, file] = result[0]!;
+    const { filePath: file } = result[0]!;
     expect(file).toHaveProperty("fromRoot");
     expect(file).toHaveProperty("absolute");
-    expect(file.fromRoot).toContain("test.png");
+    expect(file.fromRoot).toContain(path.join(".cache", "assets", "test.png"));
     expect(existsSync(file.absolute)).toBe(true);
   });
 
-  it("should discover nested asset files", async () => {
+  it("should handle nested asset paths", async () => {
     const dir = path.join(SANDBOX_DIR, "assets", "images");
     await mkdir(dir, { recursive: true });
     await writeFile(path.join(dir, "photo.jpg"), "jpg data");
 
-    const result = await discoverAssets();
+    const result = await collectAssets();
 
     expect(result.length).toBeGreaterThanOrEqual(1);
     const photoEntry = result.find(
-      ([url]) => url === "/assets/images/photo.jpg",
+      ({ url }) => url === "/assets/images/photo.jpg",
     );
     expect(photoEntry).toBeDefined();
+
+    const destPath = path.join(
+      SANDBOX_DIR,
+      ".cache",
+      "assets",
+      "images",
+      "photo.jpg",
+    );
+    expect(existsSync(destPath)).toBe(true);
   });
 
   it("should return empty array when no assets directory exists", async () => {
-    const result = await discoverAssets();
+    const result = await collectAssets();
 
     expect(result).toEqual([]);
   });
@@ -237,7 +250,7 @@ describe("discoverAssets", () => {
   it("should return empty array when assets directory is empty", async () => {
     await mkdir(path.join(SANDBOX_DIR, "assets"), { recursive: true });
 
-    const result = await discoverAssets();
+    const result = await collectAssets();
 
     expect(result).toEqual([]);
   });
@@ -592,8 +605,8 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     await mkdir(path.dirname(assetFile.absolute), { recursive: true });
     await writeFile(assetFile.absolute, "png data");
 
-    const assetFiles: [string, RelativePath][] = [
-      ["/assets/test.png", assetFile],
+    const assetFiles: FileEntry[] = [
+      { url: "/assets/test.png", filePath: assetFile },
     ];
 
     const result = await generateRouteMap([], [], assetFiles);
@@ -640,7 +653,9 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     const routes: RouteData[] = [
       { routeName: "/", filePath: RelativePath.fromCwd(pagePath) },
     ];
-    const assets: [string, RelativePath][] = [["/assets/img.png", assetFile]];
+    const assets: FileEntry[] = [
+      { url: "/assets/img.png", filePath: assetFile },
+    ];
 
     const result = await generateRouteMap(routes, [], assets);
     const content = JSON.parse(await readFile(result.absolute, "utf-8"));
@@ -749,12 +764,14 @@ describe("generateStaticPages", () => {
       "assets",
       "style.css",
     );
-    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), { recursive: true });
+    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), {
+      recursive: true,
+    });
     await writeFile(cacheAssetPath, "body { color: red; }");
 
     const assetFile = RelativePath.fromCwd(cacheAssetPath);
-    const assetFiles: [string, RelativePath][] = [
-      ["/assets/style.css", assetFile],
+    const assetFiles: FileEntry[] = [
+      { url: "/assets/style.css", filePath: assetFile },
     ];
 
     const manifest = await generateStaticPages([], [], assetFiles);
@@ -769,19 +786,14 @@ describe("generateStaticPages", () => {
   });
 
   it("should handle nested asset paths", async () => {
-    const cacheAssetDir = path.join(
-      SANDBOX_DIR,
-      ".cache",
-      "assets",
-      "images",
-    );
+    const cacheAssetDir = path.join(SANDBOX_DIR, ".cache", "assets", "images");
     const cacheAssetPath = path.join(cacheAssetDir, "photo.jpg");
     await mkdir(cacheAssetDir, { recursive: true });
     await writeFile(cacheAssetPath, "jpg data");
 
     const assetFile = RelativePath.fromCwd(cacheAssetPath);
-    const assetFiles: [string, RelativePath][] = [
-      ["/assets/images/photo.jpg", assetFile],
+    const assetFiles: FileEntry[] = [
+      { url: "/assets/images/photo.jpg", filePath: assetFile },
     ];
 
     const manifest = await generateStaticPages([], [], assetFiles);
@@ -806,7 +818,9 @@ describe("generateStaticPages", () => {
     await writeFile(cacheIsland, "console.log('button');");
 
     const cacheAsset = path.join(SANDBOX_DIR, ".cache", "assets", "img.png");
-    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), { recursive: true });
+    await mkdir(path.join(SANDBOX_DIR, ".cache", "assets"), {
+      recursive: true,
+    });
     await writeFile(cacheAsset, "png data");
 
     const routes: RouteData[] = [
@@ -820,10 +834,10 @@ describe("generateStaticPages", () => {
         files: [RelativePath.fromCwd(cacheIsland)],
       },
     };
-    const assetEntry: [string, RelativePath] = [
-      "/assets/img.png",
-      RelativePath.fromCwd(cacheAsset),
-    ];
+    const assetEntry: FileEntry = {
+      url: "/assets/img.png",
+      filePath: RelativePath.fromCwd(cacheAsset),
+    };
 
     const manifest = await generateStaticPages(
       routes,
@@ -840,7 +854,9 @@ describe("generateStaticPages", () => {
     expect(islandManifestValue).toBeDefined();
     expect(islandManifestValue).toContain(path.join("dist", "_islands"));
     expect(manifest["/dist/assets/img.png"]).toBeDefined();
-    expect(manifest["/dist/assets/img.png"]).toContain(path.join("dist", "assets"));
+    expect(manifest["/dist/assets/img.png"]).toContain(
+      path.join("dist", "assets"),
+    );
   });
 
   it("should handle multiple routes", async () => {
@@ -865,79 +881,6 @@ describe("generateStaticPages", () => {
     expect(Object.keys(manifest)).toHaveLength(2);
     expect(manifest["/"]).toContain("index.html");
     expect(manifest["/about"]).toContain("about");
-  });
-});
-
-describe("copyAssets", () => {
-  beforeEach(async () => {
-    await setupSandbox();
-    process.chdir(SANDBOX_DIR);
-  });
-
-  afterEach(cleanupSandbox);
-
-  it("should copy assets to .cache/assets", async () => {
-    const absPath = path.join(SANDBOX_DIR, "assets", "logo.png");
-    await mkdir(path.dirname(absPath), { recursive: true });
-    await writeFile(absPath, "png data");
-
-    const assetFile = new RelativePath("logo.png", absPath);
-
-    await copyAssets([["/assets/logo.png", assetFile]]);
-
-    const destPath = path.join(SANDBOX_DIR, ".cache", "assets", "logo.png");
-    expect(existsSync(destPath)).toBe(true);
-    const content = await readFile(destPath, "utf-8");
-    expect(content).toBe("png data");
-  });
-
-  it("should copy multiple assets", async () => {
-    const abs1 = path.join(SANDBOX_DIR, "assets", "a.png");
-    const abs2 = path.join(SANDBOX_DIR, "assets", "b.css");
-    await mkdir(path.dirname(abs1), { recursive: true });
-    await writeFile(abs1, "a data");
-    await writeFile(abs2, "b data");
-
-    const asset1 = new RelativePath("a.png", abs1);
-    const asset2 = new RelativePath("b.css", abs2);
-
-    await copyAssets([
-      ["/assets/a.png", asset1],
-      ["/assets/b.css", asset2],
-    ]);
-
-    expect(
-      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "a.png")),
-    ).toBe(true);
-    expect(
-      existsSync(path.join(SANDBOX_DIR, ".cache", "assets", "b.css")),
-    ).toBe(true);
-  });
-
-  it("should handle nested asset paths", async () => {
-    const absPath = path.join(SANDBOX_DIR, "assets", "images", "photo.jpg");
-    await mkdir(path.dirname(absPath), { recursive: true });
-    await writeFile(absPath, "jpg data");
-
-    const assetFile = new RelativePath("images/photo.jpg", absPath);
-
-    await copyAssets([["/assets/images/photo.jpg", assetFile]]);
-
-    const destPath = path.join(
-      SANDBOX_DIR,
-      ".cache",
-      "assets",
-      "images",
-      "photo.jpg",
-    );
-    expect(existsSync(destPath)).toBe(true);
-  });
-
-  it("should do nothing with empty array", async () => {
-    await copyAssets([]);
-
-    const assetsDir = path.join(SANDBOX_DIR, ".cache", "assets");
-    expect(existsSync(assetsDir)).toBe(false);
   });
 });
 
@@ -974,8 +917,11 @@ describe("generateUtils", () => {
   });
 
   it("should include asset function with asset ids", async () => {
-    const assetFiles: [string, RelativePath][] = [
-      ["/assets/logo.png", RelativePath.fromCwd("assets/logo.png")],
+    const assetFiles: FileEntry[] = [
+      {
+        url: "/assets/logo.png",
+        filePath: RelativePath.fromCwd("assets/logo.png"),
+      },
     ];
 
     await generateUtils([], assetFiles);
@@ -991,8 +937,11 @@ describe("generateUtils", () => {
     const pageFiles: [string, RelativePath][] = [
       ["/", RelativePath.fromCwd("pages/index.tsx")],
     ];
-    const assetFiles: [string, RelativePath][] = [
-      ["/assets/style.css", RelativePath.fromCwd("assets/style.css")],
+    const assetFiles: FileEntry[] = [
+      {
+        url: "/assets/style.css",
+        filePath: RelativePath.fromCwd("assets/style.css"),
+      },
     ];
 
     await generateUtils(pageFiles, assetFiles);
@@ -1007,7 +956,12 @@ describe("generateUtils", () => {
   it("should generate valid TypeScript", async () => {
     await generateUtils(
       [["/", RelativePath.fromCwd("pages/index.tsx")]],
-      [["/assets/img.png", RelativePath.fromCwd("assets/img.png")]],
+      [
+        {
+          url: "/assets/img.png",
+          filePath: RelativePath.fromCwd("assets/img.png"),
+        },
+      ],
     );
 
     const utilsPath = path.join(SANDBOX_DIR, ".cache", "utils.ts");

@@ -50,6 +50,11 @@ export interface RouteData {
   filePath: RelativePath;
 }
 
+export interface FileEntry {
+  url: string;
+  filePath: RelativePath;
+}
+
 export type { IslandEntry } from "../core/registry";
 
 export async function prerenderIslands(): Promise<IslandEntry[]> {
@@ -187,7 +192,7 @@ async function prerenderPage(
 export async function generateStaticPages(
   routes: RouteData[],
   islandEntries: IslandEntry[],
-  assetFiles: [string, RelativePath][],
+  assetFiles: FileEntry[],
 ): Promise<Record<string, string>> {
   const manifest: Record<string, string> = {};
 
@@ -208,7 +213,7 @@ export async function generateStaticPages(
     }
   }
 
-  for (const [, assetPath] of assetFiles) {
+  for (const { filePath: assetPath } of assetFiles) {
     const assetRelPath = path.relative(ASSETS_CACHE_DIR, assetPath.fromRoot);
     let outputPath = distPath("assets", assetRelPath);
     await copyFile(assetPath.fromRoot, outputPath);
@@ -221,7 +226,7 @@ export async function generateStaticPages(
 export async function generateRouteMap(
   routes: RouteData[],
   islandEntries: IslandEntry[],
-  assetFiles: [string, RelativePath][],
+  assetFiles: FileEntry[],
 ): Promise<RelativePath> {
   const manifest: Record<string, string> = {};
 
@@ -229,7 +234,7 @@ export async function generateRouteMap(
     manifest[route.routeName] = route.filePath.fromRoot;
   }
 
-  for (const [url, assetPath] of assetFiles) {
+  for (const { url, filePath: assetPath } of assetFiles) {
     manifest[url] = assetsCachePath(assetPath.fromRoot);
   }
 
@@ -246,7 +251,7 @@ export async function generateRouteMap(
   return RelativePath.fromCwd(routesFile);
 }
 
-export async function discoverAssets(): Promise<[string, RelativePath][]> {
+export async function collectAssets(): Promise<FileEntry[]> {
   let assetFiles: RelativePath[];
   try {
     assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
@@ -254,21 +259,22 @@ export async function discoverAssets(): Promise<[string, RelativePath][]> {
     console.log("No assets folder found");
     return [];
   }
-  return assetFiles.map((file) => [
-    "/assets" + toPublicPath(file.fromRoot),
-    file,
-  ]);
+  const files = assetFiles.map((file) => ({
+    url: "/assets" + toPublicPath(file.fromRoot),
+    filePath: file,
+  }));
+  return copyAssetsToCache(files);
 }
 
-export async function copyAssets(
-  assetFiles: [string, RelativePath][],
-): Promise<[string, RelativePath][]> {
-  const newFiles: [string, RelativePath][] = [];
+async function copyAssetsToCache(
+  assetFiles: FileEntry[],
+): Promise<FileEntry[]> {
+  const newFiles: FileEntry[] = [];
 
-  for (const [route, file] of assetFiles) {
+  for (const { url, filePath: file } of assetFiles) {
     const destPath = assetsCachePath(file.fromRoot);
     await copyFile(file.absolute, destPath);
-    newFiles.push([route, RelativePath.fromRelative(destPath)]);
+    newFiles.push({ url, filePath: RelativePath.fromRelative(destPath) });
   }
   console.log(`Copied ${assetFiles.length} asset(s) to .cache/assets/`);
 
@@ -277,10 +283,10 @@ export async function copyAssets(
 
 export async function generateUtils(
   pageFiles: [string, RelativePath][],
-  assetFiles: [string, RelativePath][],
+  assetFiles: FileEntry[],
 ): Promise<void> {
   const routeNames = pageFiles.map(([routeName]) => routeName);
-  const assetIds = assetFiles.map(([assetId]) => assetId);
+  const assetIds = assetFiles.map(({ url }) => url);
   const linkCode = generateLinkUtilsCode(routeNames);
   const assetCode = generateAssetUtilsCode(assetIds);
   const code = `${linkCode}\n${assetCode}`;
@@ -305,8 +311,7 @@ export async function build(): Promise<{
   let islands = await prerenderIslands();
   islands = await bundleIslands(islands);
 
-  let assetFiles = await discoverAssets();
-  assetFiles = await copyAssets(assetFiles);
+  let assetFiles = await collectAssets();
 
   const pageFiles = await discoverRouteFiles();
   await generateUtils(pageFiles, assetFiles);

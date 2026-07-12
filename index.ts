@@ -20,10 +20,10 @@ import {
   generateRouteMap,
   generateUtils,
   discoverRouteFiles,
-  discoverAssets,
-  copyAssets,
+  collectAssets,
   bundleIslands,
   generateStaticPages,
+  type FileEntry,
 } from "./src/shell/build";
 import { Island } from "./src/shell/pages";
 import { staticPrerender } from "./src/shell/static";
@@ -35,10 +35,10 @@ export {
   generateRouteMap,
   generateUtils,
   discoverRouteFiles,
-  discoverAssets,
-  copyAssets,
+  collectAssets,
   bundleIslands,
   Island,
   staticPrerender,
-  generateStaticPages
+  generateStaticPages,
+  FileEntry as AssetEntry,
 };
