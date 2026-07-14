@@ -1,42 +1,29 @@
 import path from "node:path";
-import { build, type RouteData } from "./build";
+import { cp, mkdir } from "node:fs/promises";
+import { build } from "./build";
 import { getRouteName } from "../core/rendering";
 
 export async function staticPrerender(): Promise<Record<string, string>> {
   console.log("Exporting static site...");
 
   const { routes } = await build();
-  const entrypoints = routes
-    .map((r) => r.filePath.absolute)
-    .filter((path) => path.endsWith(".html"));
-  console.log("Building with Bun...");
+  const outdir = path.resolve("dist");
+  await mkdir(outdir, { recursive: true });
 
-  let buildSuccess = false;
-  try {
-    const result = await Bun.build({
-      entrypoints,
-      outdir: path.resolve("dist"),
-      minify: true,
-    });
-
-    if (!result.success) {
-      console.error("Build failed:", result.logs);
-      throw new Error("Static export build failed");
-    }
-
-    console.log("Static export complete! Output in dist/");
-
-    const routeData: Record<string, string> = {};
-    for (const output of result.outputs) {
-      const pathFromDist = path.relative(path.resolve("dist"), output.path);
-      const routeName = pathFromDist.endsWith(".html")
-        ? getRouteName(pathFromDist)
-        : "/" + pathFromDist;
-      routeData[routeName] = output.path;
-    }
-
-    return routeData;
-  } catch {
-    return {};
+  const routeData: Record<string, string> = {};
+  for (const route of routes) {
+    const source = route.filePath.absolute;
+    if (!source.endsWith(".html")) continue;
+    const pathFromDist = path.relative(outdir, source);
+    const dest = path.join(outdir, pathFromDist);
+    await mkdir(path.dirname(dest), { recursive: true });
+    await cp(source, dest);
+    const routeName = pathFromDist.endsWith(".html")
+      ? getRouteName(pathFromDist)
+      : "/" + pathFromDist;
+    routeData[routeName] = dest;
   }
+
+  console.log("Static export complete! Output in dist/");
+  return routeData;
 }

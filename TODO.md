@@ -8,5 +8,5 @@ Ideas of things that could be implemented:
 - Progressive Web App helper function
 - Remote Procedure Call by defining APIs files
 - State helper ? To share data between islands using signals
-- Remove Bun references
+- ~~Remove Bun references~~
 - Base path

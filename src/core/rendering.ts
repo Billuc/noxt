@@ -16,6 +16,8 @@
 import path from "node:path";
 import { h, type ComponentType } from "preact";
 import { renderToStringAsync } from "preact-render-to-string";
+import * as yaml from "yaml";
+import { micromark } from "micromark";
 
 /**
  * Converts a file path from pages directory to a route name.
@@ -92,7 +94,7 @@ export async function renderMarkdownToHtml(
   markdownData: MarkdownData,
   Layout: ComponentType<Record<string, any>>,
 ): Promise<string> {
-  const markdownHTML = Bun.markdown.html(markdownData.content);
+  const markdownHTML = micromark(markdownData.content);
 
   const fullPage = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
   let htmlContent = await renderToStringAsync(fullPage);
@@ -103,7 +105,7 @@ export async function renderMarkdownToHtml(
 
 function parseFrontmatter(frontmatterContent: string): Record<string, any> {
   try {
-    const frontmatterData = Bun.YAML.parse(frontmatterContent);
+    const frontmatterData = yaml.parse(frontmatterContent);
     return frontmatterData instanceof Object ? frontmatterData : {};
   } catch {
     return {};

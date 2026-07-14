@@ -14,16 +14,6 @@
  *  limitations under the License.
  **/
 
-import path from "node:path";
-
-function normalizePath(p: string): string {
-  const normalized = p.replace(/\\/g, "/");
-  if (normalized.startsWith("/")) return normalized;
-  if (normalized.startsWith("./") || normalized.startsWith("../"))
-    return normalized;
-  return "./" + normalized;
-}
-
 /**
  * Generates pure JavaScript code for the import map.
  *
@@ -67,34 +57,4 @@ function asset(id: AssetId): string {
 
 export { asset, type AssetId };
 `;
-}
-
-export function generateRouteMapCode(manifest: Record<string, string>): string {
-  const imports: string[] = [];
-  const mapCode: string[] = [];
-
-  for (const route in manifest) {
-    const rawPath = manifest[route]!;
-    if (rawPath.endsWith(".html")) {
-      // HTML pages are co-located with routes.js in .cache/, so import by basename
-      const importPath = normalizePath(path.relative(".cache", rawPath));
-      const sanitizedRouteName = route.replace(/\W/g, "_");
-      imports.push(
-        `import ${sanitizedRouteName} from ${JSON.stringify(importPath)};`,
-      );
-      mapCode.push(`"${route}": ${sanitizedRouteName}`);
-    } else {
-      // Static files (island scripts, assets) are served from disk via Bun.file()
-      // Bun.file() resolves relative to process.cwd() at runtime, so keep CWD-relative path
-      mapCode.push(
-        `"${route}": () => new Response(Bun.file(${JSON.stringify(rawPath)}))`,
-      );
-    }
-  }
-
-  return `${imports.join("\n")}
-
-export default {
-  ${mapCode.join(",\n\t")}
-};`;
 }

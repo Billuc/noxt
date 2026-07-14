@@ -25,13 +25,13 @@ import {
 import { Path } from "../core/fs";
 import { mkdir } from "node:fs/promises";
 
-/** Writes a string to a file using Bun.write. */
+/** Writes a string to a file. */
 export async function writeFile(filepath: string, content: string) {
   await mkdir(path.dirname(filepath), { recursive: true });
   await write(filepath, content);
 }
 
-/** Reads a file's contents as a string using Bun.file. */
+/** Reads a file's contents as a string. */
 export async function readFile(filePath: string): Promise<string> {
   return (await read(filePath)).toString("utf8");
 }
