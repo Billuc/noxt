@@ -27,6 +27,7 @@ import {
 } from "./src/shell/build";
 import { Island } from "./src/shell/pages";
 import { staticPrerender } from "./src/shell/static";
+import { generateServiceWorker } from "./src/shell/pwa";
 
 export {
   build,
@@ -40,5 +41,6 @@ export {
   Island,
   staticPrerender,
   generateStaticPages,
-  FileEntry as AssetEntry,
+  generateServiceWorker,
+  type FileEntry,
 };
