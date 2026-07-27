@@ -18,7 +18,7 @@ import {
   type RouteData,
   type FileEntry,
 } from "../../src/shell/build";
-import { setIslandMap, type IslandEntry } from "../../src/core/registry";
+import { type IslandEntry } from "../../src/core/registry";
 
 const SANDBOX_DIR = path.resolve(
   import.meta.dir,
@@ -459,7 +459,6 @@ export default function Index() { return h("h1", {}, "Home"); }`,
     );
 
     const pageFile: FileEntry = { url: "/", filePath: Path.create(filePath) };
-    setIslandMap([]);
 
     const result = await prerenderPages([pageFile], []);
 
@@ -477,7 +476,6 @@ export default function Index() { return h("h1", {}, "Home"); }`,
       url: "/about",
       filePath: Path.create(filePath),
     };
-    setIslandMap([]);
 
     const result = await prerenderPages([pageFile], []);
 
@@ -499,7 +497,6 @@ export default function Index() { return h("h1", {}, "Home"); }`,
       { url: "/", filePath: Path.create(tsxPath) },
       { url: "/contact", filePath: Path.create(mdPath) },
     ];
-    setIslandMap([]);
 
     const result = await prerenderPages(pages, []);
 
@@ -523,7 +520,6 @@ export default function Page${i}() { return h("h1", {}, "Page ${i}"); }`,
       url: `/page${i}`,
       filePath: Path.create(p),
     }));
-    setIslandMap([]);
 
     const result = await prerenderPages(pages, []);
 

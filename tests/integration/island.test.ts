@@ -14,8 +14,9 @@
  *  limitations under the License.
  **/
 import { Island } from "../../src/shell/pages";
-import { setIslandMap, type IslandEntry } from "../../src/core/registry";
-import { describe, it, expect, beforeEach } from "bun:test";
+import { type IslandEntry } from "../../src/core/registry";
+import { IslandMapProvider } from "../../src/core/context";
+import { describe, it, expect } from "bun:test";
 import { h } from "preact";
 import renderToString from "preact-render-to-string";
 import * as devalue from "devalue";
@@ -36,10 +37,6 @@ function decodeHtmlEntities(str: string): string {
 }
 
 describe("Island", () => {
-  beforeEach(() => {
-    setIslandMap([]);
-  });
-
   it("should render div with data-island attribute", () => {
     const TestComponent = ({ name }: TestProps) =>
       h("div", { class: "test" }, name);
@@ -52,10 +49,9 @@ describe("Island", () => {
         file: Path.create("test.js"),
       },
     };
-    setIslandMap([entry]);
 
     const html = renderToString(
-      h(Island, { component: TestComponent, props: { name: "World" } }),
+      h(IslandMapProvider, { entries: [entry] }, h(Island, { component: TestComponent, props: { name: "World" } })),
     );
 
     expect(html).toContain('data-island="testhash456"');
@@ -73,13 +69,12 @@ describe("Island", () => {
         file: Path.create("test.js"),
       },
     };
-    setIslandMap([entry]);
 
     const html = renderToString(
-      h(Island, {
+      h(IslandMapProvider, { entries: [entry] }, h(Island, {
         component: TestComponent,
         props: { name: "Test", count: 42 },
-      }),
+      })),
     );
 
     expect(html).toContain("data-props=");
@@ -103,10 +98,9 @@ describe("Island", () => {
         file: Path.resolve(".cache/test.js"),
       },
     };
-    setIslandMap([entry]);
 
     const html = renderToString(
-      h(Island, { component: TestComponent, props: { name: "ScriptTest" } }),
+      h(IslandMapProvider, { entries: [entry] }, h(Island, { component: TestComponent, props: { name: "ScriptTest" } })),
     );
 
     expect(html).toContain('<script src="/test.js"');
@@ -130,10 +124,9 @@ describe("Island", () => {
         file: Path.create("test.js"),
       },
     };
-    setIslandMap([entry]);
 
     const html = renderToString(
-      h(Island, { component: TestComponent, props: {} }),
+      h(IslandMapProvider, { entries: [entry] }, h(Island, { component: TestComponent, props: {} })),
     );
 
     expect(html).toContain("data-props=");

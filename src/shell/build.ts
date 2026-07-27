@@ -35,7 +35,6 @@ import {
 } from "../core/code_generator";
 import { getRouteName, toPublicPath } from "../core/rendering";
 import {
-  setIslandMap,
   type IslandEntry,
   getIslandFiles,
 } from "../core/registry";
@@ -164,10 +163,10 @@ function getIslandEntry(
 export async function prerenderPages(
   pageFiles: FileEntry[],
   islands: IslandEntry[],
+  base?: string,
 ): Promise<RouteData[]> {
-  setIslandMap(islands);
   const pages = await Promise.all(
-    pageFiles.map(({ url, filePath }) => prerenderPage(url, filePath)),
+    pageFiles.map(({ url, filePath }) => prerenderPage(url, filePath, base, islands)),
   );
   return pages;
 }
@@ -175,15 +174,17 @@ export async function prerenderPages(
 async function prerenderPage(
   routeName: string,
   pathFromPages: Path,
+  base?: string,
+  islandEntries?: IslandEntry[],
 ): Promise<RouteData> {
   const extension = path.extname(pathFromPages.absolute);
   console.log(`Prerendering page [${routeName}]`);
 
   let prerenderedFile: Path;
   if (extension === ".md") {
-    prerenderedFile = await prepareMarkdown(pathFromPages.absolute);
+    prerenderedFile = await prepareMarkdown(pathFromPages.absolute, base, islandEntries);
   } else {
-    prerenderedFile = await preparePreact(pathFromPages.absolute);
+    prerenderedFile = await preparePreact(pathFromPages.absolute, base, islandEntries);
   }
   return { routeName, filePath: prerenderedFile };
 }
@@ -192,6 +193,7 @@ export async function generateStaticPages(
   routes: RouteData[],
   islandEntries: IslandEntry[],
   assetFiles: FileEntry[],
+  base?: string,
 ): Promise<Record<string, string>> {
   const manifest: Record<string, string> = {};
 
@@ -200,7 +202,7 @@ export async function generateStaticPages(
     let outputPath = DIST_DIR + routeName + "/index.html";
     outputPath = outputPath.replaceAll("/", path.sep);
     await copyFile(route.filePath.absolute, outputPath);
-    manifest[route.routeName] = outputPath;
+    manifest[(base ?? "") + route.routeName] = outputPath;
   }
 
   for (const entry of islandEntries) {
@@ -208,7 +210,7 @@ export async function generateStaticPages(
       const islandRelPath = file.relativeTo(ISLANDS_CACHE_DIR);
       let outputPath = distPath("_islands", islandRelPath);
       await copyFile(file.absolute, outputPath);
-      manifest[toPublicPath(outputPath)] = outputPath;
+      manifest[toPublicPath(outputPath, base ?? "")] = outputPath;
     }
   }
 
@@ -216,7 +218,7 @@ export async function generateStaticPages(
     const assetRelPath = assetPath.relativeTo(ASSETS_DIR);
     let outputPath = distPath("assets", assetRelPath);
     await copyFile(assetPath.absolute, outputPath);
-    manifest[toPublicPath(outputPath)] = outputPath;
+    manifest[toPublicPath(outputPath, base ?? "")] = outputPath;
   }
 
   return manifest;
@@ -226,11 +228,12 @@ export async function generateRouteMap(
   routes: RouteData[],
   islandEntries: IslandEntry[],
   assetFiles: FileEntry[],
+  base?: string,
 ): Promise<Path> {
   const manifest: Record<string, string> = {};
 
   for (const route of routes) {
-    manifest[route.routeName] = route.filePath.relativeToCwd();
+    manifest[(base ?? "") + route.routeName] = route.filePath.relativeToCwd();
   }
 
   for (const { url, filePath: assetPath } of assetFiles) {
@@ -239,7 +242,7 @@ export async function generateRouteMap(
 
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
-      manifest[toPublicPath(file.relativeTo(CACHE_DIR))] = file.relativeToCwd();
+      manifest[toPublicPath(file.relativeTo(CACHE_DIR), base ?? "")] = file.relativeToCwd();
     }
   }
 
@@ -250,7 +253,7 @@ export async function generateRouteMap(
   return Path.create(routesFile);
 }
 
-export async function collectAssets(): Promise<FileEntry[]> {
+export async function collectAssets(base?: string): Promise<FileEntry[]> {
   let assetFiles: Path[];
   try {
     assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
@@ -259,7 +262,7 @@ export async function collectAssets(): Promise<FileEntry[]> {
     return [];
   }
   return assetFiles.map((file) => ({
-    url: toPublicPath(file.relativeToCwd()),
+    url: toPublicPath(file.relativeToCwd(), base ?? ""),
     filePath: file,
   }));
 }
@@ -267,10 +270,11 @@ export async function collectAssets(): Promise<FileEntry[]> {
 export async function generateUtils(
   pageFiles: FileEntry[],
   assetFiles: FileEntry[],
+  base?: string,
 ): Promise<void> {
   const routeNames = pageFiles.map(({ url }) => url);
   const assetIds = assetFiles.map(({ url }) => url);
-  const linkCode = generateLinkUtilsCode(routeNames);
+  const linkCode = generateLinkUtilsCode(routeNames, base);
   const assetCode = generateAssetUtilsCode(assetIds);
   const code = `${linkCode}\n${assetCode}`;
   const utilsFile = path.resolve(UTILS_CACHE_FILE);
@@ -289,7 +293,7 @@ export async function discoverRouteFiles(): Promise<FileEntry[]> {
   }));
 }
 
-export async function build(): Promise<{
+export async function build(base: string = ""): Promise<{
   routes: RouteData[];
   islands: IslandEntry[];
   routeMap: Path;
@@ -297,12 +301,12 @@ export async function build(): Promise<{
   let islands = await prerenderIslands();
   islands = await bundleIslands(islands);
 
-  let assetFiles = await collectAssets();
+  let assetFiles = await collectAssets(base);
 
   const pageFiles = await discoverRouteFiles();
-  await generateUtils(pageFiles, assetFiles);
+  await generateUtils(pageFiles, assetFiles, base);
 
-  const routes = await prerenderPages(pageFiles, islands);
-  const routeMap = await generateRouteMap(routes, islands, assetFiles);
+  const routes = await prerenderPages(pageFiles, islands, base);
+  const routeMap = await generateRouteMap(routes, islands, assetFiles, base);
   return { routes, islands, routeMap };
 }

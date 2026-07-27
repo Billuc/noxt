@@ -1,8 +1,10 @@
 import type { FunctionComponent } from "preact";
-import { getIslandEntry, getIslandFiles } from "../core/registry";
+import { getIslandFiles } from "../core/registry";
 import { h, Fragment } from "preact";
+import { useContext } from "preact/hooks";
 import * as devalue from "devalue";
 import { toPublicPath } from "../core/rendering";
+import { BaseContext, IslandMapContext } from "../core/context";
 import { CACHE_DIR } from "./fs";
 
 type Props<T> = h.JSX.IntrinsicAttributes & {
@@ -12,8 +14,10 @@ type Props<T> = h.JSX.IntrinsicAttributes & {
 
 export function Island<T>(props: Props<T>) {
   const { component: Component, props: finalProps, key } = props;
+  const base = useContext(BaseContext);
+  const islandMap = useContext(IslandMapContext);
 
-  const entry = getIslandEntry(Component);
+  const entry = islandMap.get(Component);
   if (!entry) {
     throw new Error(
       `Component "${Component.displayName ?? Component.name}" has not been prerendered as an island. ` +
@@ -27,10 +31,10 @@ export function Island<T>(props: Props<T>) {
   for (const file of getIslandFiles(entry)) {
     const pathFromCache = file.relativeTo(CACHE_DIR);
     if (/.*\.(js|jsx|ts|tsx)$/.test(pathFromCache)) {
-      scripts.push(<script src={toPublicPath(pathFromCache)}></script>);
+      scripts.push(<script src={toPublicPath(pathFromCache, base)}></script>);
     } else if (pathFromCache.endsWith(".css")) {
       cssLinks.push(
-        <link rel="stylesheet" href={toPublicPath(pathFromCache)}></link>,
+        <link rel="stylesheet" href={toPublicPath(pathFromCache, base)}></link>,
       );
     }
   }

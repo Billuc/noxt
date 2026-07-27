@@ -61,7 +61,11 @@ export async function prepareIsland(
 }
 
 /** Prerenders a Preact page component to HTML and caches it. */
-export async function preparePreact(pagePath: string): Promise<Path> {
+export async function preparePreact(
+  pagePath: string,
+  base?: string,
+  islandEntries?: IslandEntry[],
+): Promise<Path> {
   const mod = await import(pagePath);
   const Page = mod.default as FunctionComponent<any> | undefined;
   if (!Page) throw new Error(`File ${pagePath} has no default export !`);
@@ -70,7 +74,7 @@ export async function preparePreact(pagePath: string): Promise<Path> {
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 
-  const prerenderedPage = await renderPageToHtml(Page);
+  const prerenderedPage = await renderPageToHtml(Page, base, islandEntries);
   await writeFile(prerenderPath, prerenderedPage);
 
   return Path.create(prerenderPath);
@@ -79,6 +83,8 @@ export async function preparePreact(pagePath: string): Promise<Path> {
 /** Prerenders a markdown page to HTML using its frontmatter-defined layout. */
 export async function prepareMarkdown(
   markdownPath: string,
+  base?: string,
+  islandEntries?: IslandEntry[],
 ): Promise<Path> {
   const content = await readFile(markdownPath);
 
@@ -92,7 +98,7 @@ export async function prepareMarkdown(
   if (!Layout)
     throw new Error("Error while preparing layout for page " + markdownPath);
 
-  const prerenderedPage = await renderMarkdownToHtml(markdownData, Layout);
+  const prerenderedPage = await renderMarkdownToHtml(markdownData, Layout, base, islandEntries);
   await writeFile(prerenderPath, prerenderedPage);
 
   return Path.create(prerenderPath);

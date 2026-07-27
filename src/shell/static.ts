@@ -8,10 +8,10 @@ import {
 import { getRouteName } from "../core/rendering";
 import { generateServiceWorker } from "./pwa";
 
-export async function staticPrerender(): Promise<Record<string, string>> {
+export async function staticPrerender(base: string = ""): Promise<Record<string, string>> {
   console.log("Exporting static site...");
 
-  const { routes, islands } = await build();
+  const { routes, islands } = await build(base);
   const outdir = path.resolve("dist");
   await mkdir(outdir, { recursive: true });
 
@@ -26,11 +26,11 @@ export async function staticPrerender(): Promise<Record<string, string>> {
     const routeName = pathFromDist.endsWith(".html")
       ? getRouteName(pathFromDist)
       : "/" + pathFromDist;
-    routeData[routeName] = dest;
+    routeData[base + routeName] = dest;
   }
 
   const assetFiles = await collectAssets();
-  const manifest = await generateStaticPages(routes, islands, assetFiles);
+  const manifest = await generateStaticPages(routes, islands, assetFiles, base);
   await generateServiceWorker(manifest);
 
   console.log("Static export complete! Output in dist/");

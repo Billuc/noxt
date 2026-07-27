@@ -18,6 +18,8 @@ import { h, type ComponentType } from "preact";
 import { renderToStringAsync } from "preact-render-to-string";
 import * as yaml from "yaml";
 import { micromark } from "micromark";
+import { BaseProvider, IslandMapProvider } from "./context";
+import type { IslandEntry } from "./registry";
 
 /**
  * Converts a file path from pages directory to a route name.
@@ -43,8 +45,8 @@ export function routeToHtmlPath(routeName: string): string {
   return path.join(relative, "index.html");
 }
 
-export function toPublicPath(cwdRelativePath: string): string {
-  return "/" + cwdRelativePath.replaceAll("\\", "/");
+export function toPublicPath(cwdRelativePath: string, base: string): string {
+  return base + "/" + cwdRelativePath.replaceAll("\\", "/");
 }
 
 function sanitizeHtml(htmlContent: string) {
@@ -71,8 +73,17 @@ function sanitizeHtml(htmlContent: string) {
  */
 export async function renderPageToHtml(
   component: preact.ComponentType,
+  base?: string,
+  islandEntries?: IslandEntry[],
 ): Promise<string> {
-  let htmlContent = await renderToStringAsync(h(component, {}, []));
+  let element: any = h(component, {}, []);
+  if (base !== undefined) {
+    element = h(BaseProvider, { value: base }, element);
+  }
+  if (islandEntries !== undefined) {
+    element = h(IslandMapProvider, { entries: islandEntries }, element);
+  }
+  let htmlContent = await renderToStringAsync(element);
   htmlContent = sanitizeHtml(htmlContent);
   return "<!DOCTYPE html>" + htmlContent;
 }
@@ -93,10 +104,18 @@ const MARKDOWN_PLACEHOLDER = "---MARKDOWN:CHILDREN---";
 export async function renderMarkdownToHtml(
   markdownData: MarkdownData,
   Layout: ComponentType<Record<string, any>>,
+  base?: string,
+  islandEntries?: IslandEntry[],
 ): Promise<string> {
   const markdownHTML = micromark(markdownData.content);
 
-  const fullPage = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
+  let fullPage: any = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
+  if (base !== undefined) {
+    fullPage = h(BaseProvider, { value: base }, fullPage);
+  }
+  if (islandEntries !== undefined) {
+    fullPage = h(IslandMapProvider, { entries: islandEntries }, fullPage);
+  }
   let htmlContent = await renderToStringAsync(fullPage);
   htmlContent = sanitizeHtml(htmlContent);
   htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);

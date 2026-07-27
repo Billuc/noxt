@@ -26,21 +26,6 @@ export interface IslandEntry {
   files: IslandFiles;
 }
 
-const islandComponentMap = new Map<FunctionComponent<any>, IslandEntry>();
-
-export function setIslandMap(entries: IslandEntry[]) {
-  islandComponentMap.clear();
-  for (const entry of entries) {
-    islandComponentMap.set(entry.component, entry);
-  }
-}
-
-export function getIslandEntry<T>(
-  component: FunctionComponent<T>,
-): IslandEntry | undefined {
-  return islandComponentMap.get(component);
-}
-
 export function getIslandFiles(entry: IslandEntry): Path[] {
   switch (entry.files.type) {
     case "source":
