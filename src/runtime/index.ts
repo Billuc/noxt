@@ -23,3 +23,6 @@ export {
   type FetchJsonReturn,
   type HttpMethod,
 } from "./fetch";
+
+export { signal, useSignal } from "./signal";
+export type { Signal } from "@preact/signals-core";
