@@ -1,58 +1,68 @@
-import { z } from "zod";
-import type { APIEndpoint, APIEndpointDef } from "./types";
-import { jsonCodec, searchParamCodec, type SearchParamObjectSchema } from "./zod";
+import type {
+  APIEndpoint,
+  APIEndpointDef,
+  SearchParamSchema,
+  SomeSchema,
+} from "./types";
+import { toBody } from "./utils";
+import { body, searchParams } from "./valibot";
+import * as v from "valibot";
 
 export function get<
-  TInput extends SearchParamObjectSchema,
-  TOutput extends z.ZodObject,
->(
-  {input, output, handler}: APIEndpointDef<TInput, TOutput>,
-): APIEndpoint<TInput, TOutput> {
-    const inputCodec = searchParamCodec(input);
-    const outputCodec = jsonCodec(output);
+  TInput extends SearchParamSchema,
+  TOutput extends SomeSchema,
+>({
+  input,
+  output,
+  handler,
+}: APIEndpointDef<TInput, TOutput>): APIEndpoint<TInput, TOutput> {
+  return {
+    input,
+    output,
+    handler: async (request) => {
+      try {
+        const params = new URL(request.url).searchParams;
+        const inputData = v.parse(searchParams(input), params);
 
-    return {
-        input,
-        output,
-        handler: async (request) => {
-            const searchParams = new URL(request.url).searchParams;
-            const searchParamsRecord: Record<string, string[]> = {};
-
-            for (const key of searchParams.keys()) {
-                searchParamsRecord[key] = searchParams.getAll(key);    
-            }
-            
-            const inputData = inputCodec.decode(searchParamsRecord);
-            const response: ResponseInit = {}
-
-            const result = await handler({ input: inputData, request, response })
-
-            const body = outputCodec.encode(result as any);
-            return new Response(body, response);
+        try {
+          const response: ResponseInit = {};
+          const result = await handler({ input: inputData, request, response });
+          const body = toBody(result);
+          return new Response(body, response);
+        } catch {
+          return new Response("Internal Server Error", { status: 500 });
         }
-    }
+      } catch {
+        return new Response("Bad argument", { status: 400 });
+      }
+    },
+  };
 }
 
-export function post<
-  TInput extends z.ZodObject,
-  TOutput extends z.ZodObject,
->(
-  {input, output, handler}: APIEndpointDef<TInput, TOutput>,
-): APIEndpoint<TInput, TOutput> {
-    const inputCodec = jsonCodec(input);
-    const outputCodec = jsonCodec(output);
+export function post<TInput extends SomeSchema, TOutput extends SomeSchema>({
+  input,
+  output,
+  handler,
+}: APIEndpointDef<TInput, TOutput>): APIEndpoint<TInput, TOutput> {
+  return {
+    input,
+    output,
+    handler: async (request) => {
+      try {
+        const data = await request.text();
+        const inputData = v.parse(body(input), data);
 
-    return {
-        input,
-        output,
-        handler: async (request) => {
-            const inputData = inputCodec.decode(await request.text());
-            const response: ResponseInit = {}
-
-            const result = await handler({ input: inputData, request, response })
-
-            const body = outputCodec.encode(result as any);
-            return new Response(body, response);
+        try {
+          const response: ResponseInit = {};
+          const result = await handler({ input: inputData, request, response });
+          const responseBody = toBody(result);
+          return new Response(responseBody, response);
+        } catch {
+          return new Response("Internal Server Error", { status: 500 });
         }
-    }
+      } catch {
+        return new Response("Bad argument", { status: 400 });
+      }
+    },
+  };
 }

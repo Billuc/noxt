@@ -27,7 +27,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "happy-dom": "^20.9.0"
+    "happy-dom": "^20.9.0",
+    "htm": "^3.1.1"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
@@ -36,10 +37,10 @@
     "@preact/signals": "^2.10.0",
     "devalue": "^5.8.1",
     "esbuild": "^0.28.1",
-    "htm": "^3.1.1",
     "micromark": "^4.0.2",
     "preact": "^10.29.2",
     "preact-render-to-string": "^6.7.0",
+    "valibot": "^1.4.2",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"
   }
