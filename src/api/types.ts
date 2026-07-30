@@ -16,7 +16,7 @@ export type SearchParamSchema = v.ObjectSchema<
   any
 >;
 
-export type SomeSchema = v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>;
+export type SomeSchema = v.GenericSchema<unknown>;
 
 export type APIHandler<TInput, TOutput> = (data: {
   input: TInput;
@@ -24,17 +24,45 @@ export type APIHandler<TInput, TOutput> = (data: {
   response: ResponseInit;
 }) => Promise<TOutput> | TOutput;
 
-export interface APIEndpointDef<
+export interface APIEndpoint<
   TInput extends SomeSchema,
   TOutput extends SomeSchema,
 > {
   input: TInput;
   output: TOutput;
-  handler: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>;
+  handler: (request: Request) => Promise<Response>;
 }
 
-export interface APIEndpoint<TInput, TOutput> {
-  input: TInput;
-  output: TOutput;
-  handler: (request: Request) => Promise<Response>;
+export interface IQueryEndpointBuilder<
+  TInput extends SearchParamSchema,
+  TOutput extends SomeSchema,
+> {
+  input<TInput2 extends SearchParamSchema>(
+    Input: TInput2,
+  ): IQueryEndpointBuilder<TInput2, TOutput>;
+
+  output<TOutput2 extends SomeSchema>(
+    Output: TOutput2,
+  ): IQueryEndpointBuilder<TInput, TOutput2>;
+
+  endpoint(
+    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
+  ): APIEndpoint<TInput, TOutput>;
+}
+
+export interface IMutationEndpointBuilder<
+  TInput extends SomeSchema,
+  TOutput extends SomeSchema,
+> {
+  input<TInput2 extends SomeSchema>(
+    Input: TInput2,
+  ): IMutationEndpointBuilder<TInput2, TOutput>;
+
+  output<TOutput2 extends SomeSchema>(
+    Output: TOutput2,
+  ): IMutationEndpointBuilder<TInput, TOutput2>;
+
+  endpoint(
+    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
+  ): APIEndpoint<TInput, TOutput>;
 }
