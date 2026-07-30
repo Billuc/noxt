@@ -56,6 +56,7 @@ export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
 export const ISLANDS_DIR = "islands";
 export const ASSETS_DIR = "assets";
 export const PAGES_DIR = "pages";
+export const API_DIR = "api";
 
 export const DIST_DIR = "dist";
 

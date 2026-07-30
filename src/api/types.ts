@@ -1,5 +1,8 @@
 import * as v from "valibot";
 
+export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
+export type HttpMethod = (typeof HTTP_METHODS)[number];
+
 type SearchParamValueSchema =
   | v.NumberSchema<any>
   | v.BigintSchema<any>
@@ -24,13 +27,15 @@ export type APIHandler<TInput, TOutput> = (data: {
   response: ResponseInit;
 }) => Promise<TOutput> | TOutput;
 
-export interface APIEndpoint<
+export class APIEndpoint<
   TInput extends SomeSchema,
   TOutput extends SomeSchema,
 > {
-  input: TInput;
-  output: TOutput;
-  handler: (request: Request) => Promise<Response>;
+  constructor(
+    public input: TInput,
+    public output: TOutput,
+    public handler: (request: Request) => Promise<Response>,
+  ) {}
 }
 
 export interface IQueryEndpointBuilder<
