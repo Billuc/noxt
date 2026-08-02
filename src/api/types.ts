@@ -50,6 +50,9 @@ export interface IQueryEndpointBuilder<
     Output: TOutput2,
   ): IQueryEndpointBuilder<TInput, TOutput2>;
 
+  get _input(): TInput;
+  get _output(): TOutput;
+
   endpoint(
     fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
   ): APIEndpoint<TInput, TOutput>;
@@ -66,6 +69,9 @@ export interface IMutationEndpointBuilder<
   output<TOutput2 extends SomeSchema>(
     Output: TOutput2,
   ): IMutationEndpointBuilder<TInput, TOutput2>;
+
+  get _input(): TInput;
+  get _output(): TOutput;
 
   endpoint(
     fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,

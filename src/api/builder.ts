@@ -15,29 +15,36 @@ class QueryEndpointBuilder<
   TOutput extends SomeSchema,
 > implements IQueryEndpointBuilder<TInput, TOutput> {
   constructor(
-    private _input: TInput,
-    private _output: TOutput,
+    private __input: TInput,
+    private __output: TOutput,
   ) {}
 
   input<TInput2 extends SearchParamSchema>(
     Input: TInput2,
   ): IQueryEndpointBuilder<TInput2, TOutput> {
-    return new QueryEndpointBuilder(Input, this._output);
+    return new QueryEndpointBuilder(Input, this.__output);
   }
 
   output<TOutput2 extends SomeSchema>(
     Output: TOutput2,
   ): IQueryEndpointBuilder<TInput, TOutput2> {
-    return new QueryEndpointBuilder(this._input, Output);
+    return new QueryEndpointBuilder(this.__input, Output);
+  }
+
+  get _input(): TInput {
+    return this.__input;
+  }
+  get _output(): TOutput {
+    return this.__output;
   }
 
   endpoint(
     fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
   ): APIEndpoint<TInput, TOutput> {
-    return new APIEndpoint(this._input, this._output, async (request) => {
+    return new APIEndpoint(this.__input, this.__output, async (request) => {
       try {
         const params = new URL(request.url).searchParams;
-        const inputData = v.parse(searchParams(this._input), params);
+        const inputData = v.parse(searchParams(this.__input), params);
 
         try {
           const response: ResponseInit = {};
@@ -70,29 +77,36 @@ class MutationEndpointBuilder<
   TOutput extends SomeSchema,
 > implements IMutationEndpointBuilder<TInput, TOutput> {
   constructor(
-    private _input: TInput,
-    private _output: TOutput,
+    private __input: TInput,
+    private __output: TOutput,
   ) {}
 
   input<TInput2 extends SomeSchema>(
     Input: TInput2,
   ): IMutationEndpointBuilder<TInput2, TOutput> {
-    return new MutationEndpointBuilder(Input, this._output);
+    return new MutationEndpointBuilder(Input, this.__output);
   }
 
   output<TOutput2 extends SomeSchema>(
     Output: TOutput2,
   ): IMutationEndpointBuilder<TInput, TOutput2> {
-    return new MutationEndpointBuilder(this._input, Output);
+    return new MutationEndpointBuilder(this.__input, Output);
+  }
+
+  get _input(): TInput {
+    return this.__input;
+  }
+  get _output(): TOutput {
+    return this.__output;
   }
 
   endpoint(
     fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
   ): APIEndpoint<TInput, TOutput> {
-    return new APIEndpoint(this._input, this._output, async (request) => {
+    return new APIEndpoint(this.__input, this.__output, async (request) => {
       try {
         const data = await request.text();
-        const inputData = v.parse(body(this._input), data);
+        const inputData = v.parse(body(this.__input), data);
 
         try {
           const response: ResponseInit = {};

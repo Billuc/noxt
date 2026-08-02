@@ -18,17 +18,6 @@ import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
 /** Supported HTTP methods for fetch requests. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-/** Represents a non-OK HTTP response (e.g. 4xx/5xx). */
-export class FetchError extends Error {
-  status: number;
-
-  public constructor(status: number, message: string) {
-    super(message);
-    this.name = "FetchError";
-    this.status = status;
-  }
-}
-
 /** Options to configure a useFetch request. */
 export interface UseFetchOptions<T> {
   method?: HttpMethod;
@@ -37,79 +26,54 @@ export interface UseFetchOptions<T> {
   initial?: T;
 }
 
-/** Options to configure a fetchJson request. */
-export interface FetchJsonOptions {
-  method?: HttpMethod;
-  body?: any;
-  headers?: Record<string, string>;
-  abortController?: AbortController;
-}
-
 /** Return type of the useFetch hook. */
 export interface UseFetchReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
-  refresh: () => Promise<T | null>;
+  fetch: () => Promise<T | null>;
 }
 
-/** Return type of the fetchJson function. */
-export type FetchJsonReturn<T> =
-  | { data: T | null; error: null }
-  | { data: null; error: Error };
+export type RequestInitWithBody = RequestInit & { objectBody: any };
 
-export async function fetchJson<T>(
+export async function fetchWithBody<T>(
   url: string,
-  options?: FetchJsonOptions,
-): Promise<FetchJsonReturn<T>> {
-  try {
-    const {
-      method = "GET",
-      body,
-      headers: customHeaders = {},
-      abortController,
-    } = options ?? {};
+  options?: RequestInitWithBody,
+): Promise<Response> {
+  const {
+    body = undefined,
+    headers = {},
+    method = "GET",
+    objectBody = undefined,
+  } = options ?? {};
 
-    const finalHeaders: Record<string, string> = { ...customHeaders };
-    const finalUrl =
-      url.startsWith("http://") || url.startsWith("https://")
-        ? new URL(url)
-        : new URL(url, window.location.origin);
-    let finalBody: BodyInit | null | undefined = undefined;
+  const finalHeaders =
+    headers instanceof Headers ? headers : new Headers(headers);
+  const finalUrl =
+    url.startsWith("http://") || url.startsWith("https://")
+      ? new URL(url)
+      : new URL(url, window.location.origin);
+  let finalBody: BodyInit | null | undefined = undefined;
 
-    if (body != null) {
-      if (method === "GET") {
-        for (const [k, v] of Object.entries(body)) {
-          finalUrl.searchParams.append(k, String(v));
+  if (!!objectBody) {
+    if (method === "GET") {
+      for (const [k, v] of Object.entries(objectBody)) {
+        const values = v instanceof Array ? v : [v];
+        for (const value of values) {
+          finalUrl.searchParams.append(k, String(value));
         }
-      } else {
-        finalBody = JSON.stringify(body);
-        finalHeaders["Content-Type"] = "application/json";
       }
+    } else {
+      finalBody = JSON.stringify(body);
+      finalHeaders.set("Content-Type", "application/json");
     }
-
-    const response = await fetch(finalUrl, {
-      method,
-      headers: finalHeaders,
-      body: finalBody,
-      signal: abortController?.signal,
-    });
-
-    if (!response.ok) {
-      throw new FetchError(response.status, response.statusText);
-    }
-
-    const json: T = await response.json();
-    return { data: json, error: null };
-  } catch (err) {
-    if (!(err instanceof Error)) {
-      return { data: null, error: Error(String(err)) };
-    }
-    if (err.name === "AbortError") {
-      return { data: null, error: null };
-    }
-    return { data: null, error: err };
   }
+
+  return await fetch(finalUrl, {
+    ...options,
+    headers: finalHeaders,
+    body: finalBody,
+  });
 }
 
 /** A hook that fetches JSON data from a URL with loading/error state and automatic re-fetch. */
@@ -141,20 +105,29 @@ export function useFetch<T = any>(
     setError(null);
 
     try {
-      const { data, error } = await fetchJson<T>(urlRef.current, {
+      const response = await fetchWithBody(urlRef.current, {
         ...optionsRef.current,
-        abortController: abortControllerRef.current,
+        signal: abortControllerRef.current.signal,
+        objectBody: optionsRef.current?.body,
       });
-      if (!!error) {
-        if (mountedRef.current) {
-          setError(error);
-        }
-        throw error;
-      }
-      if (mountedRef.current && !!data) {
+      const data = (await response.json()) as T;
+      if (mountedRef.current) {
         setData(data);
       }
       return data;
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.name !== "AbortError") {
+          setError(err);
+          throw err;
+        }
+      } else {
+        const error = Error(String(err));
+        setError(error);
+        throw error;
+      }
+
+      return null;
     } finally {
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;

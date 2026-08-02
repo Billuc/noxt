@@ -31,12 +31,12 @@ function parseSearchParams<TSchema extends SearchParamSchema>(
       decoded[key] = (fieldValues ?? []).map((s) => parseValue(s, Item));
     } else {
       const fieldValue = fieldValues?.[0];
-      if (!fieldValue) continue;
+      if (fieldValue === undefined) continue;
       decoded[key] = parseValue(fieldValue, Field);
     }
   }
 
-  return v.parse(Schema, searchParams);
+  return v.parse(Schema, decoded);
 }
 
 function unwrapSchema(Schema: SomeSchema): SomeSchema {

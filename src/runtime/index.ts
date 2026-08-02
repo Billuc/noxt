@@ -17,12 +17,10 @@ export {
   useFetch,
   type UseFetchOptions,
   type UseFetchReturn,
-  type FetchError,
-  fetchJson,
-  type FetchJsonOptions,
-  type FetchJsonReturn,
+  fetchWithBody,
   type HttpMethod,
 } from "./fetch";
+export { ApiRouter } from "./api";
 
 export { signal, useSignal } from "./signal";
 export type { Signal } from "@preact/signals-core";

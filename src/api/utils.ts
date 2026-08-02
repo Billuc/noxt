@@ -27,6 +27,6 @@ function toSearchParamValue(value: unknown): string[] {
   }
 }
 
-export function toBody(body: unknown): string {
+export function toBody(body: unknown): string | undefined {
   return JSON.stringify(body);
 }
