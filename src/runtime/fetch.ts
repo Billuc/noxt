@@ -23,7 +23,7 @@ export interface UseDataFetchReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
-  refetch: () => Promise<T | null>;
+  refresh: () => Promise<T | null>;
 }
 
 export type RequestInitWithBody = RequestInit & { objectBody: any };
@@ -70,9 +70,9 @@ export function requestFrom(
   });
 }
 
-export function useDataFetch<TInput = any, TResult = any>(
+export function useAsync<TInput = any, TResult = any>(
   input: TInput,
-  fetcher: (input: TInput, signal: AbortSignal) => Promise<TResult>,
+  asyncFn: (input: TInput, signal: AbortSignal) => Promise<TResult>,
 ): UseDataFetchReturn<TResult> {
   const [data, setData] = useState<TResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,7 @@ export function useDataFetch<TInput = any, TResult = any>(
     setError(null);
 
     try {
-      const data = await fetcher(
+      const data = await asyncFn(
         inputRef.current,
         abortControllerRef.current.signal,
       );
@@ -139,17 +139,22 @@ export function useDataFetch<TInput = any, TResult = any>(
     };
   }, []);
 
-  return { data, loading, error, refetch };
+  return { data, loading, error, refresh: refetch };
+}
+
+export async function fetchJson<TResult = any>(
+  { url, options }: { url: string; options: RequestInitWithBody },
+  signal: AbortSignal,
+) {
+  const request = requestFrom(url, { ...options, signal });
+  const response = await fetch(request);
+  const data = (await response.json()) as TResult;
+  return data;
 }
 
 export function useFetchJson<TResult = any>(
   url: string,
   options: RequestInitWithBody,
 ): UseDataFetchReturn<TResult> {
-  return useDataFetch({ url, options }, async ({ url, options }, signal) => {
-    const request = requestFrom(url, { ...options, signal });
-    const response = await fetch(request);
-    const data = (await response.json()) as TResult;
-    return data;
-  });
+  return useAsync({ url, options }, fetchJson);
 }

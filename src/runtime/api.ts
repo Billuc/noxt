@@ -14,7 +14,7 @@
  *  limitations under the License.
  **/
 import * as v from "valibot";
-import { requestFrom, useDataFetch } from "./fetch";
+import { requestFrom, useAsync } from "./fetch";
 
 type EndpointCaller<
   ApiDefinitions extends {
@@ -75,10 +75,7 @@ export function useApi<
   input: v.InferOutput<ApiDefinitions[TEndpoint]["input"]>,
   options?: RequestInit,
 ) {
-  return useDataFetch(
-    { input, options },
-    async ({ input, options }, signal) => {
-      return endpointCaller(input, { ...options, signal });
-    },
-  );
+  return useAsync({ input, options }, async ({ input, options }, signal) => {
+    return endpointCaller(input, { ...options, signal });
+  });
 }

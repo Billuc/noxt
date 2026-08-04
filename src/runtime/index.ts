@@ -17,7 +17,7 @@ export {
   type UseDataFetchReturn as UseFetchReturn,
   type HttpMethod,
   requestFrom,
-  useDataFetch,
+  useAsync as useDataFetch,
   useFetchJson,
 } from "./fetch";
 export { ApiRouter, useApi } from "./api";
