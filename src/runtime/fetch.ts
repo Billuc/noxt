@@ -18,34 +18,27 @@ import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
 /** Supported HTTP methods for fetch requests. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-/** Options to configure a useFetch request. */
-export interface UseFetchOptions<T> {
-  method?: HttpMethod;
-  body?: any;
-  headers?: Record<string, string>;
-  initial?: T;
-}
-
 /** Return type of the useFetch hook. */
 export interface UseFetchReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
-  fetch: () => Promise<T | null>;
+  refetch: () => Promise<T | null>;
 }
 
 export type RequestInitWithBody = RequestInit & { objectBody: any };
 
-export async function fetchWithBody<T>(
+export function requestFrom(
   url: string,
-  options?: RequestInitWithBody,
-): Promise<Response> {
+  initWithBody?: RequestInitWithBody,
+): Request {
   const {
     body = undefined,
     headers = {},
     method = "GET",
     objectBody = undefined,
-  } = options ?? {};
+    ...rest
+  } = initWithBody ?? {};
 
   const finalHeaders =
     headers instanceof Headers ? headers : new Headers(headers);
@@ -69,20 +62,63 @@ export async function fetchWithBody<T>(
     }
   }
 
-  return await fetch(finalUrl, {
-    ...options,
-    headers: finalHeaders,
+  return new Request(finalUrl, {
     body: finalBody,
+    method: method,
+    headers: finalHeaders,
+    ...rest,
   });
+}
+
+export async function fetchWithBody(
+  url: string,
+  options?: RequestInitWithBody,
+  fetcher: (request: Request) => Promise<Response> = fetch,
+): Promise<Response> {
+  const request = requestFrom(url, options);
+  return await fetcher(request);
+}
+
+async function defaultFetch<T = any>(request: Request): Promise<T> {
+  const response = await fetch(request);
+  const data = (await response.json()) as T;
+  return data;
+}
+
+interface Result<T> {
+  data: T | null;
+  error: Error | null;
+}
+
+export async function safeFetch<TInput = any, TResult = any>(
+  request: TInput,
+  fetcher: (request: TInput) => Promise<TResult>,
+): Promise<Result<TResult>> {
+  try {
+    const data = await fetcher(request);
+    return { data, error: null };
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.name !== "AbortError") {
+        return { data: null, error: err };
+      }
+    } else {
+      const error = Error(String(err));
+      return { data: null, error };
+    }
+
+    return { data: null, error: null };
+  }
 }
 
 /** A hook that fetches JSON data from a URL with loading/error state and automatic re-fetch. */
 export function useFetch<T = any>(
   url: string,
-  options?: UseFetchOptions<T>,
+  options?: RequestInitWithBody,
+  fetcher: (request: Request) => Promise<T> = defaultFetch,
 ): UseFetchReturn<T> {
-  const [data, setData] = useState<T | null>(options?.initial ?? null);
-  const [loading, setLoading] = useState(!options?.initial);
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   // Refs to track abort controller, latest options/url, and mount state across renders
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -93,7 +129,7 @@ export function useFetch<T = any>(
   optionsRef.current = options;
   urlRef.current = url;
 
-  const refresh = useCallback(async (): Promise<T | null> => {
+  const refetch = useCallback(async (): Promise<T | null> => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -105,12 +141,12 @@ export function useFetch<T = any>(
     setError(null);
 
     try {
-      const response = await fetchWithBody(urlRef.current, {
+      const request = requestFrom(urlRef.current, {
         ...optionsRef.current,
         signal: abortControllerRef.current.signal,
         objectBody: optionsRef.current?.body,
       });
-      const data = (await response.json()) as T;
+      const data = await fetcher(request);
       if (mountedRef.current) {
         setData(data);
       }
@@ -141,9 +177,7 @@ export function useFetch<T = any>(
   // Fetch data on mount and abort on unmount
   useLayoutEffect(() => {
     mountedRef.current = true;
-    if (!options?.initial) {
-      refresh().catch(() => {});
-    }
+    refetch().catch(() => {});
     return () => {
       mountedRef.current = false;
       if (abortControllerRef.current) {
@@ -152,5 +186,5 @@ export function useFetch<T = any>(
     };
   }, []);
 
-  return { data, loading, error, refresh };
+  return { data, loading, error, refetch };
 }
