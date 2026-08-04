@@ -19,7 +19,7 @@ import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 /** Return type of the useFetch hook. */
-export interface UseFetchReturn<T> {
+export interface UseDataFetchReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
@@ -70,66 +70,21 @@ export function requestFrom(
   });
 }
 
-export async function fetchWithBody(
-  url: string,
-  options?: RequestInitWithBody,
-  fetcher: (request: Request) => Promise<Response> = fetch,
-): Promise<Response> {
-  const request = requestFrom(url, options);
-  return await fetcher(request);
-}
-
-async function defaultFetch<T = any>(request: Request): Promise<T> {
-  const response = await fetch(request);
-  const data = (await response.json()) as T;
-  return data;
-}
-
-interface Result<T> {
-  data: T | null;
-  error: Error | null;
-}
-
-export async function safeFetch<TInput = any, TResult = any>(
-  request: TInput,
-  fetcher: (request: TInput) => Promise<TResult>,
-): Promise<Result<TResult>> {
-  try {
-    const data = await fetcher(request);
-    return { data, error: null };
-  } catch (err) {
-    if (err instanceof Error) {
-      if (err.name !== "AbortError") {
-        return { data: null, error: err };
-      }
-    } else {
-      const error = Error(String(err));
-      return { data: null, error };
-    }
-
-    return { data: null, error: null };
-  }
-}
-
-/** A hook that fetches JSON data from a URL with loading/error state and automatic re-fetch. */
-export function useFetch<T = any>(
-  url: string,
-  options?: RequestInitWithBody,
-  fetcher: (request: Request) => Promise<T> = defaultFetch,
-): UseFetchReturn<T> {
-  const [data, setData] = useState<T | null>(null);
+export function useDataFetch<TInput = any, TResult = any>(
+  input: TInput,
+  fetcher: (input: TInput, signal: AbortSignal) => Promise<TResult>,
+): UseDataFetchReturn<TResult> {
+  const [data, setData] = useState<TResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   // Refs to track abort controller, latest options/url, and mount state across renders
   const abortControllerRef = useRef<AbortController | null>(null);
-  const optionsRef = useRef(options);
-  const urlRef = useRef(url);
+  const inputRef = useRef(input);
   const mountedRef = useRef(true);
 
-  optionsRef.current = options;
-  urlRef.current = url;
+  inputRef.current = input;
 
-  const refetch = useCallback(async (): Promise<T | null> => {
+  const refetch = useCallback(async (): Promise<TResult | null> => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -141,12 +96,10 @@ export function useFetch<T = any>(
     setError(null);
 
     try {
-      const request = requestFrom(urlRef.current, {
-        ...optionsRef.current,
-        signal: abortControllerRef.current.signal,
-        objectBody: optionsRef.current?.body,
-      });
-      const data = await fetcher(request);
+      const data = await fetcher(
+        inputRef.current,
+        abortControllerRef.current.signal,
+      );
       if (mountedRef.current) {
         setData(data);
       }
@@ -187,4 +140,16 @@ export function useFetch<T = any>(
   }, []);
 
   return { data, loading, error, refetch };
+}
+
+export function useFetchJson<TResult = any>(
+  url: string,
+  options: RequestInitWithBody,
+): UseDataFetchReturn<TResult> {
+  return useDataFetch({ url, options }, async ({ url, options }, signal) => {
+    const request = requestFrom(url, { ...options, signal });
+    const response = await fetch(request);
+    const data = (await response.json()) as TResult;
+    return data;
+  });
 }

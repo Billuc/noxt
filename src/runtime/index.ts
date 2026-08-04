@@ -14,13 +14,13 @@
  *  limitations under the License.
  **/
 export {
-  useFetch,
-  type UseFetchOptions,
-  type UseFetchReturn,
-  fetchWithBody,
+  type UseDataFetchReturn as UseFetchReturn,
   type HttpMethod,
+  requestFrom,
+  useDataFetch,
+  useFetchJson,
 } from "./fetch";
-export { ApiRouter } from "./api";
+export { ApiRouter, useApi } from "./api";
 
 export { signal, useSignal } from "./signal";
 export type { Signal } from "@preact/signals-core";
