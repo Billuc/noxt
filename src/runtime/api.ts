@@ -15,39 +15,64 @@
  **/
 import * as v from "valibot";
 import { requestFrom, useAsync } from "./fetch";
+import type { HttpMethod } from "../api/types";
 
+type EndpointDefinition = {
+  input: v.GenericSchema;
+  output: v.GenericSchema;
+};
+
+type KeyOf<T> =
+  T extends Record<infer K, any>
+    ? K
+    : T extends Partial<Record<infer K, any>>
+      ? keyof T
+      : string | number | symbol;
+
+export type ApiDefinitions = Record<
+  string,
+  Partial<Record<HttpMethod, EndpointDefinition>>
+>;
+type Route<TDefinitions extends ApiDefinitions> = KeyOf<TDefinitions>;
+type Method<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+> = KeyOf<TDefinitions[TRoute]>;
+
+type CallerInput<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = v.InferOutput<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
+type CallerOutput<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = v.InferInput<NonNullable<TDefinitions[TRoute][TMethod]>["output"]>;
 type EndpointCaller<
-  ApiDefinitions extends {
-    [k: string]: {
-      input: v.GenericSchema;
-      output: v.GenericSchema;
-    };
-  },
-  TEndpoint extends keyof ApiDefinitions,
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
 > = (
-  input: v.InferOutput<ApiDefinitions[TEndpoint]["input"]>,
+  input: CallerInput<TDefinitions, TRoute, TMethod>,
   options?: RequestInit | undefined,
-) => Promise<v.InferInput<ApiDefinitions[TEndpoint]["output"]>>;
+) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
 
-export class ApiRouter<
-  ApiDefinitions extends {
-    [k: string]: {
-      input: v.GenericSchema;
-      output: v.GenericSchema;
-    };
-  },
-> {
+export class ApiRouter<TDefinitions extends ApiDefinitions> {
   constructor(
     private base?: string,
     private fetcher: (request: Request) => Promise<Response> = fetch,
   ) {}
 
-  api<TEndpoint extends keyof ApiDefinitions>(
-    endpoint: TEndpoint,
-  ): EndpointCaller<ApiDefinitions, TEndpoint> {
+  api<
+    TRoute extends Route<TDefinitions>,
+    TMethod extends Method<TDefinitions, TRoute>,
+  >(
+    route: TRoute,
+    method: TMethod,
+  ): EndpointCaller<TDefinitions, TRoute, TMethod> {
     return async (input, options) => {
-      let [method, url] = endpoint.toString().split(" ", 2);
-      url = (this.base ?? "") + url;
+      const url = (this.base ?? "") + route;
 
       const request = requestFrom(url, {
         ...options,
@@ -57,22 +82,20 @@ export class ApiRouter<
       const response = await this.fetcher(request);
       const data = await response.json();
 
-      return data as v.InferInput<ApiDefinitions[TEndpoint]["output"]>;
+      return data as v.InferInput<
+        NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
+      >;
     };
   }
 }
 
 export function useApi<
-  ApiDefinitions extends {
-    [k: string]: {
-      input: v.GenericSchema;
-      output: v.GenericSchema;
-    };
-  },
-  TEndpoint extends keyof ApiDefinitions,
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
 >(
-  endpointCaller: EndpointCaller<ApiDefinitions, TEndpoint>,
-  input: v.InferOutput<ApiDefinitions[TEndpoint]["input"]>,
+  endpointCaller: EndpointCaller<TDefinitions, TRoute, TMethod>,
+  input: CallerInput<TDefinitions, TRoute, TMethod>,
   options?: RequestInit,
 ) {
   return useAsync({ input, options }, async ({ input, options }, signal) => {

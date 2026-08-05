@@ -30,8 +30,8 @@ import {
   useAsync,
   fetchJson,
   useFetchJson,
-  RequestInitWithBody,
-  UseDataFetchReturn,
+  type RequestInitWithBody,
+  type UseDataFetchReturn,
 } from "../../../src/runtime/fetch";
 
 const happyWindow = new GlobalWindow();
@@ -312,9 +312,7 @@ describe("useAsync", () => {
     it("should return correct shape", () => {
       const asyncFn = (input: string) => Promise.resolve("result");
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       expect(result.current).toHaveProperty("data");
       expect(result.current).toHaveProperty("loading");
@@ -328,9 +326,7 @@ describe("useAsync", () => {
     it("should start with loading state true", () => {
       const asyncFn = (input: string) => Promise.resolve("result");
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       expect(result.current.loading).toBe(true);
       expect(result.current.data).toBeNull();
@@ -345,9 +341,7 @@ describe("useAsync", () => {
       const expectedData = { id: "1", name: "test" };
       const asyncFn = (input: string) => Promise.resolve(expectedData);
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       // Wait for async to complete - useLayoutEffect + async needs more time
       await Bun.sleep(100);
@@ -378,15 +372,13 @@ describe("useAsync", () => {
     });
 
     it("should pass AbortSignal to async function", async () => {
-      let receivedSignal: AbortSignal | null = null;
+      let receivedSignal: AbortSignal | null = null as AbortSignal | null;
       const asyncFn = (input: string, signal: AbortSignal) => {
         receivedSignal = signal;
         return Promise.resolve("result");
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(50);
 
@@ -402,9 +394,7 @@ describe("useAsync", () => {
       const testError = new Error("Test error");
       const asyncFn = (input: string) => Promise.reject(testError);
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(50);
 
@@ -419,9 +409,7 @@ describe("useAsync", () => {
     it("should convert non-Error rejections to Error objects", async () => {
       const asyncFn = (input: string) => Promise.reject("String error");
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(50);
 
@@ -443,9 +431,7 @@ describe("useAsync", () => {
         return Promise.reject(err);
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       // Wait for the async to complete
       await Bun.sleep(100);
@@ -466,9 +452,7 @@ describe("useAsync", () => {
         return Promise.resolve(`result-${callCount.count}`);
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       // Wait for initial fetch
       await Bun.sleep(50);
@@ -520,9 +504,7 @@ describe("useAsync", () => {
     it("should return data from refresh call", async () => {
       const asyncFn = (input: string) => Promise.resolve("refreshed-data");
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(50);
 
@@ -542,9 +524,7 @@ describe("useAsync", () => {
         return Promise.resolve("success");
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(50);
 
@@ -580,9 +560,7 @@ describe("useAsync", () => {
         });
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(20);
 
@@ -601,16 +579,14 @@ describe("useAsync", () => {
     });
 
     it("should abort request on unmount", async () => {
-      let receivedSignal: AbortSignal | null = null;
+      let receivedSignal: AbortSignal | null = null as AbortSignal | null;
 
       const asyncFn = (input: string, signal: AbortSignal) => {
         receivedSignal = signal;
         return new Promise(() => {}); // Never resolves
       };
 
-      const { unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(20);
 
@@ -628,9 +604,7 @@ describe("useAsync", () => {
         });
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test", asyncFn),
-      );
+      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
       // Unmount immediately
       unmount();
@@ -658,6 +632,7 @@ describe("fetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
@@ -674,7 +649,7 @@ describe("fetchJson", () => {
 
       const request = mockFetch.mock.lastCall?.[0];
       expect(request).toBeInstanceOf(Request);
-      expect(request.url).toBe("http://localhost:3000/api/users");
+      expect(request?.url).toBe("http://localhost:3000/api/users");
     });
 
     it("should pass options to requestFrom", async () => {
@@ -685,6 +660,7 @@ describe("fetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
@@ -701,9 +677,9 @@ describe("fetchJson", () => {
       );
 
       const request = mockFetch.mock.lastCall?.[0];
-      expect(request.method).toBe("POST");
-      expect(request.headers.get("Authorization")).toBe("Bearer token");
-      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request?.method).toBe("POST");
+      expect(request?.headers.get("Authorization")).toBe("Bearer token");
+      expect(request?.headers.get("Content-Type")).toBe("application/json");
     });
 
     it("should pass signal to requestFrom", async () => {
@@ -714,6 +690,7 @@ describe("fetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
@@ -726,7 +703,7 @@ describe("fetchJson", () => {
       );
 
       const request = mockFetch.mock.lastCall?.[0];
-      expect(request.signal).toBe(signal);
+      expect(request?.signal).toBe(signal);
     });
 
     it("should handle typed responses", async () => {
@@ -748,6 +725,7 @@ describe("fetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
@@ -766,16 +744,17 @@ describe("fetchJson", () => {
   });
 
   describe("Error handling", () => {
-    it("should throw on network errors", async () => {
+    it("should throw on network errors", () => {
       const mockFetch = mock(() => {
         return Promise.reject(new Error("Network error"));
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
 
-      await expect(
+      expect(() =>
         fetchJson(
           {
             url: "/api/users",
@@ -786,18 +765,17 @@ describe("fetchJson", () => {
       ).toThrow("Network error");
     });
 
-    it("should throw on JSON parse errors", async () => {
+    it("should throw on JSON parse errors", () => {
       const mockFetch = mock(() => {
-        return Promise.resolve(
-          new Response("invalid json", { status: 200 }),
-        );
+        return Promise.resolve(new Response("invalid json", { status: 200 }));
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
 
-      await expect(
+      expect(() =>
         fetchJson(
           {
             url: "/api/users",
@@ -808,18 +786,19 @@ describe("fetchJson", () => {
       ).toThrow();
     });
 
-    it("should throw on HTTP errors", async () => {
+    it("should throw on HTTP errors", () => {
       const mockFetch = mock(() => {
         return Promise.resolve(
           new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
 
-      await expect(
+      expect(() =>
         fetchJson(
           {
             url: "/api/users/999",
@@ -837,6 +816,7 @@ describe("fetchJson", () => {
         return Promise.reject(new Error("Aborted"));
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const controller = new AbortController();
@@ -868,6 +848,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -890,6 +871,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -913,6 +895,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -937,6 +920,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -952,9 +936,9 @@ describe("useFetchJson", () => {
       expect(mockFetch.mock.calls.length).toBe(1);
 
       const request = mockFetch.mock.lastCall?.[0];
-      expect(request.method).toBe("POST");
-      expect(request.headers.get("Authorization")).toBe("Bearer token");
-      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request?.method).toBe("POST");
+      expect(request?.headers.get("Authorization")).toBe("Bearer token");
+      expect(request?.headers.get("Content-Type")).toBe("application/json");
 
       unmount();
     });
@@ -972,6 +956,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -994,6 +979,7 @@ describe("useFetchJson", () => {
         return Promise.reject(new Error("Network error"));
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       // Suppress console error
@@ -1020,11 +1006,10 @@ describe("useFetchJson", () => {
 
     it("should handle JSON parse errors", async () => {
       const mockFetch = mock(() => {
-        return Promise.resolve(
-          new Response("invalid json", { status: 200 }),
-        );
+        return Promise.resolve(new Response("invalid json", { status: 200 }));
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       // Suppress console error
@@ -1055,13 +1040,13 @@ describe("useFetchJson", () => {
       const mockFetch = mock((request: Request) => {
         callCount.count++;
         return Promise.resolve(
-          new Response(
-            JSON.stringify({ id: String(callCount.count) }),
-            { status: 200 },
-          ),
+          new Response(JSON.stringify({ id: String(callCount.count) }), {
+            status: 200,
+          }),
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -1093,6 +1078,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -1110,13 +1096,14 @@ describe("useFetchJson", () => {
 
   describe("Abort behavior", () => {
     it("should abort request on unmount", async () => {
-      let receivedSignal: AbortSignal | null = null;
+      let receivedSignal: AbortSignal | null = null as AbortSignal | null;
 
       const mockFetch = mock((request: Request) => {
         receivedSignal = request.signal;
         return new Promise(() => {}); // Never resolves
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { unmount } = renderHook(() =>
@@ -1143,6 +1130,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -1157,7 +1145,7 @@ describe("useFetchJson", () => {
       expect(result.current.data).toEqual(expectedData);
 
       const request = mockFetch.mock.lastCall?.[0];
-      const url = new URL(request.url);
+      const url = new URL(request!.url);
       expect(url.searchParams.get("id")).toBe("123");
 
       unmount();
@@ -1171,6 +1159,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -1182,7 +1171,7 @@ describe("useFetchJson", () => {
       expect(result.current.data).toEqual(expectedData);
 
       const request = mockFetch.mock.lastCall?.[0];
-      expect(request.url).toBe("http://localhost:3000/users");
+      expect(request?.url).toBe("http://localhost:3000/users");
 
       unmount();
     });
@@ -1195,6 +1184,7 @@ describe("useFetchJson", () => {
         );
       });
 
+      // @ts-ignore
       globalThis.fetch = mockFetch;
 
       const { result, unmount } = renderHook(() =>
@@ -1206,7 +1196,7 @@ describe("useFetchJson", () => {
       expect(result.current.data).toEqual(expectedData);
 
       const request = mockFetch.mock.lastCall?.[0];
-      expect(request.url).toBe("https://api.example.com/users");
+      expect(request?.url).toBe("https://api.example.com/users");
 
       unmount();
     });

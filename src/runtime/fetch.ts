@@ -26,7 +26,7 @@ export interface UseDataFetchReturn<T> {
   refresh: () => Promise<T | null>;
 }
 
-export type RequestInitWithBody = RequestInit & { objectBody: any };
+export type RequestInitWithBody = RequestInit & { objectBody?: any };
 
 export function requestFrom(
   url: string,

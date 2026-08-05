@@ -5,6 +5,7 @@ import * as v from "valibot";
 import { Path } from "../../../src/core/fs";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
+import { ApiRouter } from "../../../src/runtime";
 
 // Helper to create mock entries
 function createEntry(
@@ -34,7 +35,7 @@ import { ApiRouter as NoxtApiRouter } from "noxt/runtime";
 
 
 const apiRoutesData = {
-
+  
 };
 const router = new NoxtApiRouter<typeof apiRoutesData>("");
 
@@ -54,7 +55,9 @@ export { router, type ApiRouter };
         "import { GET as _api_test_GET } from " +
           JSON.stringify(apiTestEntry.file.absolute),
       );
-      expect(code).toContain('"GET /api/test": _api_test_GET');
+      expect(code).toContain(
+        '{\n  \"/api/test\": {\n    \"GET\": _api_test_GET\n  }\n}',
+      );
     });
 
     it("should generate code with multiple entries from same file", () => {
@@ -68,8 +71,12 @@ export { router, type ApiRouter };
         "import { GET as _api_test_GET, POST as _api_test_POST } from " +
           JSON.stringify(getApiTestEntry.file.absolute),
       );
-      expect(code).toContain('"GET /api/test": _api_test_GET');
-      expect(code).toContain('"POST /api/test": _api_test_POST');
+      expect(code).toContain(`{
+  \"/api/test\": {
+    \"GET\": _api_test_GET,
+    \"POST\": _api_test_POST
+  }
+}`);
     });
 
     it("should generate code with multiple entries from different files", () => {
@@ -84,17 +91,21 @@ export { router, type ApiRouter };
       const code = generateApiUtilsCode(entries);
 
       expect(code).toContain(
-        'import { GET as _api_users_GET } from "' +
-          getApiUsersEntry.file.relativeToCwd() +
-          '"',
+        "import { GET as _api_users_GET } from " +
+          JSON.stringify(getApiUsersEntry.file.absolute),
       );
       expect(code).toContain(
-        'import { POST as _api_posts_POST } from "' +
-          postApiPostsEntry.file.relativeToCwd() +
-          '"',
+        "import { POST as _api_posts_POST } from " +
+          JSON.stringify(postApiPostsEntry.file.absolute),
       );
-      expect(code).toContain('"GET /api/users": _api_users_GET');
-      expect(code).toContain('"POST /api/posts": _api_posts_POST');
+      expect(code).toContain(`{
+  \"/api/users\": {
+    \"GET\": _api_users_GET
+  },
+  \"/api/posts\": {
+    \"POST\": _api_posts_POST
+  }
+}`);
     });
 
     it("should handle routes with slashes", () => {
@@ -108,19 +119,20 @@ export { router, type ApiRouter };
       const code = generateApiUtilsCode(entries);
 
       expect(code).toContain(
-        'import { GET as _api_v1_users_GET } from "' +
-          getApiUsersEntry.file.relativeToCwd() +
-          '"',
+        "import { GET as _api_v1_users_GET } from " +
+          JSON.stringify(getApiUsersEntry.file.absolute),
       );
-      expect(code).toContain('"GET /api/v1/users": _api_v1_users_GET');
+      expect(code).toContain('"GET": _api_v1_users_GET');
     });
 
-    it("should handle base URL parameter", () => {
+    it("should pass base URL parameter to ApiRouter", () => {
       const entries = [createEntry("GET", "/api/test", "./src/api/test.ts")];
 
       const code = generateApiUtilsCode(entries, "http://localhost:3000");
 
-      expect(code).toContain('const BASE = "http://localhost:3000";');
+      expect(code).toContain(
+        'const router = new NoxtApiRouter<typeof apiRoutesData>("http://localhost:3000");',
+      );
     });
 
     it("should handle empty base URL parameter", () => {
@@ -128,7 +140,9 @@ export { router, type ApiRouter };
 
       const code = generateApiUtilsCode(entries, "");
 
-      expect(code).toContain('const BASE = "";');
+      expect(code).toContain(
+        'const router = new NoxtApiRouter<typeof apiRoutesData>("");',
+      );
     });
 
     it("should handle undefined base URL parameter", () => {
@@ -136,17 +150,19 @@ export { router, type ApiRouter };
 
       const code = generateApiUtilsCode(entries, undefined);
 
-      expect(code).toContain('const BASE = "";');
+      expect(code).toContain(
+        'const router = new NoxtApiRouter<typeof apiRoutesData>("");',
+      );
     });
   });
 
   describe("export statements", () => {
-    it("should include api and ApiRouter exports", () => {
+    it("should include router and ApiRouter exports", () => {
       const entries = [createEntry("GET", "/api/test", "./src/api/test.ts")];
 
       const code = generateApiUtilsCode(entries);
 
-      expect(code).toContain("export { api, type ApiRouter };");
+      expect(code).toContain("export { router, type ApiRouter };");
     });
   });
 
@@ -200,8 +216,8 @@ export { router, type ApiRouter };
       ];
 
       const mod = await generateAndLoadApiCode(mockEntries);
-      expect(mod.api).toBeDefined();
-      expect(typeof mod.api).toBe("function");
+      expect(mod.router).toBeDefined();
+      expect(mod.router).toBeInstanceOf(ApiRouter);
     });
 
     it("should handle base URL correctly", async () => {
@@ -223,26 +239,23 @@ export { router, type ApiRouter };
       // @ts-ignore
       global.fetch = mockFetch;
 
-      mockFetch.mockImplementation(
-        async (url: string, options?: RequestInit) => {
-          const urlUrl = new URL(url);
-          const result = new Response(
-            `{"greeting":"Hello ${urlUrl.searchParams.get("name") ?? "World"}!"}`,
-            { status: 200 },
-          );
-          return result;
-        },
-      );
+      mockFetch.mockImplementation(async (request: Request) => {
+        const urlUrl = new URL(request.url);
+        const result = new Response(
+          `{"greeting":"Hello ${urlUrl.searchParams.get("name") ?? "World"}!"}`,
+          { status: 200 },
+        );
+        return result;
+      });
 
       const mod = await generateAndLoadApiCode(
         mockEntries,
         "http://localhost:3000",
       );
-      const testApi = mod.api("GET /api/test");
+      const testApi = mod.router.api("/api/test", "GET");
       const result = await testApi({ name: "Tom" });
 
-      expect(mod.api).toBeDefined();
-      expect(result).toBe({ greeting: "Hello Tom!" });
+      expect(result).toEqual({ greeting: "Hello Tom!" });
 
       mockFetch.mockReset();
     });
@@ -276,7 +289,9 @@ export { router, type ApiRouter };
       ];
 
       const mod = await generateAndLoadApiCode(mockEntries);
-      expect(mod.api).toBeDefined();
+      expect(mod.router).toBeDefined();
+      expect(mod.router.api("/api/users", "GET")).toBeDefined();
+      expect(mod.router.api("/api/posts", "POST")).toBeDefined();
     });
   });
 
@@ -292,11 +307,10 @@ export { router, type ApiRouter };
       const code = generateApiUtilsCode(entries);
 
       expect(code).toContain(
-        'import { GET as _api_test-route_GET } from "' +
-          entryWithDash.file.relativeToCwd() +
-          '"',
+        "import { GET as _api_test_route_GET } from " +
+          JSON.stringify(entryWithDash.file.absolute),
       );
-      expect(code).toContain('"GET /api/test-route": _api_test-route_GET');
+      expect(code).toContain('"GET": _api_test_route_GET');
     });
 
     it("should handle multiple HTTP methods", () => {
@@ -335,19 +349,16 @@ export { router, type ApiRouter };
       const code = generateApiUtilsCode(entries);
 
       expect(code).toContain(
-        'import { GET as _api_GET } from "' +
-          apiEntry.file.relativeToCwd() +
-          '"',
+        "import { GET as _api_GET } from " +
+          JSON.stringify(apiEntry.file.absolute),
       );
       expect(code).toContain(
-        'import { GET as _api_users_GET } from "' +
-          apiUsersEntry.file.relativeToCwd() +
-          '"',
+        "import { GET as _api_users_GET } from " +
+          JSON.stringify(apiUsersEntry.file.absolute),
       );
       expect(code).toContain(
-        'import { PUT as _api_users_create_PUT } from "' +
-          nestedEntry.file.relativeToCwd() +
-          '"',
+        "import { PUT as _api_users_create_PUT } from " +
+          JSON.stringify(nestedEntry.file.absolute),
       );
     });
   });
