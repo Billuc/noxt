@@ -57,7 +57,7 @@ export function requestFrom(
         }
       }
     } else {
-      finalBody = JSON.stringify(body);
+      finalBody = JSON.stringify(objectBody);
       finalHeaders.set("Content-Type", "application/json");
     }
   }

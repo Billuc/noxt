@@ -101,7 +101,7 @@ import { ApiRouter as NoxtApiRouter } from "noxt/runtime";
 ${generateImportsCode(importMap).join("\n")}
 
 const apiRoutesData = ${generateRouterTypeCode(apiRoutes)};
-const router = new NoxtApiRouter(apiRoutesData, ${JSON.stringify(base ?? "")});
+const router = new NoxtApiRouter<typeof apiRoutesData>(${JSON.stringify(base ?? "")});
 
 type ApiRouter = typeof router;
 
