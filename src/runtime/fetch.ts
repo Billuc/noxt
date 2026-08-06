@@ -13,7 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "preact/hooks";
 
 /** Supported HTTP methods for fetch requests. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -26,22 +32,42 @@ export interface UseDataFetchReturn<T> {
   refresh: () => Promise<T | null>;
 }
 
-export type RequestInitWithBody = RequestInit & { objectBody?: any };
+export type FetchRequestInit<TBody extends {} | [] = any> = {
+  cache?: RequestCache;
+  credentials?: RequestCredentials;
+  headers?:
+    | [string, string][]
+    | {
+        [x: string]: string;
+      };
+  integrity?: string;
+  keepalive?: boolean;
+  method?: string;
+  mode?: RequestMode;
+  redirect?: RequestRedirect;
+  referrer?: string;
+  referrerPolicy?: ReferrerPolicy;
+} & { objectBody?: TBody };
+
+export class FetchError extends Error {
+  constructor(public response: Response) {
+    super(`Error ${response.status}: ${response.statusText}`);
+  }
+}
 
 export function requestFrom(
   url: string,
-  initWithBody?: RequestInitWithBody,
+  initWithBody?: FetchRequestInit,
+  signal?: AbortSignal,
 ): Request {
   const {
-    body = undefined,
     headers = {},
     method = "GET",
     objectBody = undefined,
     ...rest
   } = initWithBody ?? {};
 
-  const finalHeaders =
-    headers instanceof Headers ? headers : new Headers(headers);
+  const finalHeaders = new Headers(headers);
   const finalUrl =
     url.startsWith("http://") || url.startsWith("https://")
       ? new URL(url)
@@ -66,6 +92,7 @@ export function requestFrom(
     body: finalBody,
     method: method,
     headers: finalHeaders,
+    signal,
     ...rest,
   });
 }
@@ -82,9 +109,7 @@ export function useAsync<TInput = any, TResult = any>(
   const inputRef = useRef(input);
   const mountedRef = useRef(true);
 
-  inputRef.current = input;
-
-  const refetch = useCallback(async (): Promise<TResult | null> => {
+  const refresh = useCallback(async (): Promise<TResult | null> => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -127,10 +152,14 @@ export function useAsync<TInput = any, TResult = any>(
     }
   }, []);
 
+  useEffect(() => {
+    inputRef.current = input;
+    refresh().catch(() => {});
+  }, [input]);
+
   // Fetch data on mount and abort on unmount
-  useLayoutEffect(() => {
+  useEffect(() => {
     mountedRef.current = true;
-    refetch().catch(() => {});
     return () => {
       mountedRef.current = false;
       if (abortControllerRef.current) {
@@ -139,22 +168,33 @@ export function useAsync<TInput = any, TResult = any>(
     };
   }, []);
 
-  return { data, loading, error, refresh: refetch };
+  return { data, loading, error, refresh };
 }
 
 export async function fetchJson<TResult = any>(
-  { url, options }: { url: string; options: RequestInitWithBody },
+  url: string,
+  options: FetchRequestInit,
   signal: AbortSignal,
-) {
-  const request = requestFrom(url, { ...options, signal });
+): Promise<TResult> {
+  const request = requestFrom(url, options, signal);
   const response = await fetch(request);
+
+  if (!response.ok) {
+    throw new FetchError(response);
+  }
+
   const data = (await response.json()) as TResult;
   return data;
 }
 
 export function useFetchJson<TResult = any>(
   url: string,
-  options: RequestInitWithBody,
+  options: FetchRequestInit,
 ): UseDataFetchReturn<TResult> {
-  return useAsync({ url, options }, fetchJson);
+  const key = useMemo(() => JSON.stringify([url, options]), [url, options]);
+  const input = useMemo(() => ({ url, options }), [key]);
+
+  return useAsync(input, ({ url, options }, signal) =>
+    fetchJson(url, options, signal),
+  );
 }

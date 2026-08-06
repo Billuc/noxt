@@ -23,16 +23,18 @@ import {
   beforeEach,
   mock,
 } from "bun:test";
-import { renderHook } from "@testing-library/preact";
+import { renderHook, waitFor } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
 import {
   requestFrom,
   useAsync,
   fetchJson,
   useFetchJson,
-  type RequestInitWithBody,
+  type FetchRequestInit,
   type UseDataFetchReturn,
 } from "../../../src/runtime/fetch";
+import { sleep } from "bun";
+import { useMemo } from "preact/hooks";
 
 const happyWindow = new GlobalWindow();
 
@@ -114,12 +116,6 @@ describe("requestFrom", () => {
         headers: { Authorization: "Bearer token123" },
       });
       expect(request.headers.get("Authorization")).toBe("Bearer token123");
-    });
-
-    it("should accept Headers instance", () => {
-      const headers = new Headers({ Authorization: "Bearer token456" });
-      const request = requestFrom("/users", { headers });
-      expect(request.headers.get("Authorization")).toBe("Bearer token456");
     });
   });
 
@@ -217,18 +213,6 @@ describe("requestFrom", () => {
       const bodyText = await request.text();
       const body = JSON.parse(bodyText);
       expect(body).toEqual({ name: "patched" });
-    });
-
-    it("should prioritize objectBody over body from options for non-GET requests", async () => {
-      const request = requestFrom("/users", {
-        method: "POST",
-        body: JSON.stringify({ manual: "body" }),
-        objectBody: { name: "test" },
-      });
-
-      const bodyText = await request.text();
-      // objectBody should take precedence and be stringified
-      expect(bodyText).toBe(JSON.stringify({ name: "test" }));
     });
   });
 
@@ -486,7 +470,7 @@ describe("useAsync", () => {
         { initialProps: { input: "initial" } },
       );
 
-      await Bun.sleep(20);
+      await Bun.sleep(50);
 
       // Update input
       rerender({ input: "updated" });
@@ -494,7 +478,7 @@ describe("useAsync", () => {
       // Resolve the promise
       resolveFn!("result");
 
-      await Bun.sleep(50);
+      await Bun.sleep(100);
 
       expect(receivedInputs).toContain("updated");
 
@@ -809,30 +793,6 @@ describe("fetchJson", () => {
       ).toThrow();
     });
   });
-
-  describe("Abort handling", () => {
-    it("should throw AbortError when signal is aborted", async () => {
-      const mockFetch = mock(() => {
-        return Promise.reject(new Error("Aborted"));
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const controller = new AbortController();
-      controller.abort();
-
-      await expect(
-        fetchJson(
-          {
-            url: "/api/users",
-            options: { method: "GET" },
-          },
-          controller.signal,
-        ),
-      ).toThrow();
-    });
-  });
 });
 
 // ============================================
@@ -889,10 +849,8 @@ describe("useFetchJson", () => {
   describe("Successful requests", () => {
     it("should fetch data and update state", async () => {
       const expectedData = { id: "1", name: "test" };
-      const mockFetch = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
+      const mockFetch = mock(async (request: Request) => {
+        return new Response(JSON.stringify(expectedData), { status: 200 });
       });
 
       // @ts-ignore

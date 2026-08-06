@@ -31,6 +31,7 @@ import {
   useApi,
   type ApiDefinitions,
 } from "../../../src/runtime/api";
+import type { FetchRequestInit } from "../../../src/runtime/fetch";
 
 const happyWindow = new GlobalWindow();
 
@@ -368,7 +369,11 @@ describe("useApi", () => {
 
   it("should pass options to endpoint caller including signal", async () => {
     const endpointCaller = mock(
-      (input: { id: string }, options?: RequestInit) => {
+      (
+        input: { id: string },
+        options?: FetchRequestInit,
+        signal?: AbortSignal,
+      ) => {
         return Promise.resolve({ id: "1", name: "test" });
       },
     );
@@ -386,8 +391,9 @@ describe("useApi", () => {
 
     // Should have the headers plus the signal
     const receivedOptions = endpointCaller.mock.lastCall?.[1];
+    const receivedSignal = endpointCaller.mock.lastCall?.[2];
     expect(receivedOptions?.headers).toEqual({ Authorization: "Bearer token" });
-    expect(receivedOptions?.signal).toBeInstanceOf(AbortSignal);
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
 
     unmount();
   });
@@ -463,10 +469,12 @@ describe("useApi", () => {
   it("should pass signal to endpoint caller for abort", async () => {
     const abortSignals: (AbortSignal | null)[] = [];
 
-    const endpointCaller = mock((input: any, options?: RequestInit) => {
-      abortSignals.push(options?.signal ?? null);
-      return new Promise(() => {}); // Never resolves
-    });
+    const endpointCaller = mock(
+      (input: any, options?: FetchRequestInit, signal?: AbortSignal) => {
+        abortSignals.push(signal ?? null);
+        return new Promise(() => {}); // Never resolves
+      },
+    );
 
     const { result, unmount } = renderHook(() =>
       useApi(endpointCaller as any, { id: "1" }),

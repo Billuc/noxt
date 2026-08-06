@@ -14,8 +14,9 @@
  *  limitations under the License.
  **/
 import * as v from "valibot";
-import { requestFrom, useAsync } from "./fetch";
+import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
 import type { HttpMethod } from "../api/types";
+import { useMemo } from "preact/hooks";
 
 type EndpointDefinition = {
   input: v.GenericSchema;
@@ -55,7 +56,8 @@ type EndpointCaller<
   TMethod extends Method<TDefinitions, TRoute>,
 > = (
   input: CallerInput<TDefinitions, TRoute, TMethod>,
-  options?: RequestInit | undefined,
+  options?: FetchRequestInit | undefined,
+  signal?: AbortSignal,
 ) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
 
 export class ApiRouter<TDefinitions extends ApiDefinitions> {
@@ -71,14 +73,33 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
     route: TRoute,
     method: TMethod,
   ): EndpointCaller<TDefinitions, TRoute, TMethod> {
-    return async (input, options) => {
+    return async (input, options, signal) => {
       const url = (this.base ?? "") + route;
 
-      const request = requestFrom(url, {
-        ...options,
-        objectBody: input,
-        method,
-      });
+      const newOptions: FetchRequestInit = { method, objectBody: input };
+
+      if (options) {
+        const headers = options.headers;
+        newOptions.headers =
+          headers instanceof Headers ? headers.toJSON() : headers;
+
+        if (!!options.method && options.method !== method) {
+          console.warn(
+            `Method ${options.method} passed in options for endpoint "${method} ${route}" ! Ignoring...`,
+          );
+        }
+
+        newOptions.cache = options.cache;
+        newOptions.credentials = options.credentials;
+        newOptions.integrity = options.integrity;
+        newOptions.keepalive = options.keepalive;
+        newOptions.mode = options.mode;
+        newOptions.redirect = options.redirect;
+        newOptions.referrer = options.referrer;
+        newOptions.referrerPolicy = options.referrerPolicy;
+      }
+
+      const request = requestFrom(url, newOptions, signal);
       const response = await this.fetcher(request);
       const data = await response.json();
 
@@ -96,9 +117,12 @@ export function useApi<
 >(
   endpointCaller: EndpointCaller<TDefinitions, TRoute, TMethod>,
   input: CallerInput<TDefinitions, TRoute, TMethod>,
-  options?: RequestInit,
+  options?: FetchRequestInit,
 ) {
-  return useAsync({ input, options }, async ({ input, options }, signal) => {
-    return endpointCaller(input, { ...options, signal });
-  });
+  const key = useMemo(() => JSON.stringify([input, options]), [input, options]);
+  const memoizedData = useMemo(() => ({ input, options }), [key]);
+
+  return useAsync(memoizedData, ({ input, options }, signal) =>
+    endpointCaller(input, options, signal),
+  );
 }
