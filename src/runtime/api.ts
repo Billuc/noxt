@@ -15,13 +15,8 @@
  **/
 import * as v from "valibot";
 import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
-import type { HttpMethod } from "../api/types";
+import type { APIEndpoint, HttpMethod } from "../api/types";
 import { useMemo } from "preact/hooks";
-
-type EndpointDefinition = {
-  input: v.GenericSchema;
-  output: v.GenericSchema;
-};
 
 type KeyOf<T> =
   T extends Record<infer K, any>
@@ -32,7 +27,7 @@ type KeyOf<T> =
 
 export type ApiDefinitions = Record<
   string,
-  Partial<Record<HttpMethod, EndpointDefinition>>
+  Partial<Record<HttpMethod, APIEndpoint<v.GenericSchema, v.GenericSchema>>>
 >;
 type Route<TDefinitions extends ApiDefinitions> = KeyOf<TDefinitions>;
 type Method<
@@ -60,8 +55,14 @@ type EndpointCaller<
   signal?: AbortSignal,
 ) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
 
+type ApiEndpoints = Record<
+  string,
+  Partial<Record<HttpMethod, (request: Request) => Promise<Response>>>
+>;
+
 export class ApiRouter<TDefinitions extends ApiDefinitions> {
   constructor(
+    private definitions: TDefinitions,
     private base?: string,
     private fetcher: (request: Request) => Promise<Response> = fetch,
   ) {}
@@ -107,6 +108,20 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
         NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
       >;
     };
+  }
+
+  getRoutes(): ApiEndpoints {
+    const routes: ApiEndpoints = {};
+
+    for (const [route, routeData] of Object.entries(this.definitions)) {
+      const handlers: ApiEndpoints[string] = {};
+      for (const [method, endpoint] of Object.entries(routeData)) {
+        handlers[method as HttpMethod] = endpoint.handler;
+      }
+      routes[route] = handlers;
+    }
+
+    return routes;
   }
 }
 

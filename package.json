@@ -23,7 +23,8 @@
       "require": "./index.ts",
       "default": "./index.ts"
     },
-    "./runtime": "./src/runtime/index.ts"
+    "./runtime": "./src/runtime/index.ts",
+    "./api": "./src/api/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -28,6 +28,14 @@ import {
 import { Island } from "./src/shell/pages";
 import { staticPrerender } from "./src/shell/static";
 import { generateServiceWorker } from "./src/shell/pwa";
+import { discoverAPIs, generateAPIFile } from "./src/api/build";
+import { query, mutation } from "./src/api/builder";
+import type {
+  IQueryEndpointBuilder,
+  IMutationEndpointBuilder,
+  APIEndpoint,
+  SearchParamSchema,
+} from "./src/api/types";
 
 export {
   build,
@@ -42,5 +50,13 @@ export {
   staticPrerender,
   generateStaticPages,
   generateServiceWorker,
+  discoverAPIs,
+  generateAPIFile,
+  query,
+  mutation,
   type FileEntry,
+  type IQueryEndpointBuilder,
+  type IMutationEndpointBuilder,
+  type APIEndpoint,
+  type SearchParamSchema,
 };

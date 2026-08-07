@@ -52,6 +52,7 @@ export const CACHE_DIR = ".cache";
 export const ISLANDS_CACHE_DIR = path.join(CACHE_DIR, "_islands");
 export const ROUTES_CACHE_FILE = path.join(CACHE_DIR, "routes.json");
 export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
+export const API_CACHE_FILE = path.join(CACHE_DIR, "api.ts");
 
 export const ISLANDS_DIR = "islands";
 export const ASSETS_DIR = "assets";

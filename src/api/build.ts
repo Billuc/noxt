@@ -15,7 +15,13 @@
  **/
 import type { Path } from "../core/fs";
 import { getRouteName } from "../core/rendering";
-import { API_DIR, getFilesMatchingGlob } from "../shell/fs";
+import {
+  API_CACHE_FILE,
+  API_DIR,
+  getFilesMatchingGlob,
+  writeFile,
+} from "../shell/fs";
+import { generateApiUtilsCode } from "./code_generation";
 import {
   type HttpMethod,
   type SomeSchema,
@@ -62,47 +68,13 @@ export async function discoverAPIs(): Promise<APIEndpointEntry<any, any>[]> {
   return entries;
 }
 
-export async function generateAPIFile(entries: APIEndpointEntry<any, any>[]) {
-  const importMap: Map<
-    string,
-    {
-      prefix: string;
-      methods: Set<HttpMethod>;
-    }
-  > = new Map();
-  const apis: string[] = [];
+export async function generateAPIFile(
+  entries: APIEndpointEntry<any, any>[],
+  base?: string,
+) {
+  let code = generateApiUtilsCode(entries, base);
 
-  for (const entry of entries) {
-    const importPrefix = entry.route.replaceAll(/\\\//, "_");
-
-    importMap
-      .getOrInsert(entry.file.relativeToCwd(), {
-        prefix: importPrefix,
-        methods: new Set<HttpMethod>(),
-      })
-      .methods.add(entry.method);
-
-    apis.push(
-      `"${entry.method} ${entry.route}": ${importPrefix}_${entry.method}`,
-    );
-  }
-
-  const imports: string[] = [];
-  for (const [fileToImport, importData] of importMap.entries()) {
-    const importElements = importData.methods
-      .values()
-      .map((m) => `${m} as ${importData.prefix}_${m}`)
-      .toArray();
-    imports.push(
-      `import { ${importElements.join(", ")} } from ${fileToImport};`,
-    );
-  }
-
-  let code = `${imports.join("\n")}
-  
-  export default {
-    ${apis.join(",\n\t")}
-  };`;
-
-  return code;
+  const utilsFile = path.resolve(API_CACHE_FILE);
+  await writeFile(utilsFile, code);
+  console.log("Generated api utils at .cache/api.ts");
 }

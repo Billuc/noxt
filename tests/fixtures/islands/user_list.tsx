@@ -1,0 +1,83 @@
+import { useState } from "preact/hooks";
+import { h, Fragment } from "preact";
+import { router } from "../.cache/api";
+import { useApi } from "noxt/runtime";
+
+function UserList() {
+  const [userId, setUserId] = useState("1");
+  const [createName, setCreateName] = useState("");
+  const [createEmail, setCreateEmail] = useState("");
+
+  const {
+    data: user,
+    loading,
+    error,
+    refresh,
+  } = useApi(router.api("/api/users", "GET"), { id: userId });
+
+  const createUser = async () => {
+    const res = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: createName, email: createEmail }),
+    });
+    if (res.ok) {
+      const newUser = await res.json();
+      setUserId(newUser.id);
+      setCreateName("");
+      setCreateEmail("");
+    }
+  };
+
+  return (
+    <Fragment>
+      <h2>User List (API Test)</h2>
+      <div>
+        <label>
+          User ID:
+          <input
+            type="text"
+            value={userId}
+            onChange={(e) => setUserId(e.target!.value)}
+          />
+        </label>
+      </div>
+      {loading && <p>Loading...</p>}
+      {error && <p style={{ color: "red" }}>Error: {error.message}</p>}
+      {user && (
+        <div>
+          <p>ID: {user.id}</p>
+          <p>Name: {user.name}</p>
+          <p>Email: {user.email}</p>
+          <button onClick={refresh}>Refresh</button>
+        </div>
+      )}
+
+      <hr />
+      <h3>Create User</h3>
+      <div>
+        <label>
+          Name:
+          <input
+            type="text"
+            value={createName}
+            onChange={(e) => setCreateName(e.target!.value)}
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          Email:
+          <input
+            type="email"
+            value={createEmail}
+            onChange={(e) => setCreateEmail(e.target!.value)}
+          />
+        </label>
+      </div>
+      <button onClick={createUser}>Create User</button>
+    </Fragment>
+  );
+}
+
+export default UserList;

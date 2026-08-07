@@ -34,10 +34,7 @@ import {
   generateLinkUtilsCode,
 } from "../core/code_generator";
 import { getRouteName, toPublicPath } from "../core/rendering";
-import {
-  type IslandEntry,
-  getIslandFiles,
-} from "../core/registry";
+import { type IslandEntry, getIslandFiles } from "../core/registry";
 import { Path } from "../core/fs";
 import * as esbuild from "esbuild";
 import { isDev } from "./env";
@@ -121,7 +118,7 @@ export async function bundleIslands(
   islands.forEach((ie) => {
     if (ie.files.type !== "source") return;
 
-    newEntriesMap[ie.files.file.relativeToCwd()] = {
+    newEntriesMap[ie.files.file.absolute] = {
       component: ie.component,
       hash: ie.hash,
       files: {
@@ -166,7 +163,9 @@ export async function prerenderPages(
   base?: string,
 ): Promise<RouteData[]> {
   const pages = await Promise.all(
-    pageFiles.map(({ url, filePath }) => prerenderPage(url, filePath, base, islands)),
+    pageFiles.map(({ url, filePath }) =>
+      prerenderPage(url, filePath, base, islands),
+    ),
   );
   return pages;
 }
@@ -182,9 +181,17 @@ async function prerenderPage(
 
   let prerenderedFile: Path;
   if (extension === ".md") {
-    prerenderedFile = await prepareMarkdown(pathFromPages.absolute, base, islandEntries);
+    prerenderedFile = await prepareMarkdown(
+      pathFromPages.absolute,
+      base,
+      islandEntries,
+    );
   } else {
-    prerenderedFile = await preparePreact(pathFromPages.absolute, base, islandEntries);
+    prerenderedFile = await preparePreact(
+      pathFromPages.absolute,
+      base,
+      islandEntries,
+    );
   }
   return { routeName, filePath: prerenderedFile };
 }
@@ -242,7 +249,8 @@ export async function generateRouteMap(
 
   for (const entry of islandEntries) {
     for (const file of getIslandFiles(entry)) {
-      manifest[toPublicPath(file.relativeTo(CACHE_DIR), base ?? "")] = file.relativeToCwd();
+      manifest[toPublicPath(file.relativeTo(CACHE_DIR), base ?? "")] =
+        file.relativeToCwd();
     }
   }
 
