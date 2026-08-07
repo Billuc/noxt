@@ -16,17 +16,14 @@ function UserList() {
   } = useApi(router.api("/api/users", "GET"), { id: userId });
 
   const createUser = async () => {
-    const res = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: createName, email: createEmail }),
+    const createUserApi = router.api("/api/users", "POST");
+    const newUser = await createUserApi({
+      name: createName,
+      email: createEmail,
     });
-    if (res.ok) {
-      const newUser = await res.json();
-      setUserId(newUser.id);
-      setCreateName("");
-      setCreateEmail("");
-    }
+    setUserId(newUser.id);
+    setCreateName("");
+    setCreateEmail("");
   };
 
   return (

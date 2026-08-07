@@ -64,7 +64,6 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
   constructor(
     private definitions: TDefinitions,
     private base?: string,
-    private fetcher: (request: Request) => Promise<Response> = fetch,
   ) {}
 
   api<
@@ -73,7 +72,16 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
   >(
     route: TRoute,
     method: TMethod,
+    fetcher?: (request: Request) => Promise<Response>,
   ): EndpointCaller<TDefinitions, TRoute, TMethod> {
+    if (!fetcher) {
+      if (typeof window !== "undefined") {
+        fetcher = window.fetch;
+      } else {
+        fetcher = fetch;
+      }
+    }
+
     return async (input, options, signal) => {
       const url = (this.base ?? "") + route;
 
@@ -101,7 +109,7 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
       }
 
       const request = requestFrom(url, newOptions, signal);
-      const response = await this.fetcher(request);
+      const response = await fetcher(request);
       const data = await response.json();
 
       return data as v.InferInput<
