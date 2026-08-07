@@ -15,7 +15,7 @@
  **/
 import * as v from "valibot";
 import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
-import type { APIEndpoint, HttpMethod } from "../api/types";
+import type { ApiDefinitions, APIEndpoint, HttpMethod } from "../api/types";
 import { useMemo } from "preact/hooks";
 
 type KeyOf<T> =
@@ -25,10 +25,6 @@ type KeyOf<T> =
       ? keyof T
       : string | number | symbol;
 
-export type ApiDefinitions = Record<
-  string,
-  Partial<Record<HttpMethod, APIEndpoint<v.GenericSchema, v.GenericSchema>>>
->;
 type Route<TDefinitions extends ApiDefinitions> = KeyOf<TDefinitions>;
 type Method<
   TDefinitions extends ApiDefinitions,
@@ -55,16 +51,8 @@ type EndpointCaller<
   signal?: AbortSignal,
 ) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
 
-type ApiEndpoints = Record<
-  string,
-  Partial<Record<HttpMethod, (request: Request) => Promise<Response>>>
->;
-
 export class ApiRouter<TDefinitions extends ApiDefinitions> {
-  constructor(
-    private definitions: TDefinitions,
-    private base?: string,
-  ) {}
+  constructor(private base?: string) {}
 
   api<
     TRoute extends Route<TDefinitions>,
@@ -72,16 +60,8 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
   >(
     route: TRoute,
     method: TMethod,
-    fetcher?: (request: Request) => Promise<Response>,
+    fetcher: (request: Request) => Promise<Response> = fetch,
   ): EndpointCaller<TDefinitions, TRoute, TMethod> {
-    if (!fetcher) {
-      if (typeof window !== "undefined") {
-        fetcher = window.fetch;
-      } else {
-        fetcher = fetch;
-      }
-    }
-
     return async (input, options, signal) => {
       const url = (this.base ?? "") + route;
 
@@ -116,20 +96,6 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
         NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
       >;
     };
-  }
-
-  getRoutes(): ApiEndpoints {
-    const routes: ApiEndpoints = {};
-
-    for (const [route, routeData] of Object.entries(this.definitions)) {
-      const handlers: ApiEndpoints[string] = {};
-      for (const [method, endpoint] of Object.entries(routeData)) {
-        handlers[method as HttpMethod] = endpoint.handler;
-      }
-      routes[route] = handlers;
-    }
-
-    return routes;
   }
 }
 

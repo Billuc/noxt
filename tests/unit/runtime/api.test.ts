@@ -26,11 +26,7 @@ import {
 import * as v from "valibot";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
-import {
-  ApiRouter,
-  useApi,
-  type ApiDefinitions,
-} from "../../../src/runtime/api";
+import { ApiRouter, useApi } from "../../../src/runtime/api";
 import type { FetchRequestInit } from "../../../src/runtime/fetch";
 
 const happyWindow = new GlobalWindow();
@@ -88,18 +84,6 @@ describe("ApiRouter", () => {
       const router = new ApiRouter<TestApi>("https://api.example.com");
       expect(router).toBeInstanceOf(ApiRouter);
     });
-
-    it("should create instance with custom fetcher", () => {
-      const customFetcher = (request: Request) =>
-        Promise.resolve(
-          new Response(JSON.stringify({ ok: true }), { status: 200 }),
-        );
-      const router = new ApiRouter<TestApi>(
-        "https://api.example.com",
-        customFetcher,
-      );
-      expect(router).toBeInstanceOf(ApiRouter);
-    });
   });
 
   describe("api() method", () => {
@@ -118,8 +102,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
-      const endpointCaller = router.api("/users", "GET");
+      const router = new ApiRouter<TestApi>("");
+      const endpointCaller = router.api("/users", "GET", customFetcher);
       await endpointCaller!({ id: "123" });
 
       const requestMethod = customFetcher.mock.lastCall?.[0].method;
@@ -138,11 +122,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>(
-        "https://api.example.com",
-        customFetcher,
-      );
-      const endpointCaller = router.api("/users", "GET");
+      const router = new ApiRouter<TestApi>("https://api.example.com");
+      const endpointCaller = router.api("/users", "GET", customFetcher);
       await endpointCaller!({ id: "123" });
 
       const requestUrl = customFetcher.mock.lastCall?.[0].url;
@@ -158,8 +139,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
-      const endpointCaller = router.api("/users", "POST");
+      const router = new ApiRouter<TestApi>("");
+      const endpointCaller = router.api("/users", "POST", customFetcher);
       await endpointCaller({ name: "test", email: "test@example.com" });
 
       const requestMethod = customFetcher.mock.lastCall?.[0].method;
@@ -180,8 +161,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
-      const endpointCaller = router.api("/users", "POST");
+      const router = new ApiRouter<TestApi>("");
+      const endpointCaller = router.api("/users", "POST", customFetcher);
       await endpointCaller({ name: "test", email: "test@example.com" });
 
       const requestHeaders = customFetcher.mock.lastCall?.[0].headers;
@@ -197,8 +178,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
-      const endpointCaller = router.api("/users", "GET");
+      const router = new ApiRouter<TestApi>("");
+      const endpointCaller = router.api("/users", "GET", customFetcher);
       await endpointCaller({ id: "123" });
 
       const requestUrl = customFetcher.mock.lastCall?.[0].url;
@@ -216,11 +197,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>(
-        "https://api.example.com",
-        customFetcher,
-      );
-      const endpointCaller = router.api("/users", "GET");
+      const router = new ApiRouter<TestApi>("https://api.example.com");
+      const endpointCaller = router.api("/users", "GET", customFetcher);
 
       await endpointCaller({ id: "123" });
 
@@ -235,8 +213,8 @@ describe("ApiRouter", () => {
         ),
       );
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
-      const endpointCaller = router.api("/users", "GET");
+      const router = new ApiRouter<TestApi>("");
+      const endpointCaller = router.api("/users", "GET", customFetcher);
 
       const result = await endpointCaller({ id: "1" });
 
@@ -252,8 +230,8 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
-      const endpointCaller = router.api("/users", "GET");
+      const router = new ApiRouter<TestApi>("");
+      const endpointCaller = router.api("/users", "GET", customFetcher);
 
       await endpointCaller(
         { id: "123" },
@@ -280,10 +258,10 @@ describe("ApiRouter", () => {
         );
       });
 
-      const router = new ApiRouter<TestApi>("", customFetcher);
+      const router = new ApiRouter<TestApi>("");
 
       for (const [route, method] of endpoints) {
-        const endpointCaller = router.api(route, method);
+        const endpointCaller = router.api(route, method, customFetcher);
 
         // Call with minimal required input based on method
         const input =
@@ -503,8 +481,8 @@ describe("useApi", () => {
       ),
     );
 
-    const router = new ApiRouter<TestApi>("", customFetcher);
-    const getUserCaller = router.api("/users", "GET");
+    const router = new ApiRouter<TestApi>("");
+    const getUserCaller = router.api("/users", "GET", customFetcher);
 
     const { result, unmount } = renderHook(() =>
       useApi(getUserCaller, { id: "1" }),
@@ -550,15 +528,15 @@ describe("useApi", () => {
       );
     });
 
-    const router = new ApiRouter<TestApi>("", customFetcher);
+    const router = new ApiRouter<TestApi>("");
 
     // Test GET endpoint
-    const getUser = router.api("/users", "GET");
+    const getUser = router.api("/users", "GET", customFetcher);
     const getResult = await getUser({ id: "1" });
     expect(getResult).toEqual({ id: "1", name: "test user" });
 
     // Test POST endpoint
-    const createUser = router.api("/users", "POST");
+    const createUser = router.api("/users", "POST", customFetcher);
     const postResult = await createUser({
       name: "new user",
       email: "new@example.com",

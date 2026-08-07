@@ -14,6 +14,7 @@
  *  limitations under the License.
  **/
 import * as v from "valibot";
+import type { Path } from "../core/fs";
 
 export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
 export type HttpMethod = (typeof HTTP_METHODS)[number];
@@ -91,4 +92,41 @@ export interface IMutationEndpointBuilder<
   endpoint(
     fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
   ): APIEndpoint<TInput, TOutput>;
+}
+
+export type ApiDefinitions = Record<
+  string,
+  Partial<
+    Record<
+      HttpMethod,
+      {
+        input: v.GenericSchema;
+        output: v.GenericSchema;
+      }
+    >
+  >
+>;
+
+export type ApiEndpointDefinitions = Record<
+  string,
+  Partial<Record<HttpMethod, APIEndpoint<v.GenericSchema, v.GenericSchema>>>
+>;
+
+export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> = {
+  [route in keyof TDefinitions]: {
+    [method in keyof TDefinitions[route]]: (
+      request: Request,
+    ) => Promise<Response>;
+  };
+};
+
+export interface APIEndpointEntry<
+  TInput extends SomeSchema,
+  TOutput extends SomeSchema,
+> {
+  method: HttpMethod;
+  route: string;
+  input: TInput;
+  output: TOutput;
+  file: Path;
 }

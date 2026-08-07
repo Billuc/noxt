@@ -20,8 +20,9 @@ import type {
   APIEndpoint,
   SearchParamSchema,
 } from "./types";
+import { getRoutes } from "./utils";
 
-export { query, mutation };
+export { query, mutation, getRoutes };
 export type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,

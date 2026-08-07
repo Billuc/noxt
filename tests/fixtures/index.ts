@@ -1,10 +1,10 @@
 import routeMap from "./.cache/routes.json";
-import { router } from "./.cache/api";
+import { routes as apiRoutes } from "./.cache/api";
 
 const routes: Bun.Serve.Routes<any, any> = {};
 
 // Add API routes
-Object.assign(routes, router.getRoutes());
+Object.assign(routes, apiRoutes);
 
 // Add static routes
 for (let route in routeMap) {

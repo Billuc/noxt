@@ -13,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { Path } from "../core/fs";
 import { getRouteName } from "../core/rendering";
 import {
   API_CACHE_FILE,
@@ -22,24 +21,8 @@ import {
   writeFile,
 } from "../shell/fs";
 import { generateApiUtilsCode } from "./code_generation";
-import {
-  type HttpMethod,
-  type SomeSchema,
-  APIEndpoint,
-  HTTP_METHODS,
-} from "./types";
+import { type APIEndpointEntry, APIEndpoint, HTTP_METHODS } from "./types";
 import path from "node:path";
-
-export interface APIEndpointEntry<
-  TInput extends SomeSchema,
-  TOutput extends SomeSchema,
-> {
-  method: HttpMethod;
-  route: string;
-  input: TInput;
-  output: TOutput;
-  file: Path;
-}
 
 export async function discoverAPIs(): Promise<APIEndpointEntry<any, any>[]> {
   const pageFiles = await getFilesMatchingGlob(

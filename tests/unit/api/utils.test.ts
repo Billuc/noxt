@@ -1,5 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { toSearchParam, toBody } from "../../../src/api/utils";
+import { toSearchParam, toBody, getRoutes } from "../../../src/api/utils";
+import * as v from "valibot";
+import { APIEndpoint } from "../../../src/api/types";
 
 describe("toSearchParam", () => {
   describe("string values", () => {
@@ -283,6 +285,83 @@ describe("toBody", () => {
       obj.self = obj;
       // JSON.stringify will throw for circular references
       expect(() => toBody(obj)).toThrow();
+    });
+  });
+
+  describe("getRoutes", () => {
+    it("should extract handlers from API definitions", () => {
+      const mockHandler = (request: Request) => Promise.resolve(new Response());
+      const apiMap = {
+        "/api/users": {
+          GET: new APIEndpoint(v.object({}), v.object({}), mockHandler),
+        },
+      };
+
+      const result = getRoutes(apiMap);
+
+      expect(result).toEqual({
+        "/api/users": {
+          GET: mockHandler,
+        },
+      });
+    });
+
+    it("should handle multiple routes and methods", () => {
+      const getHandler = (request: Request) => Promise.resolve(new Response());
+      const postHandler = (request: Request) => Promise.resolve(new Response());
+      const apiMap = {
+        "/api/users": {
+          GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
+          POST: new APIEndpoint(v.object({}), v.object({}), postHandler),
+        },
+        "/api/posts": {
+          GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
+        },
+      };
+
+      const result = getRoutes(apiMap);
+
+      expect(result).toEqual({
+        "/api/users": {
+          GET: getHandler,
+          POST: postHandler,
+        },
+        "/api/posts": {
+          GET: getHandler,
+        },
+      });
+    });
+
+    it("should handle empty API definitions", () => {
+      const result = getRoutes({});
+      expect(result).toEqual({});
+    });
+
+    it("should handle routes with no methods", () => {
+      const apiMap = {
+        "/api/users": {},
+      };
+
+      const result = getRoutes(apiMap);
+      expect(result).toEqual({
+        "/api/users": {},
+      });
+    });
+
+    it("should preserve handler references", () => {
+      const handler1 = (request: Request) => Promise.resolve(new Response());
+      const handler2 = (request: Request) => Promise.resolve(new Response());
+      const apiMap = {
+        "/api/test": {
+          GET: new APIEndpoint(v.object({}), v.object({}), handler1),
+          POST: new APIEndpoint(v.object({}), v.object({}), handler2),
+        },
+      };
+
+      const result = getRoutes(apiMap);
+
+      expect(result["/api/test"].GET).toBe(handler1);
+      expect(result["/api/test"].POST).toBe(handler2);
     });
   });
 });
