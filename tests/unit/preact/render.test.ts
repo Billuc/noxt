@@ -9,12 +9,12 @@ import { useContext } from "preact/hooks";
 
 describe("renderPreactToHtml", () => {
   it("should render a simple component to full HTML with DOCTYPE", async () => {
-    const Component = () => h("h1", {}, "Hello World");
+    const Component = () =>
+      h("html", {}, [h("body", {}, h("h1", {}, "Hello World"))]);
     const result = await renderPreactToHtml(Component);
     expect(result).toEqualIgnoringWhitespace(
       `<!DOCTYPE html>
         <html>
-          <head></head>
           <body><h1>Hello World</h1></body>
         </html>`,
     );
@@ -23,12 +23,17 @@ describe("renderPreactToHtml", () => {
   it("should render nested components", async () => {
     const Child = () => h("span", {}, "Child");
     const Parent = () => h("div", {}, [h("h1", {}, "Parent"), h(Child, {})]);
-    const result = await renderPreactToHtml(Parent);
+    const Layout = () => h("html", {}, [h("body", {}, h(Parent, {}))]);
+    const result = await renderPreactToHtml(Layout);
     expect(result).toEqualIgnoringWhitespace(
       `<!DOCTYPE html>
         <html>
-          <head></head>
-          <body><div><h1>Parent</h1><span>Child</span></div></body>
+          <body>
+            <div>
+              <h1>Parent</h1>
+              <span>Child</span>
+            </div>
+          </body>
         </html>`,
     );
   });
@@ -36,13 +41,13 @@ describe("renderPreactToHtml", () => {
   it("should render a component that returns null", async () => {
     const Component = () => null;
     const result = await renderPreactToHtml(Component);
-    expect(result).toEqualIgnoringWhitespace(
-      `<!DOCTYPE html>
-        <html>
-          <head></head>
-          <body></body>
-        </html>`,
-    );
+    expect(result).toEqualIgnoringWhitespace(``);
+  });
+
+  it("should render a component that returns a string", async () => {
+    const Component = () => "<foo>bar</foo>";
+    const result = await renderPreactToHtml(Component);
+    expect(result).toEqualIgnoringWhitespace(`<foo>bar</foo>`);
   });
 
   it("should render a component with props", async () => {

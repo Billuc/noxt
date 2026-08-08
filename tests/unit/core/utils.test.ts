@@ -5,7 +5,7 @@ import {
   getRouteName,
   routeToHtmlPath,
   toPublicPath,
-  sanitizeHtml,
+  sanitizePrerendered,
 } from "../../../src/core/utils";
 import { describe, it, expect } from "bun:test";
 import path from "node:path";
@@ -87,25 +87,15 @@ describe("toPublicPath", () => {
   });
 });
 
-describe("sanitizeHtml", () => {
-  it("should return html as-is if it starts with <html", () => {
-    const input = "<html><body>Test</body></html>";
-    expect(sanitizeHtml(input)).toBe(input);
+describe("sanitizePrerendered", () => {
+  it("should add doctype if it starts with <html", () => {
+    const input = "<!DOCTYPE html><html><body>Test</body></html>";
+    expect(sanitizePrerendered(input)).toBe(input);
   });
 
-  it("should wrap body content in html tags", () => {
-    const input = "<body><h1>Test</h1></body>";
-    const result = sanitizeHtml(input);
-    expect(result).toContain("<html>");
-    expect(result).toContain("<head></head>");
-    expect(result).toContain("<body><h1>Test</h1></body>");
-  });
-
-  it("should wrap fragment in html and body tags", () => {
-    const input = "<h1>Test</h1>";
-    const result = sanitizeHtml(input);
-    expect(result).toContain("<html>");
-    expect(result).toContain("<head></head>");
-    expect(result).toContain("<body><h1>Test</h1></body>");
+  it("should unescape non-html strings", () => {
+    const input = "&lt;foo>&amp;bar&lt;/foo>";
+    const result = sanitizePrerendered(input);
+    expect(result).toEqual("<foo>&bar</foo>");
   });
 });

@@ -49,20 +49,11 @@ export function toPublicPath(cwdRelativePath: string, base: string): string {
   return "/" + (trimmedBase ? trimmedBase + "/" : "") + trimmed;
 }
 
-export function sanitizeHtml(htmlContent: string) {
-  if (htmlContent.startsWith("<html")) {
-    return htmlContent;
+export function sanitizePrerendered(content: string) {
+  if (content.startsWith("<html")) {
+    return "<!DOCTYPE html>" + content;
   }
-  if (htmlContent.startsWith("<body")) {
-    return `<html>
-      <head></head>
-      ${htmlContent}
-    </html>`;
-  }
-  return `<html>
-      <head></head>
-      <body>${htmlContent}</body>
-    </html>`;
+  return unescape(content);
 }
 
 function trim(str: string, character: string): string {
@@ -76,4 +67,11 @@ function trim(str: string, character: string): string {
   while (end > start && str[end - 1] === ch) --end;
 
   return start > 0 || end < str.length ? str.substring(start, end) : str;
+}
+
+function unescape(content: string): string {
+  return content
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&quot;", '"');
 }

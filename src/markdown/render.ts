@@ -17,7 +17,7 @@ import { h } from "preact";
 import { renderToStringAsync } from "preact-render-to-string";
 import { micromark } from "micromark";
 import { BaseProvider, IslandMapProvider } from "../core/context";
-import { sanitizeHtml } from "../core/utils";
+import { sanitizePrerendered } from "../core/utils";
 import type { MarkdownData } from "./types";
 import type { IslandEntry } from "../islands";
 import { getLayout } from "./layout";
@@ -46,7 +46,7 @@ export async function renderMarkdownToHtml(
     fullPage = h(IslandMapProvider, { entries: islandEntries }, fullPage);
   }
   let htmlContent = await renderToStringAsync(fullPage);
-  htmlContent = sanitizeHtml(htmlContent);
+  htmlContent = sanitizePrerendered(htmlContent);
   htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);
   return "<!DOCTYPE html>" + htmlContent;
 }

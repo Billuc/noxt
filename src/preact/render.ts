@@ -16,7 +16,7 @@
 import { h } from "preact";
 import { renderToStringAsync } from "preact-render-to-string";
 import { BaseProvider, IslandMapProvider } from "../core/context";
-import { sanitizeHtml } from "../core/utils";
+import { sanitizePrerendered } from "../core/utils";
 import type { IslandEntry } from "../islands";
 
 /**
@@ -37,7 +37,6 @@ export async function renderPreactToHtml(
   if (islandEntries !== undefined) {
     element = h(IslandMapProvider, { entries: islandEntries }, element);
   }
-  let htmlContent = await renderToStringAsync(element);
-  htmlContent = sanitizeHtml(htmlContent);
-  return "<!DOCTYPE html>" + htmlContent;
+  const content = await renderToStringAsync(element);
+  return sanitizePrerendered(content);
 }
