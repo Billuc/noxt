@@ -13,22 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { query, mutation } from "./builder";
-import { discoverAPIs, generateAPIFile } from "./build";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-} from "./types";
-import { getRoutes } from "./utils";
+import type { FunctionComponent } from "preact";
+import type { Path } from "../core/fs";
 
-export { query, mutation, getRoutes, discoverAPIs, generateAPIFile };
-export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-};
+export interface IslandSourceEntry {
+  component: FunctionComponent<any>;
+  sourceFile: Path;
+}
+
+export interface PrerenderedIslandEntry {
+  component: FunctionComponent<any>;
+  hash: string;
+  renderScriptFile: Path;
+}
+
+export interface IslandEntry {
+  component: FunctionComponent<any>;
+  hash: string;
+  files: Path[];
+}

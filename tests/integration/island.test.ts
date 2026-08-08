@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { Island } from "../../src/shell/pages";
+import { Island } from "../../src/islands/Island";
 import { type IslandEntry } from "../../src/core/registry";
 import { IslandMapProvider } from "../../src/core/context";
 import { describe, it, expect } from "bun:test";
@@ -51,7 +51,11 @@ describe("Island", () => {
     };
 
     const html = renderToString(
-      h(IslandMapProvider, { entries: [entry] }, h(Island, { component: TestComponent, props: { name: "World" } })),
+      h(
+        IslandMapProvider,
+        { entries: [entry] },
+        h(Island, { component: TestComponent, props: { name: "World" } }),
+      ),
     );
 
     expect(html).toContain('data-island="testhash456"');
@@ -71,10 +75,14 @@ describe("Island", () => {
     };
 
     const html = renderToString(
-      h(IslandMapProvider, { entries: [entry] }, h(Island, {
-        component: TestComponent,
-        props: { name: "Test", count: 42 },
-      })),
+      h(
+        IslandMapProvider,
+        { entries: [entry] },
+        h(Island, {
+          component: TestComponent,
+          props: { name: "Test", count: 42 },
+        }),
+      ),
     );
 
     expect(html).toContain("data-props=");
@@ -100,7 +108,11 @@ describe("Island", () => {
     };
 
     const html = renderToString(
-      h(IslandMapProvider, { entries: [entry] }, h(Island, { component: TestComponent, props: { name: "ScriptTest" } })),
+      h(
+        IslandMapProvider,
+        { entries: [entry] },
+        h(Island, { component: TestComponent, props: { name: "ScriptTest" } }),
+      ),
     );
 
     expect(html).toContain('<script src="/test.js"');
@@ -126,7 +138,11 @@ describe("Island", () => {
     };
 
     const html = renderToString(
-      h(IslandMapProvider, { entries: [entry] }, h(Island, { component: TestComponent, props: {} })),
+      h(
+        IslandMapProvider,
+        { entries: [entry] },
+        h(Island, { component: TestComponent, props: {} }),
+      ),
     );
 
     expect(html).toContain("data-props=");

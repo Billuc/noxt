@@ -15,13 +15,13 @@
  **/
 import * as v from "valibot";
 import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
-import type { ApiDefinitions, APIEndpoint, HttpMethod } from "../api/types";
+import type { ApiDefinitions } from "../api";
 import { useMemo } from "preact/hooks";
 
 type KeyOf<T> =
   T extends Record<infer K, any>
     ? K
-    : T extends Partial<Record<infer K, any>>
+    : T extends Partial<Record<any, any>>
       ? keyof T
       : string | number | symbol;
 

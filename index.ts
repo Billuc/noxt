@@ -13,50 +13,66 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { build } from "./src/shell/build";
-import {
-  prerenderIslands,
-  prerenderPages,
-  generateRouteMap,
-  generateUtils,
-  discoverRouteFiles,
-  collectAssets,
-  bundleIslands,
-  generateStaticPages,
-  type FileEntry,
-} from "./src/shell/build";
-import { Island } from "./src/shell/pages";
-import { staticPrerender } from "./src/shell/static";
-import { generateServiceWorker } from "./src/shell/pwa";
-import { discoverAPIs, generateAPIFile } from "./src/api/build";
-import { query, mutation } from "./src/api/builder";
+import { generateRouteMap, generateUtils } from "./src/core/build";
+
+import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
 import type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,
   APIEndpoint,
   SearchParamSchema,
-} from "./src/api/types";
+} from "./src/api";
+import { discoverAssets, type AssetEntry } from "./src/assets";
+import {
+  Island,
+  discoverIslands,
+  prerenderIslands,
+  type IslandEntry,
+  type IslandSourceEntry,
+} from "./src/islands";
+import {
+  discoverMarkdownPages,
+  prerenderMarkdownPages,
+  type MarkdownPage,
+  type MarkdownPageEntry,
+} from "./src/markdown";
+import {
+  discoverPreactPages,
+  prerenderPreactPages,
+  type PreactPage,
+  type PreactPageEntry,
+} from "./src/preact";
+import { generateServiceWorker } from "./src/pwa";
+import { generateStaticPages } from "./src/static";
 
 export {
-  build,
-  prerenderIslands,
-  prerenderPages,
-  generateRouteMap,
-  generateUtils,
-  discoverRouteFiles,
-  collectAssets,
-  bundleIslands,
-  Island,
-  staticPrerender,
-  generateStaticPages,
-  generateServiceWorker,
   discoverAPIs,
   generateAPIFile,
   query,
   mutation,
-  type FileEntry,
-  type IQueryEndpointBuilder,
-  type IMutationEndpointBuilder,
-  type APIEndpoint,
-  type SearchParamSchema,
+  discoverAssets,
+  discoverIslands,
+  prerenderIslands,
+  Island,
+  discoverMarkdownPages,
+  prerenderMarkdownPages,
+  discoverPreactPages,
+  prerenderPreactPages,
+  generateRouteMap,
+  generateUtils,
+  generateServiceWorker,
+  generateStaticPages,
+};
+export type {
+  IQueryEndpointBuilder,
+  IMutationEndpointBuilder,
+  APIEndpoint,
+  SearchParamSchema,
+  AssetEntry,
+  IslandEntry,
+  IslandSourceEntry,
+  MarkdownPage,
+  MarkdownPageEntry,
+  PreactPage,
+  PreactPageEntry,
 };

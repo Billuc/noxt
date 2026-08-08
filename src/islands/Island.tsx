@@ -14,13 +14,12 @@
  *  limitations under the License.
  **/
 import type { FunctionComponent } from "preact";
-import { getIslandFiles } from "../core/registry";
 import { h, Fragment } from "preact";
 import { useContext } from "preact/hooks";
 import * as devalue from "devalue";
-import { toPublicPath } from "../core/rendering";
+import { toPublicPath } from "../core/utils";
 import { BaseContext, IslandMapContext } from "../core/context";
-import { CACHE_DIR } from "./fs";
+import { CACHE_DIR } from "../core/fs";
 
 type Props<T> = h.JSX.IntrinsicAttributes & {
   component: FunctionComponent<T>;
@@ -43,7 +42,7 @@ export function Island<T>(props: Props<T>) {
   const scripts = [];
   const cssLinks = [];
 
-  for (const file of getIslandFiles(entry)) {
+  for (const file of entry.files) {
     const pathFromCache = file.relativeTo(CACHE_DIR);
     if (/.*\.(js|jsx|ts|tsx)$/.test(pathFromCache)) {
       scripts.push(<script src={toPublicPath(pathFromCache, base)}></script>);

@@ -13,27 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { FunctionComponent } from "preact";
-import type { Path } from "./fs";
+import type { Path } from "../core/fs";
 
-/// ISLANDS
-
-type IslandFiles = { type: "source", file: Path } | { type: "bundle", files: Path[] };
-
-export interface IslandEntry {
-  component: FunctionComponent<any>;
-  hash: string;
-  files: IslandFiles;
+export interface MarkdownPageEntry {
+  url: string;
+  file: Path;
 }
 
-export function getIslandFiles(entry: IslandEntry): Path[] {
-  switch (entry.files.type) {
-    case "source":
-      return [entry.files.file];
-    case "bundle":
-      return entry.files.files;
-  }
+export interface MarkdownPage {
+  url: string;
+  file: Path;
 }
 
-/// ASSETS
-
+export interface MarkdownData {
+  frontmatter: Record<string, any>;
+  content: string;
+}

@@ -13,22 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { query, mutation } from "./builder";
-import { discoverAPIs, generateAPIFile } from "./build";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-} from "./types";
-import { getRoutes } from "./utils";
+import { hydrate, h } from "preact";
+import type { ComponentType } from "preact";
+import * as devalue from "devalue";
 
-export { query, mutation, getRoutes, discoverAPIs, generateAPIFile };
-export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-};
+/** Hydrates all island elements matching the given hash with the given component. */
+export function renderIsland(Component: ComponentType<any>, hash: string) {
+  const elements = document.querySelectorAll<HTMLElement>(
+    `[data-island="${hash}"]`,
+  );
+
+  elements.forEach((element) => {
+    const props = devalue.parse(element.getAttribute("data-props") || "[{}]");
+    hydrate(h(Component, props, []), element);
+  });
+}

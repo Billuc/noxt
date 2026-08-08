@@ -14,6 +14,7 @@
  *  limitations under the License.
  **/
 import path from "node:path";
+import fs from "node:fs/promises";
 
 export class Path {
   constructor(public absolute: string) {}
@@ -33,4 +34,72 @@ export class Path {
   relativeTo(base: string): string {
     return path.relative(path.resolve(base), this.absolute);
   }
+}
+
+// ─── Util Functions ────────────────────────────────────────────
+
+/** Writes a string to a file. */
+export async function writeFile(filepath: string, content: string) {
+  await fs.mkdir(path.dirname(filepath), { recursive: true });
+  await fs.writeFile(filepath, content);
+}
+
+/** Reads a file's contents as a string. */
+export async function readFile(filePath: string): Promise<string> {
+  return (await fs.readFile(filePath)).toString("utf8");
+}
+
+/** Copy a file from `from` to `to`. */
+export async function copyFile(from: string, to: string) {
+  await fs.mkdir(path.dirname(to), { recursive: true });
+  await fs.copyFile(from, to);
+}
+
+/** Recursively removes a folder and its contents. */
+export async function removeFolder(path: string) {
+  await fs.rm(path, { recursive: true, force: true });
+}
+
+// ─── Directory Constants ─────────────────────────────────────
+export const CACHE_DIR = ".cache";
+export const ISLANDS_CACHE_DIR = path.join(CACHE_DIR, "_islands");
+export const ROUTES_CACHE_FILE = path.join(CACHE_DIR, "routes.json");
+export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
+export const API_CACHE_FILE = path.join(CACHE_DIR, "api.ts");
+
+export const ISLANDS_DIR = "islands";
+export const ASSETS_DIR = "assets";
+export const PAGES_DIR = "pages";
+export const API_DIR = "api";
+
+export const DIST_DIR = "dist";
+
+// ─── Path Helpers ────────────────────────────────────────────
+
+/** Builds a path inside .cache. */
+export function cachePath(...segments: string[]): string {
+  return path.join(CACHE_DIR, ...segments);
+}
+
+/** Builds a path inside dist. */
+export function distPath(...segments: string[]): string {
+  return path.join(DIST_DIR, ...segments);
+}
+
+/** Returns all files matching a glob pattern under a root directory. */
+export async function getFilesMatchingGlob(
+  globPattern: string,
+  root: string,
+): Promise<Path[]> {
+  const globFiles = fs.glob(globPattern, { cwd: root });
+  const results: Path[] = [];
+
+  for await (const file of globFiles) {
+    const absolute = path.resolve(root, file);
+    const stats = await fs.stat(absolute);
+    if (stats.isDirectory()) continue;
+    results.push(Path.create(absolute));
+  }
+
+  return results;
 }

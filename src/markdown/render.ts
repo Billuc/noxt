@@ -1,0 +1,52 @@
+/**
+ * Copyright 2026 Luc BILLAUD
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ **/
+import { h } from "preact";
+import { renderToStringAsync } from "preact-render-to-string";
+import { micromark } from "micromark";
+import { BaseProvider, IslandMapProvider } from "../core/context";
+import { sanitizeHtml } from "../core/utils";
+import type { MarkdownData } from "./types";
+import type { IslandEntry } from "../islands";
+import { getLayout } from "./layout";
+
+const MARKDOWN_PLACEHOLDER = "---MARKDOWN:CHILDREN---";
+
+/**
+ * Renders Markdown content to HTML string with DOCTYPE.
+ *
+ * @param markdownContent - Markdown content to convert
+ * @returns HTML string with DOCTYPE
+ */
+export async function renderMarkdownToHtml(
+  markdownData: MarkdownData,
+  base?: string,
+  islandEntries?: IslandEntry[],
+): Promise<string> {
+  const Layout = await getLayout(markdownData.frontmatter);
+  const markdownHTML = micromark(markdownData.content);
+
+  let fullPage: any = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
+  if (base !== undefined) {
+    fullPage = h(BaseProvider, { value: base }, fullPage);
+  }
+  if (islandEntries !== undefined) {
+    fullPage = h(IslandMapProvider, { entries: islandEntries }, fullPage);
+  }
+  let htmlContent = await renderToStringAsync(fullPage);
+  htmlContent = sanitizeHtml(htmlContent);
+  htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);
+  return "<!DOCTYPE html>" + htmlContent;
+}

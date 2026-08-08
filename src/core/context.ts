@@ -19,7 +19,7 @@ import {
   type ComponentChildren,
   type FunctionComponent,
 } from "preact";
-import type { IslandEntry } from "./registry";
+import type { IslandEntry } from "../islands";
 
 export const BaseContext = createContext("");
 

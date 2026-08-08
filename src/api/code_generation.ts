@@ -13,8 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { APIEndpointEntry } from "./types";
-import type { HttpMethod } from "./types";
+import type { APIEndpointEntry, HttpMethod } from "./types";
 
 type ApiByFileMap = Map<
   string,
@@ -31,13 +30,14 @@ function groupByRoute(entries: APIEndpointEntry<any, any>[]): ApiByFileMap {
   for (const entry of entries) {
     const importPrefix = entry.route.replaceAll(/[\\\/-]/g, "_");
 
-    importMap
-      .getOrInsert(entry.file.absolute, {
+    if (!importMap.has(entry.file.absolute)) {
+      importMap.set(entry.file.absolute, {
         prefix: importPrefix,
         route: entry.route,
         methods: new Set<HttpMethod>(),
-      })
-      .methods.add(entry.method);
+      });
+    }
+    importMap.get(entry.file.absolute)!.methods.add(entry.method);
   }
 
   return importMap;
@@ -62,7 +62,7 @@ function generateImportsCode(importMap: ApiByFileMap): string[] {
 function generateRouterTypeCode(apiMap: ApiByFileMap): string {
   const routesData: string[] = [];
 
-  for (const [file, data] of apiMap.entries()) {
+  for (const [_file, data] of apiMap.entries()) {
     const endpoints: string[] = [];
     for (const method of data.methods) {
       endpoints.push(`"${method}": ${data.prefix}_${method}`);

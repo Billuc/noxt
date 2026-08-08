@@ -7,7 +7,7 @@ import {
   copyFile,
   removeFolder,
   getFilesMatchingGlob,
-} from "../../src/shell/fs";
+} from "../../src/static/fs";
 import { Path } from "../../src/core/fs";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
@@ -193,7 +193,6 @@ describe("fs module", () => {
     });
   });
 
-
   describe("getFilesMatchingGlob", () => {
     it("should return files matching a glob pattern", async () => {
       await mkdir(path.join(TEST_DIR, "subdir"), { recursive: true });
@@ -243,7 +242,9 @@ describe("fs module", () => {
       const results = await getFilesMatchingGlob("a/**/*.txt", TEST_DIR);
 
       expect(results.length).toBe(1);
-      expect(results[0]!.relativeTo(TEST_DIR)).toBe(path.join("a", "b", "c", "deep.txt"));
+      expect(results[0]!.relativeTo(TEST_DIR)).toBe(
+        path.join("a", "b", "c", "deep.txt"),
+      );
     });
   });
 });

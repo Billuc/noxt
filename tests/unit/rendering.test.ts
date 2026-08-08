@@ -7,7 +7,7 @@ import {
   parseMarkdown,
   renderPageToHtml,
   renderMarkdownToHtml,
-} from "../../src/core/rendering";
+} from "../../src/core/utils";
 import { h, type ComponentType } from "preact";
 import { describe, it, expect } from "bun:test";
 import path from "node:path";

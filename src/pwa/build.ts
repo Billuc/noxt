@@ -13,22 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { query, mutation } from "./builder";
-import { discoverAPIs, generateAPIFile } from "./build";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-} from "./types";
-import { getRoutes } from "./utils";
+import { writeFile, distPath } from "../core/fs";
+import { generateServiceWorkerCode } from "./code_generation";
 
-export { query, mutation, getRoutes, discoverAPIs, generateAPIFile };
-export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-};
+export async function generateServiceWorker(
+  manifest: Record<string, string>,
+): Promise<string> {
+  const code = generateServiceWorkerCode(manifest);
+  const swPath = distPath("sw.js");
+  await writeFile(swPath, code);
+  console.log(`Generated service worker at ${swPath}`);
+  return swPath;
+}

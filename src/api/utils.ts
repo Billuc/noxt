@@ -13,11 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type {
-  ApiDefinitions,
-  ApiEndpointDefinitions,
-  ApiEndpoints,
-} from "./types";
+import type { ApiEndpointDefinitions, ApiEndpoints } from "./types";
 
 export function toSearchParam(input: { [k: string]: unknown }): {
   [k: string]: string[];

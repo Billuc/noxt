@@ -17,7 +17,7 @@ import {
   generateUtils,
   type RouteData,
   type FileEntry,
-} from "../../src/shell/build";
+} from "../../src/core/build";
 import { type IslandEntry } from "../../src/core/registry";
 
 const SANDBOX_DIR = path.resolve(

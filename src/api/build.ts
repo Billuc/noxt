@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { getRouteName } from "../core/rendering";
+import { getRouteName } from "../core/utils";
 import {
   API_CACHE_FILE,
   API_DIR,
   getFilesMatchingGlob,
   writeFile,
-} from "../shell/fs";
+} from "../core/fs";
 import { generateApiUtilsCode } from "./code_generation";
 import { type APIEndpointEntry, APIEndpoint, HTTP_METHODS } from "./types";
 import path from "node:path";

@@ -13,18 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { hydrate, h } from "preact";
-import type { ComponentType } from "preact";
-import * as devalue from "devalue";
+import type { Path } from "../core/fs";
 
-/** Hydrates all island elements matching the given hash with the given component. */
-export function renderComponent(Component: ComponentType<any>, hash: string) {
-  const elements = document.querySelectorAll<HTMLElement>(
-    `[data-island="${hash}"]`,
-  );
-
-  for (const element of elements) {
-    const props = devalue.parse(element.getAttribute("data-props") || "[{}]");
-    hydrate(h(Component, props, []), element);
-  }
+export interface AssetEntry {
+  url: string;
+  file: Path;
 }

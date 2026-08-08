@@ -13,22 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { query, mutation } from "./builder";
-import { discoverAPIs, generateAPIFile } from "./build";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-} from "./types";
-import { getRoutes } from "./utils";
 
-export { query, mutation, getRoutes, discoverAPIs, generateAPIFile };
-export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-};
+export function standardizePath(path: string): string {
+  return path.replaceAll("\\", "/");
+}

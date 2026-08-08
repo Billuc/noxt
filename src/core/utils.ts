@@ -1,0 +1,77 @@
+/**
+ * Copyright 2026 Luc BILLAUD
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ **/
+import path from "node:path";
+
+/**
+ * Converts a file path from pages directory to a route name.
+ * Removes file extension and handles 'index' specially.
+ *
+ * @param pathFromPages - Relative path from the pages directory
+ * @returns Route name (e.g., "about.md" -> "/about", "index.md" -> "/")
+ */
+export function getRouteName(pathFromPages: string, base?: string): string {
+  const extension = path.extname(pathFromPages);
+  const basename = pathFromPages
+    .replaceAll("\\", "/")
+    .slice(0, -extension.length);
+
+  if (basename === "index") return "/";
+
+  return (
+    (base ?? "") +
+    "/" +
+    (basename.endsWith("/index") ? basename.slice(0, -6) : basename)
+  );
+}
+
+export function routeToHtmlPath(routeName: string): string {
+  const relative = routeName.replace(/^\//, "");
+  if (relative === "") return "index.html";
+  return path.join(relative, "index.html");
+}
+
+export function toPublicPath(cwdRelativePath: string, base: string): string {
+  return base + "/" + trim(cwdRelativePath.replaceAll("\\", "/"), "/");
+}
+
+export function sanitizeHtml(htmlContent: string) {
+  if (htmlContent.startsWith("<html")) {
+    return htmlContent;
+  }
+  if (htmlContent.startsWith("<body")) {
+    return `<html>
+      <head></head>
+      ${htmlContent}
+    </html>`;
+  }
+  return `<html>
+      <head></head>
+      <body>${htmlContent}</body>
+    </html>`;
+}
+
+function trim(str: string, character: string): string {
+  if (character.length === 0) return str;
+
+  const ch = character[0];
+  let start = 0;
+  let end = str.length;
+
+  while (start < end && str[start] === ch) ++start;
+  while (end > start && str[end - 1] === ch) --end;
+
+  return start > 0 || end < str.length ? str.substring(start, end) : str;
+}

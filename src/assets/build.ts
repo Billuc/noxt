@@ -13,22 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { query, mutation } from "./builder";
-import { discoverAPIs, generateAPIFile } from "./build";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-} from "./types";
-import { getRoutes } from "./utils";
+import * as path from "node:path";
+import { ASSETS_DIR, getFilesMatchingGlob } from "../core/fs";
+import { toPublicPath } from "../core/utils";
+import { Path } from "../core/fs";
+import type { AssetEntry } from "./types";
 
-export { query, mutation, getRoutes, discoverAPIs, generateAPIFile };
-export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-  ApiDefinitions,
-};
+export async function discoverAssets(base?: string): Promise<AssetEntry[]> {
+  let assetFiles: Path[];
+  try {
+    assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
+  } catch {
+    console.log("No assets folder found");
+    return [];
+  }
+  return assetFiles.map((file) => ({
+    url: toPublicPath(file.relativeToCwd(), base ?? ""),
+    file: file,
+  }));
+}

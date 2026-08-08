@@ -26,7 +26,7 @@ Object.assign(globalThis, {
   customElements: window.customElements,
 });
 
-import { renderComponent } from "../../src/runtime/render";
+import { renderIsland } from "../../src/runtime/island";
 import { describe, it, expect, afterEach } from "bun:test";
 import { h } from "preact";
 
@@ -44,7 +44,7 @@ describe("renderComponent", () => {
     el.setAttribute("data-props", "[{}]");
     document.body.appendChild(el);
 
-    renderComponent(TestComponent, hash);
+    renderIsland(TestComponent, hash);
 
     expect(el.querySelector("#test")).not.toBeNull();
   });
@@ -59,7 +59,7 @@ describe("renderComponent", () => {
     el.setAttribute("data-props", devalue.stringify({ name: "World" }));
     document.body.appendChild(el);
 
-    renderComponent(TestComponent, hash);
+    renderIsland(TestComponent, hash);
 
     expect(el.textContent).toBe("World");
   });
@@ -72,7 +72,7 @@ describe("renderComponent", () => {
     el.setAttribute("data-island", hash);
     document.body.appendChild(el);
 
-    renderComponent(TestComponent, hash);
+    renderIsland(TestComponent, hash);
 
     expect(el.textContent).toBe("No props");
   });
@@ -80,7 +80,7 @@ describe("renderComponent", () => {
   it("should do nothing when no elements match the hash", () => {
     const TestComponent = () => h("div", {}, "Should not render");
 
-    renderComponent(TestComponent, "no-match");
+    renderIsland(TestComponent, "no-match");
 
     expect(document.body.innerHTML).toBe("");
   });
@@ -100,7 +100,7 @@ describe("renderComponent", () => {
     el2.setAttribute("data-props", devalue.stringify({ index: 2 }));
     document.body.appendChild(el2);
 
-    renderComponent(TestComponent, hash);
+    renderIsland(TestComponent, hash);
 
     expect(el1.textContent).toBe("Item 1");
     expect(el2.textContent).toBe("Item 2");
@@ -119,7 +119,7 @@ describe("renderComponent", () => {
     );
     document.body.appendChild(el);
 
-    renderComponent(TestComponent, hash);
+    renderIsland(TestComponent, hash);
 
     expect(el.textContent).toBe("Count: 3, Items: a,b,c");
   });

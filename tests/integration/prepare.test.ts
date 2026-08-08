@@ -1,7 +1,7 @@
 /**
  * Integration tests for src/shell/prepare.ts
  */
-import { preparePreact, prepareMarkdown } from "../../src/shell/prepare";
+import { preparePreact, prepareMarkdown } from "../../src/static/prepare";
 import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import path from "node:path";
 import { rm, mkdir, readdir, writeFile } from "node:fs/promises";

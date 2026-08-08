@@ -1,4 +1,4 @@
-import { staticPrerender } from "../../src/shell/static";
+import { staticPrerender } from "../../src/static/static";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import { rm, mkdir, writeFile, readdir, readFile } from "node:fs/promises";
