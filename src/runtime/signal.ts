@@ -31,7 +31,7 @@ function getStore(): Map<string, Signal> {
   return SERVER_STORE;
 }
 
-export function signal<T>(
+export function sharedSignal<T>(
   key: string,
   initialValue: T,
   options?: SignalOptions<T>,

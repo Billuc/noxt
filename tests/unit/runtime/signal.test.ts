@@ -8,7 +8,7 @@ import {
 } from "bun:test";
 import { h, render } from "preact";
 import { GlobalWindow } from "happy-dom";
-import { signal } from "../../../src/runtime/signal";
+import { sharedSignal } from "../../../src/runtime/signal";
 import type { Signal } from "@preact/signals-core";
 
 const happyWindow = new GlobalWindow();
@@ -29,29 +29,29 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("signal", () => {
+describe("sharedSignal", () => {
   it("should create a signal with the given initial value", () => {
-    const count = signal("count", 0);
+    const count = sharedSignal("count", 0);
     expect(count.value).toBe(0);
   });
 
   it("should return the same signal for the same key", () => {
-    const a = signal("shared", 42);
-    const b = signal("shared", 42);
+    const a = sharedSignal("shared", 42);
+    const b = sharedSignal("shared", 42);
     expect(a).toBe(b);
     a.value = 100;
     expect(b.value).toBe(100);
   });
 
   it("should allow reading and writing via .value", () => {
-    const s = signal("rw", "hello");
+    const s = sharedSignal("rw", "hello");
     expect(s.value).toBe("hello");
     s.value = "world";
     expect(s.value).toBe("world");
   });
 
   it("should support typed signals", () => {
-    const s = signal<number>("typed", 0);
+    const s = sharedSignal<number>("typed", 0);
     s.value = 5;
     expect(s.value).toBe(5);
   });
@@ -59,7 +59,7 @@ describe("signal", () => {
 
 describe("cross-island sharing", () => {
   it("should share state between independently rendered component trees", async () => {
-    const counter = signal("cross-island-counter", 5);
+    const counter = sharedSignal("cross-island-counter", 5);
 
     const containerA = document.createElement("div");
     const containerB = document.createElement("div");
@@ -103,7 +103,7 @@ describe("cross-island sharing", () => {
 
   it("should work when islands import via separate calls", async () => {
     function getCounter() {
-      return signal("separate-calls", 0);
+      return sharedSignal("separate-calls", 0);
     }
 
     const containerA = document.createElement("div");
@@ -144,8 +144,8 @@ describe("cross-island sharing", () => {
 
 describe("global registry", () => {
   it("should share signals via window.__NOXT_SIGNALS__", () => {
-    const s1 = signal("global-key", "first");
-    const s2 = signal("global-key", "first");
+    const s1 = sharedSignal("global-key", "first");
+    const s2 = sharedSignal("global-key", "first");
 
     expect(s1).toBe(s2);
 
@@ -158,12 +158,12 @@ describe("global registry", () => {
     (globalThis as any).window = undefined;
 
     try {
-      const s = signal("ssr", "server");
+      const s = sharedSignal("ssr", "server");
       expect(s.value).toBe("server");
       s.value = "updated";
       expect(s.value).toBe("updated");
 
-      const s2 = signal("ssr", "server");
+      const s2 = sharedSignal("ssr", "server");
       expect(s2).toBe(s);
     } finally {
       (globalThis as any).window = origWindow;
