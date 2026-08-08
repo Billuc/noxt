@@ -44,7 +44,9 @@ export function routeToHtmlPath(routeName: string): string {
 }
 
 export function toPublicPath(cwdRelativePath: string, base: string): string {
-  return base + "/" + trim(cwdRelativePath.replaceAll("\\", "/"), "/");
+  const trimmed = trim(cwdRelativePath.replaceAll("\\", "/"), "/");
+  const trimmedBase = trim(base, "/");
+  return "/" + (trimmedBase ? trimmedBase + "/" : "") + trimmed;
 }
 
 export function sanitizeHtml(htmlContent: string) {

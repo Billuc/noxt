@@ -22,5 +22,5 @@ export {
 } from "./fetch";
 export { ApiRouter, useApi } from "./api";
 
-export { signal, useSignal } from "./signal";
+export { signal } from "./signal";
 export type { Signal } from "@preact/signals-core";

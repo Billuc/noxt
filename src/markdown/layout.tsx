@@ -20,7 +20,7 @@ function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {
   return (
     <html>
       <head></head>
-      <body>${children}</body>
+      <body>{children}</body>
     </html>
   );
 }

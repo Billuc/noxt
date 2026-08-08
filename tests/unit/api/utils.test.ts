@@ -290,7 +290,8 @@ describe("toBody", () => {
 
   describe("getRoutes", () => {
     it("should extract handlers from API definitions", () => {
-      const mockHandler = (request: Request) => Promise.resolve(new Response());
+      const mockHandler = (_request: Request) =>
+        Promise.resolve(new Response());
       const apiMap = {
         "/api/users": {
           GET: new APIEndpoint(v.object({}), v.object({}), mockHandler),
@@ -307,8 +308,9 @@ describe("toBody", () => {
     });
 
     it("should handle multiple routes and methods", () => {
-      const getHandler = (request: Request) => Promise.resolve(new Response());
-      const postHandler = (request: Request) => Promise.resolve(new Response());
+      const getHandler = (_request: Request) => Promise.resolve(new Response());
+      const postHandler = (_request: Request) =>
+        Promise.resolve(new Response());
       const apiMap = {
         "/api/users": {
           GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
@@ -349,8 +351,8 @@ describe("toBody", () => {
     });
 
     it("should preserve handler references", () => {
-      const handler1 = (request: Request) => Promise.resolve(new Response());
-      const handler2 = (request: Request) => Promise.resolve(new Response());
+      const handler1 = (_request: Request) => Promise.resolve(new Response());
+      const handler2 = (_request: Request) => Promise.resolve(new Response());
       const apiMap = {
         "/api/test": {
           GET: new APIEndpoint(v.object({}), v.object({}), handler1),

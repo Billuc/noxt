@@ -20,11 +20,11 @@ export function generateScriptForIsland(
   hash: string,
   importPath: string,
 ): string {
-  const renderScriptPath = path.join(__dirname, "..", "runtime", "render.ts");
+  const renderScriptPath = path.join(__dirname, "..", "runtime", "island.ts");
 
   return `
-    import { renderComponent } from ${JSON.stringify(renderScriptPath)};
+    import { renderIsland } from ${JSON.stringify(renderScriptPath)};
     import Island from ${JSON.stringify(importPath)};
-    renderComponent(Island, ${JSON.stringify(hash)});
+    renderIsland(Island, ${JSON.stringify(hash)});
   `;
 }

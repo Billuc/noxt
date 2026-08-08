@@ -26,11 +26,11 @@ Object.assign(globalThis, {
   customElements: window.customElements,
 });
 
-import { renderIsland } from "../../src/runtime/island";
+import { renderIsland } from "../../../src/runtime/island";
 import { describe, it, expect, afterEach } from "bun:test";
 import { h } from "preact";
 
-describe("renderComponent", () => {
+describe("renderIsland", () => {
   afterEach(() => {
     document.body.innerHTML = "";
   });

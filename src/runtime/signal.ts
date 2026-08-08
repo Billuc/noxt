@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { signal as preactSignal, useSignal } from "@preact/signals";
+import { signal as preactSignal } from "@preact/signals";
 import type { Signal, SignalOptions } from "@preact/signals-core";
 
 declare global {
@@ -44,5 +44,3 @@ export function signal<T>(
   }
   return sig as Signal<T>;
 }
-
-export { useSignal };

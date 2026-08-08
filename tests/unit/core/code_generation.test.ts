@@ -1,7 +1,10 @@
 /**
- * Unit tests for link utils code generation
+ * Unit tests for src/core/code_generator.ts
  */
-import { generateLinkUtilsCode } from "../../src/core/code_generator";
+import {
+  generateLinkUtilsCode,
+  generateAssetUtilsCode,
+} from "../../../src/core/code_generation";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
@@ -30,31 +33,33 @@ afterAll(async () => {
 describe("generateLinkUtilsCode", () => {
   it("should generate code with a single route", () => {
     const result = generateLinkUtilsCode(["/"]);
-    expect(result).toContain('type RouteId = "/"');
-    expect(result).toContain("function link(routeId: RouteId, query?: QueryParams): string");
-    expect(result).toContain("if (!query) return routeId;");
-    expect(result).toContain("return routeId + \"?\" + params.toString();");
+    expect(result).toContain('type RouteId = "/";');
+    expect(result).toContain(
+      "function link(routeId: RouteId, query?: QueryParams): string",
+    );
+    expect(result).toContain("if (!query) return url;");
+    expect(result).toContain('return url + "?" + params.toString();');
     expect(result).toContain("export { link, type RouteId }");
   });
 
   it("should generate code with multiple routes", () => {
     const result = generateLinkUtilsCode(["/", "/about", "/contact"]);
-    expect(result).toContain('type RouteId = "/" | "/about" | "/contact"');
+    expect(result).toContain('type RouteId = "/" | "/about" | "/contact";');
   });
 
   it("should generate code with nested route paths", () => {
     const result = generateLinkUtilsCode(["/", "/blog/post"]);
-    expect(result).toContain('type RouteId = "/" | "/blog/post"');
+    expect(result).toContain('type RouteId = "/" | "/blog/post";');
   });
 
   it("should handle routes with hyphens and underscores", () => {
     const result = generateLinkUtilsCode(["/about-us", "/my_profile"]);
-    expect(result).toContain('type RouteId = "/about-us" | "/my_profile"');
+    expect(result).toContain('type RouteId = "/about-us" | "/my_profile";');
   });
 
   it("should handle empty route list", () => {
     const result = generateLinkUtilsCode([]);
-    expect(result).toContain("type RouteId = ");
+    expect(result).toContain("type RouteId = never;");
   });
 });
 
@@ -72,7 +77,9 @@ describe("generated link function", () => {
 
   it("should encode special characters in query params", async () => {
     const mod = await generateAndLoad("/search");
-    expect(mod.link("/search", { q: "hello world" })).toBe("/search?q=hello+world");
+    expect(mod.link("/search", { q: "hello world" })).toBe(
+      "/search?q=hello+world",
+    );
   });
 
   it("should handle multiple query parameters", async () => {
@@ -85,7 +92,9 @@ describe("generated link function", () => {
 
   it("should convert non-string values to strings", async () => {
     const mod = await generateAndLoad("/items");
-    expect(mod.link("/items", { num: 42, flag: true })).toBe("/items?num=42&flag=true");
+    expect(mod.link("/items", { num: 42, flag: true })).toBe(
+      "/items?num=42&flag=true",
+    );
   });
 
   it("should return just the path when query is empty object", async () => {
@@ -96,5 +105,26 @@ describe("generated link function", () => {
   it("should return just the path when query is undefined", async () => {
     const mod = await generateAndLoad("/about");
     expect(mod.link("/about")).toBe("/about");
+  });
+});
+
+describe("generateAssetUtilsCode", () => {
+  it("should generate code with a single asset", () => {
+    const result = generateAssetUtilsCode(["/image.png"]);
+    expect(result).toContain('type AssetId = "/image.png";');
+    expect(result).toContain("function asset(id: AssetId): string");
+    expect(result).toContain("return id;");
+    expect(result).toContain("export { asset, type AssetId }");
+  });
+
+  it("should generate code with multiple assets", () => {
+    const result = generateAssetUtilsCode(["/image.png", "/style.css"]);
+    expect(result).toContain('type AssetId = "/image.png" | "/style.css";');
+  });
+
+  it("should handle empty asset list", () => {
+    const result = generateAssetUtilsCode([]);
+    expect(result).toContain("type AssetId = never;");
+    expect(result).toContain("function asset(id: AssetId): string");
   });
 });

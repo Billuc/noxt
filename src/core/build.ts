@@ -23,7 +23,7 @@ import {
 import {
   generateAssetUtilsCode,
   generateLinkUtilsCode,
-} from "./code_generator";
+} from "./code_generation";
 import { toPublicPath } from "./utils";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";

@@ -13,9 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { generateScriptForIsland } from "../../src/core/island";
+import { generateScriptForIsland } from "../../../src/islands/code_generation";
 import { describe, it, expect } from "bun:test";
-import path from "node:path";
 
 describe("generateScriptForIsland", () => {
   it("should generate script with correct import path and hash", () => {
@@ -23,11 +22,10 @@ describe("generateScriptForIsland", () => {
     const importPath = "./components/MyIsland";
     const script = generateScriptForIsland(hash, importPath);
 
-    expect(script).toEqualIgnoringWhitespace(`
-      import { renderComponent } from ${JSON.stringify(path.join(__dirname, "../..", "src/runtime", "render.ts"))};
-      import Island from "./components/MyIsland";
-      renderComponent(Island, "testhash123");
-    `);
+    expect(script).toContain("import { renderIsland } from");
+    expect(script).toContain("runtime/island.ts");
+    expect(script).toContain('import Island from "./components/MyIsland";');
+    expect(script).toContain('renderIsland(Island, "testhash123");');
   });
 
   it("should generate different scripts for different hashes", () => {

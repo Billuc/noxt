@@ -122,7 +122,7 @@ describe("QueryEndpointBuilder", () => {
       const handler = query()
         .input(inputSchema)
         .output(outputSchema)
-        .endpoint(async ({ input }) => {
+        .endpoint(async ({ input: _ }) => {
           throw new Error("Handler error");
         });
 
@@ -287,7 +287,7 @@ describe("MutationEndpointBuilder", () => {
       const handler = mutation()
         .input(inputSchema)
         .output(outputSchema)
-        .endpoint(async ({ input }) => {
+        .endpoint(async ({ input: _ }) => {
           throw new Error("Handler error");
         });
 

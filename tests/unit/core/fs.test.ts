@@ -7,11 +7,10 @@ import {
   copyFile,
   removeFolder,
   getFilesMatchingGlob,
-} from "../../src/static/fs";
-import { Path } from "../../src/core/fs";
+} from "../../../src/core/fs";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
-import { existsSync, lstatSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { rm, mkdir } from "node:fs/promises";
 
 const TEST_DIR = path.join(import.meta.dir, "..", "..", "test-fs-temp");

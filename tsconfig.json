@@ -28,6 +28,6 @@
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
 
-    "types": []
+    "types": ["bun"]
   }
 }

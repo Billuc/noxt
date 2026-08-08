@@ -1,7 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from "bun:test";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+} from "bun:test";
 import { h, render } from "preact";
 import { GlobalWindow } from "happy-dom";
-import { signal, useSignal } from "../../src/runtime/signal";
+import { signal } from "../../../src/runtime/signal";
 import type { Signal } from "@preact/signals-core";
 
 const happyWindow = new GlobalWindow();
@@ -50,23 +57,6 @@ describe("signal", () => {
   });
 });
 
-describe("useSignal", () => {
-  it("should create a component-local signal that persists across renders", () => {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-
-    function TestComponent() {
-      const count = useSignal(0);
-      return h("p", {}, `value: ${count.value}`);
-    }
-
-    render(h(TestComponent, {}), container);
-    expect(container.innerHTML).toBe("<p>value: 0</p>");
-
-    container.remove();
-  });
-});
-
 describe("cross-island sharing", () => {
   it("should share state between independently rendered component trees", async () => {
     const counter = signal("cross-island-counter", 5);
@@ -83,7 +73,12 @@ describe("cross-island sharing", () => {
     function IslandB() {
       return h(
         "button",
-        { id: "increment", onClick: () => { counter.value++; } },
+        {
+          id: "increment",
+          onClick: () => {
+            counter.value++;
+          },
+        },
         "+",
       );
     }
@@ -123,7 +118,12 @@ describe("cross-island sharing", () => {
     function IslandB() {
       return h(
         "button",
-        { id: "inc", onClick: () => { getCounter().value++; } },
+        {
+          id: "inc",
+          onClick: () => {
+            getCounter().value++;
+          },
+        },
         "+",
       );
     }

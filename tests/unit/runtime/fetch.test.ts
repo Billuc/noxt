@@ -14,27 +14,15 @@
  *  limitations under the License.
  **/
 
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterEach,
-  beforeEach,
-  mock,
-} from "bun:test";
-import { renderHook, waitFor } from "@testing-library/preact";
+import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
+import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
 import {
   requestFrom,
   useAsync,
   fetchJson,
   useFetchJson,
-  type FetchRequestInit,
-  type UseDataFetchReturn,
 } from "../../../src/runtime/fetch";
-import { sleep } from "bun";
-import { useMemo } from "preact/hooks";
 
 const happyWindow = new GlobalWindow();
 
@@ -294,7 +282,7 @@ describe("requestFrom", () => {
 describe("useAsync", () => {
   describe("Initial state", () => {
     it("should return correct shape", () => {
-      const asyncFn = (input: string) => Promise.resolve("result");
+      const asyncFn = (_input: string) => Promise.resolve("result");
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
@@ -308,7 +296,7 @@ describe("useAsync", () => {
     });
 
     it("should start with loading state true", () => {
-      const asyncFn = (input: string) => Promise.resolve("result");
+      const asyncFn = (_input: string) => Promise.resolve("result");
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
@@ -323,7 +311,7 @@ describe("useAsync", () => {
   describe("Successful execution", () => {
     it("should resolve with data and set loading to false", async () => {
       const expectedData = { id: "1", name: "test" };
-      const asyncFn = (input: string) => Promise.resolve(expectedData);
+      const asyncFn = (_input: string) => Promise.resolve(expectedData);
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
@@ -344,9 +332,7 @@ describe("useAsync", () => {
         return Promise.resolve("result");
       };
 
-      const { result, unmount } = renderHook(() =>
-        useAsync("test-input", asyncFn),
-      );
+      const { unmount } = renderHook(() => useAsync("test-input", asyncFn));
 
       await Bun.sleep(50);
 
@@ -357,12 +343,12 @@ describe("useAsync", () => {
 
     it("should pass AbortSignal to async function", async () => {
       let receivedSignal: AbortSignal | null = null as AbortSignal | null;
-      const asyncFn = (input: string, signal: AbortSignal) => {
+      const asyncFn = (_input: string, signal: AbortSignal) => {
         receivedSignal = signal;
         return Promise.resolve("result");
       };
 
-      const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
+      const { unmount } = renderHook(() => useAsync("test", asyncFn));
 
       await Bun.sleep(50);
 
@@ -376,7 +362,7 @@ describe("useAsync", () => {
   describe("Error handling", () => {
     it("should catch and store Error objects", async () => {
       const testError = new Error("Test error");
-      const asyncFn = (input: string) => Promise.reject(testError);
+      const asyncFn = (_input: string) => Promise.reject(testError);
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
@@ -391,7 +377,7 @@ describe("useAsync", () => {
     });
 
     it("should convert non-Error rejections to Error objects", async () => {
-      const asyncFn = (input: string) => Promise.reject("String error");
+      const asyncFn = (_input: string) => Promise.reject("String error");
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
@@ -408,7 +394,7 @@ describe("useAsync", () => {
     it("should not catch AbortError", async () => {
       const abortError = new Error("Aborted");
       abortError.name = "AbortError";
-      const asyncFn = (input: string, signal: AbortSignal) => {
+      const asyncFn = (_input: string, _signal: AbortSignal) => {
         // Reject with AbortError
         const err = new Error("Aborted");
         err.name = "AbortError";
@@ -431,7 +417,7 @@ describe("useAsync", () => {
   describe("Refresh functionality", () => {
     it("should allow refetching data", async () => {
       const callCount = { count: 0 };
-      const asyncFn = (input: string) => {
+      const asyncFn = (_input: string) => {
         callCount.count++;
         return Promise.resolve(`result-${callCount.count}`);
       };
@@ -465,7 +451,7 @@ describe("useAsync", () => {
         });
       };
 
-      const { result, unmount, rerender } = renderHook(
+      const { unmount, rerender } = renderHook(
         ({ input }) => useAsync(input, asyncFn),
         { initialProps: { input: "initial" } },
       );
@@ -486,7 +472,7 @@ describe("useAsync", () => {
     });
 
     it("should return data from refresh call", async () => {
-      const asyncFn = (input: string) => Promise.resolve("refreshed-data");
+      const asyncFn = (_input: string) => Promise.resolve("refreshed-data");
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
@@ -501,7 +487,7 @@ describe("useAsync", () => {
     it("should handle refresh errors", async () => {
       const testError = new Error("Refresh error");
       let shouldFail = false;
-      const asyncFn = (input: string) => {
+      const asyncFn = (_input: string) => {
         if (shouldFail) {
           return Promise.reject(testError);
         }
@@ -537,7 +523,7 @@ describe("useAsync", () => {
       const abortSignals: AbortSignal[] = [];
       let resolveFn: () => void;
 
-      const asyncFn = (input: string, signal: AbortSignal) => {
+      const asyncFn = (_input: string, signal: AbortSignal) => {
         abortSignals.push(signal);
         return new Promise<void>((resolve) => {
           resolveFn = resolve;
@@ -565,7 +551,7 @@ describe("useAsync", () => {
     it("should abort request on unmount", async () => {
       let receivedSignal: AbortSignal | null = null as AbortSignal | null;
 
-      const asyncFn = (input: string, signal: AbortSignal) => {
+      const asyncFn = (_input: string, signal: AbortSignal) => {
         receivedSignal = signal;
         return new Promise(() => {}); // Never resolves
       };
@@ -582,7 +568,7 @@ describe("useAsync", () => {
 
   describe("Mount state tracking", () => {
     it("should not update state after unmount", async () => {
-      const asyncFn = (input: string) => {
+      const asyncFn = (_input: string) => {
         return new Promise((resolve) => {
           setTimeout(() => resolve("late-result"), 100);
         });
@@ -610,7 +596,7 @@ describe("fetchJson", () => {
   describe("Successful requests", () => {
     it("should fetch and parse JSON response", async () => {
       const expectedData = { id: "1", name: "test" };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -621,10 +607,8 @@ describe("fetchJson", () => {
 
       const signal = new AbortController().signal;
       const result = await fetchJson<typeof expectedData>(
-        {
-          url: "/api/users",
-          options: { method: "GET" },
-        },
+        "/api/users",
+        { method: "GET" },
         signal,
       );
 
@@ -638,7 +622,7 @@ describe("fetchJson", () => {
 
     it("should pass options to requestFrom", async () => {
       const expectedData = { ok: true };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -649,13 +633,11 @@ describe("fetchJson", () => {
 
       const signal = new AbortController().signal;
       await fetchJson(
+        "/api/users",
         {
-          url: "/api/users",
-          options: {
-            method: "POST",
-            headers: { Authorization: "Bearer token" },
-            objectBody: { name: "test" },
-          },
+          method: "POST",
+          headers: { Authorization: "Bearer token" },
+          objectBody: { name: "test" },
         },
         signal,
       );
@@ -668,7 +650,7 @@ describe("fetchJson", () => {
 
     it("should pass signal to requestFrom", async () => {
       const expectedData = { ok: true };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -678,13 +660,7 @@ describe("fetchJson", () => {
       globalThis.fetch = mockFetch;
 
       const signal = new AbortController().signal;
-      await fetchJson(
-        {
-          url: "/api/users",
-          options: { method: "GET" },
-        },
-        signal,
-      );
+      await fetchJson("/api/users", { method: "GET" }, signal);
 
       const request = mockFetch.mock.lastCall?.[0];
       expect(request?.signal).toBe(signal);
@@ -703,7 +679,7 @@ describe("fetchJson", () => {
         email: "test@example.com",
       };
 
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -714,10 +690,8 @@ describe("fetchJson", () => {
 
       const signal = new AbortController().signal;
       const result = await fetchJson<User>(
-        {
-          url: "/api/users/1",
-          options: { method: "GET" },
-        },
+        "/api/users/1",
+        { method: "GET" },
         signal,
       );
 
@@ -738,15 +712,9 @@ describe("fetchJson", () => {
 
       const signal = new AbortController().signal;
 
-      expect(() =>
-        fetchJson(
-          {
-            url: "/api/users",
-            options: { method: "GET" },
-          },
-          signal,
-        ),
-      ).toThrow("Network error");
+      expect(() => fetchJson("/api/users", { method: "GET" }, signal)).toThrow(
+        "Network error",
+      );
     });
 
     it("should throw on JSON parse errors", () => {
@@ -760,13 +728,7 @@ describe("fetchJson", () => {
       const signal = new AbortController().signal;
 
       expect(() =>
-        fetchJson(
-          {
-            url: "/api/users",
-            options: { method: "GET" },
-          },
-          signal,
-        ),
+        fetchJson("/api/users", { method: "GET" }, signal),
       ).toThrow();
     });
 
@@ -783,13 +745,7 @@ describe("fetchJson", () => {
       const signal = new AbortController().signal;
 
       expect(() =>
-        fetchJson(
-          {
-            url: "/api/users/999",
-            options: { method: "GET" },
-          },
-          signal,
-        ),
+        fetchJson("/api/users/999", { method: "GET" }, signal),
       ).toThrow();
     });
   });
@@ -802,7 +758,7 @@ describe("fetchJson", () => {
 describe("useFetchJson", () => {
   describe("Initial state", () => {
     it("should return correct shape", () => {
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify({ id: "1" }), { status: 200 }),
         );
@@ -825,7 +781,7 @@ describe("useFetchJson", () => {
     });
 
     it("should start with loading state", () => {
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify({ id: "1" }), { status: 200 }),
         );
@@ -849,7 +805,7 @@ describe("useFetchJson", () => {
   describe("Successful requests", () => {
     it("should fetch data and update state", async () => {
       const expectedData = { id: "1", name: "test" };
-      const mockFetch = mock(async (request: Request) => {
+      const mockFetch = mock(async (_request: Request) => {
         return new Response(JSON.stringify(expectedData), { status: 200 });
       });
 
@@ -872,7 +828,7 @@ describe("useFetchJson", () => {
 
     it("should make correct request", async () => {
       const expectedData = { id: "1" };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -881,7 +837,7 @@ describe("useFetchJson", () => {
       // @ts-ignore
       globalThis.fetch = mockFetch;
 
-      const { result, unmount } = renderHook(() =>
+      const { unmount } = renderHook(() =>
         useFetchJson("/api/users", {
           method: "POST",
           objectBody: { name: "test" },
@@ -908,7 +864,7 @@ describe("useFetchJson", () => {
       }
 
       const expectedData: User = { id: "1", name: "test" };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -995,7 +951,7 @@ describe("useFetchJson", () => {
   describe("Refresh functionality", () => {
     it("should allow refetching data", async () => {
       const callCount = { count: 0 };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         callCount.count++;
         return Promise.resolve(
           new Response(JSON.stringify({ id: String(callCount.count) }), {
@@ -1030,7 +986,7 @@ describe("useFetchJson", () => {
 
     it("should return data from refresh call", async () => {
       const expectedData = { id: "refreshed" };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -1111,7 +1067,7 @@ describe("useFetchJson", () => {
 
     it("should handle relative URLs", async () => {
       const expectedData = { ok: true };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
@@ -1136,7 +1092,7 @@ describe("useFetchJson", () => {
 
     it("should handle absolute URLs", async () => {
       const expectedData = { ok: true };
-      const mockFetch = mock((request: Request) => {
+      const mockFetch = mock((_request: Request) => {
         return Promise.resolve(
           new Response(JSON.stringify(expectedData), { status: 200 }),
         );
