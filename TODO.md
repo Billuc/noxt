@@ -3,7 +3,7 @@
 Ideas of things that could be implemented:
 
 - Incremental building ? No regeneration if hash match
-- Error handling / middlewares
+- ~~Error handling~~ / middlewares
 - ~~Manage links to other pages with a link function~~
 - ~~Progressive Web App helper function~~
 - ~~Remote Procedure Call by defining APIs files~~
@@ -15,3 +15,5 @@ Ideas of things that could be implemented:
 - context for runtime endpoints ?
 - Build pipeline
 - Move folders to src
+- Better E2E tests
+- Move to jest/AVA and JSDOM/happy-dom and @testing-library/preact
