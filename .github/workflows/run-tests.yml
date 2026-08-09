@@ -1,5 +1,6 @@
 name: run-tests
-on: []
+on:
+  push
 
 jobs:
   my-job:
