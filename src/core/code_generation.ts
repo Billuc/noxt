@@ -27,7 +27,7 @@ export function generateLinkUtilsCode(
 type RouteId = ${routeIdType};
 type QueryParams = Record<string, string | number | boolean>;
 
-const BASE = ${JSON.stringify(base ?? "")};
+export const BASE = ${JSON.stringify(base ?? "")};
 
 function link(routeId: RouteId, query?: QueryParams): string {
   const url = BASE + routeId;

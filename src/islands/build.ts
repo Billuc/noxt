@@ -77,6 +77,7 @@ export async function prerenderIslands(
     );
   }
 
+  console.log(`Bundling islands`);
   return bundleIslands(prerendered);
 }
 

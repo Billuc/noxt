@@ -107,6 +107,20 @@ export type ApiDefinitions = Record<
   >
 >;
 
+export type InferDefinitions<TDefinitions extends ApiDefinitions> = {
+  [K in keyof TDefinitions]: {
+    [M in keyof TDefinitions[K]]: TDefinitions[K][M] extends {
+      input: infer Input;
+      output: infer Output;
+    }
+      ? {
+          input: Input;
+          output: Output;
+        }
+      : never;
+  };
+};
+
 export type ApiEndpointDefinitions = Record<
   string,
   Partial<Record<HttpMethod, APIEndpoint<v.GenericSchema, v.GenericSchema>>>

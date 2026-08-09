@@ -15,8 +15,12 @@
  **/
 import * as v from "valibot";
 import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
-import type { ApiDefinitions } from "../api";
 import { useMemo } from "preact/hooks";
+import type {
+  ApiEndpointDefinitions,
+  ApiDefinitions,
+  ApiEndpoints,
+} from "../api/types";
 
 type KeyOf<T> =
   T extends Record<infer K, any>
@@ -114,4 +118,20 @@ export function useApi<
   return useAsync(memoizedData, ({ input, options }, signal) =>
     endpointCaller(input, options, signal),
   );
+}
+
+export function getApiHandlers<TDefinitions extends ApiEndpointDefinitions>(
+  apiMap: TDefinitions,
+): ApiEndpoints<TDefinitions> {
+  const routes: any = {};
+
+  for (const [route, routeData] of Object.entries(apiMap)) {
+    const handlers: any = {};
+    for (const [method, endpoint] of Object.entries(routeData)) {
+      handlers[method as keyof typeof handlers] = endpoint.handler;
+    }
+    routes[route] = handlers;
+  }
+
+  return routes;
 }

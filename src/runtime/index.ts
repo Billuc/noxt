@@ -20,7 +20,7 @@ export {
   useAsync,
   useFetchJson,
 } from "./fetch";
-export { ApiRouter, useApi } from "./api";
+export { ApiRouter, useApi, getApiHandlers } from "./api";
 
 export { sharedSignal } from "./signal";
 export type { Signal } from "@preact/signals-core";

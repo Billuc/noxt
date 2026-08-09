@@ -1,7 +1,10 @@
 import { useState } from "preact/hooks";
 import { h, Fragment } from "preact";
-import { router } from "../.cache/api";
-import { useApi } from "noxt/runtime";
+import type { ApiRoutes } from "../.cache/api";
+import { BASE } from "../.cache/utils";
+import { ApiRouter, useApi } from "noxt/runtime";
+
+const router = new ApiRouter<ApiRoutes>(BASE);
 
 function UserList() {
   const [userId, setUserId] = useState("1");

@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { rm, readdir } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 
 const FIXTURES_DIR = path.resolve("tests/fixtures");
 const DIST_DIR = path.resolve(FIXTURES_DIR, "dist");
 const CACHE_DIR = path.resolve(FIXTURES_DIR, ".cache");
-const ROUTES_FILE = path.resolve(CACHE_DIR, "routes.json");
 
 async function cleanupFixtures() {
   await rm(DIST_DIR, { recursive: true, force: true }).catch(() => {});
@@ -152,7 +151,9 @@ describe("API E2E Tests", () => {
     });
 
     it("should serve the API test page", async () => {
-      const response = await fetch(`http://localhost:${TEST_PORT}/api_test`);
+      const response = await fetch(
+        `http://localhost:${TEST_PORT}/api_test_page`,
+      );
       expect(response.status).toBe(200);
       const body = await response.text();
       expect(body).toContain("API E2E Test Page");
@@ -160,7 +161,9 @@ describe("API E2E Tests", () => {
     });
 
     it("should include island in the page", async () => {
-      const response = await fetch(`http://localhost:${TEST_PORT}/api_test`);
+      const response = await fetch(
+        `http://localhost:${TEST_PORT}/api_test_page`,
+      );
       const body = await response.text();
       expect(body).toContain("data-island=");
       expect(body).toContain("User List (API Test)");

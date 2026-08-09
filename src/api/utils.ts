@@ -13,8 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { ApiEndpointDefinitions, ApiEndpoints } from "./types";
-
 export function toSearchParam(input: { [k: string]: unknown }): {
   [k: string]: string[];
 } {
@@ -46,20 +44,4 @@ function toSearchParamValue(value: unknown): string[] {
 
 export function toBody(body: unknown): string | undefined {
   return JSON.stringify(body);
-}
-
-export function getRoutes<TDefinitions extends ApiEndpointDefinitions>(
-  apiMap: TDefinitions,
-): ApiEndpoints<TDefinitions> {
-  const routes: any = {};
-
-  for (const [route, routeData] of Object.entries(apiMap)) {
-    const handlers: any = {};
-    for (const [method, endpoint] of Object.entries(routeData)) {
-      handlers[method as keyof typeof handlers] = endpoint.handler;
-    }
-    routes[route] = handlers;
-  }
-
-  return routes;
 }

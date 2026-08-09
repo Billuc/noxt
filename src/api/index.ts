@@ -18,17 +18,17 @@ import { discoverAPIs, generateAPIFile } from "./build";
 import type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,
-  APIEndpoint,
   SearchParamSchema,
   ApiDefinitions,
+  InferDefinitions,
 } from "./types";
-import { getRoutes } from "./utils";
+import { APIEndpoint } from "./types";
 
-export { query, mutation, getRoutes, discoverAPIs, generateAPIFile };
+export { query, mutation, discoverAPIs, generateAPIFile, APIEndpoint };
 export type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,
-  APIEndpoint,
   SearchParamSchema,
   ApiDefinitions,
+  InferDefinitions,
 };

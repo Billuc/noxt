@@ -14,20 +14,13 @@
  *  limitations under the License.
  **/
 
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterEach,
-  beforeEach,
-  mock,
-} from "bun:test";
+import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
 import * as v from "valibot";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
-import { ApiRouter, useApi } from "../../../src/runtime/api";
+import { ApiRouter, useApi, getApiHandlers } from "../../../src/runtime/api";
 import type { FetchRequestInit } from "../../../src/runtime/fetch";
+import { APIEndpoint } from "../../../src/api";
 
 const happyWindow = new GlobalWindow();
 
@@ -546,5 +539,82 @@ describe("useApi", () => {
       name: "new user",
       email: "new@example.com",
     });
+  });
+});
+
+describe("getApiHandlers", () => {
+  it("should extract handlers from API definitions", () => {
+    const mockHandler = (_request: Request) => Promise.resolve(new Response());
+    const apiMap = {
+      "/api/users": {
+        GET: new APIEndpoint(v.object({}), v.object({}), mockHandler),
+      },
+    };
+
+    const result = getApiHandlers(apiMap);
+
+    expect(result).toEqual({
+      "/api/users": {
+        GET: mockHandler,
+      },
+    });
+  });
+
+  it("should handle multiple routes and methods", () => {
+    const getHandler = (_request: Request) => Promise.resolve(new Response());
+    const postHandler = (_request: Request) => Promise.resolve(new Response());
+    const apiMap = {
+      "/api/users": {
+        GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
+        POST: new APIEndpoint(v.object({}), v.object({}), postHandler),
+      },
+      "/api/posts": {
+        GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
+      },
+    };
+
+    const result = getApiHandlers(apiMap);
+
+    expect(result).toEqual({
+      "/api/users": {
+        GET: getHandler,
+        POST: postHandler,
+      },
+      "/api/posts": {
+        GET: getHandler,
+      },
+    });
+  });
+
+  it("should handle empty API definitions", () => {
+    const result = getApiHandlers({});
+    expect(result).toEqual({});
+  });
+
+  it("should handle routes with no methods", () => {
+    const apiMap = {
+      "/api/users": {},
+    };
+
+    const result = getApiHandlers(apiMap);
+    expect(result).toEqual({
+      "/api/users": {},
+    });
+  });
+
+  it("should preserve handler references", () => {
+    const handler1 = (_request: Request) => Promise.resolve(new Response());
+    const handler2 = (_request: Request) => Promise.resolve(new Response());
+    const apiMap = {
+      "/api/test": {
+        GET: new APIEndpoint(v.object({}), v.object({}), handler1),
+        POST: new APIEndpoint(v.object({}), v.object({}), handler2),
+      },
+    };
+
+    const result = getApiHandlers(apiMap);
+
+    expect(result["/api/test"].GET).toBe(handler1);
+    expect(result["/api/test"].POST).toBe(handler2);
   });
 });
