@@ -14,6 +14,7 @@
  *  limitations under the License.
  **/
 import { generateRouteMap, generateRouteUtils } from "./src/core/build";
+import { BuildPipeline } from "./src/core/types";
 
 import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
 import type {
@@ -62,6 +63,7 @@ export {
   generateRouteUtils,
   generateServiceWorker,
   generateStaticPages,
+  BuildPipeline,
 };
 export type {
   IQueryEndpointBuilder,

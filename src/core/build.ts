@@ -24,16 +24,7 @@ import { generateLinkUtilsCode } from "./code_generation";
 import { toPublicPath } from "./utils";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";
-
-interface RouteData {
-  url: string;
-  file: Path;
-}
-
-interface FileEntry {
-  url: string;
-  file: Path;
-}
+import type { FileEntry, RouteData } from "./types";
 
 export async function generateRouteMap(
   routes: RouteData[],

@@ -1,7 +1,7 @@
 import {
   prerenderIslands,
   generateRouteMap,
-  generateUtils,
+  generateRouteUtils,
   generateStaticPages,
   discoverAPIs,
   generateAPIFile,
@@ -12,6 +12,7 @@ import {
   prerenderPreactPages,
   prerenderMarkdownPages,
 } from "noxt";
+import { generateAssetUtilsFile } from "../../src/assets";
 
 process.env["NOXT_MODE"] = "dev";
 
@@ -20,7 +21,8 @@ const assetFiles = await discoverAssets();
 const preactPages = await discoverPreactPages();
 const markdownPages = await discoverMarkdownPages();
 const allPages = [...preactPages, ...markdownPages];
-await generateUtils(allPages, assetFiles);
+await generateRouteUtils(allPages);
+await generateAssetUtilsFile(assetFiles);
 
 // Discover and generate API
 const apiEntries = await discoverAPIs();
