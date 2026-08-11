@@ -14,7 +14,7 @@ Ideas of things that could be implemented:
 - ~~Non HTML results / files (e.g.: sitemap.xml) -> preact-render-to-string works with components returning strings so this should work already (to test)~~
 - context for runtime endpoints ?
 - Build pipeline
-- Move folders to src
+- ~~Move folders to src~~
 - Better E2E tests
 - Move to jest/AVA and JSDOM/happy-dom and @testing-library/preact
 - dev server ?

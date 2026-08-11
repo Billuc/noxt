@@ -67,10 +67,10 @@ export const ROUTES_CACHE_FILE = path.join(CACHE_DIR, "routes.json");
 export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
 export const API_CACHE_FILE = path.join(CACHE_DIR, "api.ts");
 
-export const ISLANDS_DIR = "islands";
-export const ASSETS_DIR = "assets";
-export const PAGES_DIR = "pages";
-export const API_DIR = "api";
+export const ISLANDS_DIR = path.join("src", "islands");
+export const ASSETS_DIR = path.join("src", "assets");
+export const PAGES_DIR = path.join("src", "pages");
+export const API_DIR = path.join("src", "api");
 
 export const DIST_DIR = "dist";
 
