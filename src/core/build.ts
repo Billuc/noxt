@@ -20,10 +20,7 @@ import {
   ROUTES_CACHE_FILE,
   UTILS_CACHE_FILE,
 } from "./fs";
-import {
-  generateAssetUtilsCode,
-  generateLinkUtilsCode,
-} from "./code_generation";
+import { generateLinkUtilsCode } from "./code_generation";
 import { toPublicPath } from "./utils";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";
@@ -68,17 +65,14 @@ export async function generateRouteMap(
   return Path.create(routesFile);
 }
 
-export async function generateUtils(
+export async function generateRouteUtils(
   pageFiles: FileEntry[],
-  assetFiles: FileEntry[],
   base?: string,
 ): Promise<void> {
   const routeNames = pageFiles.map(({ url }) => url);
-  const assetIds = assetFiles.map(({ url }) => url);
   const linkCode = generateLinkUtilsCode(routeNames, base);
-  const assetCode = generateAssetUtilsCode(assetIds);
-  const code = `${linkCode}\n${assetCode}`;
+
   const utilsFile = path.resolve(UTILS_CACHE_FILE);
-  await writeFile(utilsFile, code);
+  await writeFile(utilsFile, linkCode);
   console.log("Generated utils at .cache/utils.ts");
 }

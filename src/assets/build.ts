@@ -14,10 +14,16 @@
  *  limitations under the License.
  **/
 import * as path from "node:path";
-import { ASSETS_DIR, getFilesMatchingGlob } from "../core/fs";
+import {
+  API_CACHE_FILE,
+  ASSETS_DIR,
+  getFilesMatchingGlob,
+  writeFile,
+} from "../core/fs";
 import { toPublicPath } from "../core/utils";
 import { Path } from "../core/fs";
 import type { AssetEntry } from "./types";
+import { generateAssetUtilsCode } from "./code_generation";
 
 export async function discoverAssets(base?: string): Promise<AssetEntry[]> {
   let assetFiles: Path[];
@@ -31,4 +37,14 @@ export async function discoverAssets(base?: string): Promise<AssetEntry[]> {
     url: toPublicPath(file.relativeToCwd(), base ?? ""),
     file: file,
   }));
+}
+
+export async function generateAssetUtilsFile(assets: AssetEntry[]) {
+  const assetIds = assets.map((a) => a.url);
+
+  let code = generateAssetUtilsCode(assetIds);
+
+  const utilsFile = path.resolve(API_CACHE_FILE);
+  await writeFile(utilsFile, code);
+  console.log("Generated assets utils at .cache/assets.ts");
 }

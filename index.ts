@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { generateRouteMap, generateUtils } from "./src/core/build";
+import { generateRouteMap, generateRouteUtils } from "./src/core/build";
 
 import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
 import type {
@@ -59,7 +59,7 @@ export {
   discoverPreactPages,
   prerenderPreactPages,
   generateRouteMap,
-  generateUtils,
+  generateRouteUtils,
   generateServiceWorker,
   generateStaticPages,
 };

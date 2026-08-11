@@ -17,3 +17,4 @@ Ideas of things that could be implemented:
 - Move folders to src
 - Better E2E tests
 - Move to jest/AVA and JSDOM/happy-dom and @testing-library/preact
+- dev server ?
