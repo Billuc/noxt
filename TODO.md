@@ -2,19 +2,14 @@
 
 Ideas of things that could be implemented:
 
+- ~~Move folders to src~~ Remove src from routes (like for apis)
+- ~~Build pipeline~~ Adapt functions for build pipeline
+- Is base really required everywhere ?
+- Remove zod and valibot and use superscript instead
+- Move to jest and JSDOM and @testing-library/preact (or maybe preact directly)
+- dev server ?
+- Better E2E tests
+- context for runtime endpoints ?
+- Server endpoints (\*.server.ts ?)
 - Incremental building ? No regeneration if hash match
 - ~~Error handling~~ / middlewares
-- ~~Manage links to other pages with a link function~~
-- ~~Progressive Web App helper function~~
-- ~~Remote Procedure Call by defining APIs files~~
-- ~~State helper ? To share data between islands using signals~~
-- ~~Remove Bun references~~
-- ~~Base path~~
-- Server endpoints (\*.server.ts ?)
-- ~~Non HTML results / files (e.g.: sitemap.xml) -> preact-render-to-string works with components returning strings so this should work already (to test)~~
-- context for runtime endpoints ?
-- Build pipeline
-- ~~Move folders to src~~
-- Better E2E tests
-- Move to jest/AVA and JSDOM/happy-dom and @testing-library/preact
-- dev server ?
