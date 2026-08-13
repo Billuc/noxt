@@ -8,7 +8,7 @@ import { mkdir, rm, writeFile, exists, readdir } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
 const TEST_DIR = path.join(import.meta.dir, "test-islands-project");
-const ISLANDS_DIR = path.join(TEST_DIR, "islands");
+const ISLANDS_DIR = path.join(TEST_DIR, "src", "islands");
 const originalCwd = process.cwd();
 
 async function setupTestProject() {
@@ -110,16 +110,23 @@ async function cleanupTestProject() {
   await rm(TEST_DIR, { recursive: true, force: true });
 }
 
+/** Safely resets the dummy project: the directory must NOT be the process
+ *  cwd when deleted, or Windows returns EBUSY. */
+async function resetTestProject(setup: () => Promise<void> = setupTestProject) {
+  process.chdir(originalCwd);
+  await cleanupTestProject();
+  await setup();
+  process.chdir(TEST_DIR);
+}
+
 describe("islands/build", () => {
   beforeEach(async () => {
-    await cleanupTestProject();
-    await setupTestProject();
-    process.chdir(TEST_DIR);
+    await resetTestProject();
   });
 
   afterEach(async () => {
-    await cleanupTestProject();
     process.chdir(originalCwd);
+    await cleanupTestProject();
   });
 
   describe("discoverIslands", () => {
@@ -174,8 +181,7 @@ describe("islands/build", () => {
     });
 
     it("should discover islands with various JS-related extension", async () => {
-      await cleanupTestProject();
-      await setupTestProjectWithExtensions();
+      await resetTestProject(setupTestProjectWithExtensions);
 
       const islands = await discoverIslands();
 
@@ -197,8 +203,7 @@ describe("islands/build", () => {
     });
 
     it("should handle nested directories within islands folder", async () => {
-      await cleanupTestProject();
-      await setupTestProjectWithNestedDirs();
+      await resetTestProject(setupTestProjectWithNestedDirs);
       const islands = await discoverIslands();
       expect(islands.length).toBeGreaterThanOrEqual(1);
       expect(
@@ -227,8 +232,7 @@ describe("islands/build", () => {
     });
 
     it("should handle islands with special characters in their names", async () => {
-      await cleanupTestProject();
-      await setupTestProjectWithSpecialChars();
+      await resetTestProject(setupTestProjectWithSpecialChars);
       const islands = await discoverIslands();
       expect(islands.length).toBe(2);
       expect(
@@ -286,8 +290,7 @@ describe("islands/build", () => {
     it("should generate consistent hashes for the same component", async () => {
       const discovered = await discoverIslands();
       const rendered1 = await prerenderIslands(discovered);
-      await cleanupTestProject();
-      await setupTestProject();
+      await resetTestProject();
       const discovered2 = await discoverIslands();
       const rendered2 = await prerenderIslands(discovered2);
 

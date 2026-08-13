@@ -91,6 +91,7 @@ async function bundleIslands(
 
   const result = await esbuild.build({
     entryPoints: entrypoints,
+    absWorkingDir: process.cwd(),
     outdir: path.resolve(ISLANDS_CACHE_DIR),
     minify: !devMode,
     sourcemap: devMode,
@@ -103,7 +104,6 @@ async function bundleIslands(
     format: "esm",
     logLevel: "info",
     metafile: true,
-    absPaths: ["metafile"],
   });
 
   const entriesMap: Record<string, IslandEntry> = {};
@@ -119,7 +119,8 @@ async function bundleIslands(
   for (const output in result.metafile.outputs) {
     const inputs = result.metafile.outputs[output]?.inputs ?? {};
     for (const input in inputs) {
-      const entry = entriesMap[standardizePath(input)];
+      const entry =
+        entriesMap[standardizePath(path.resolve(process.cwd(), input))];
       if (!entry) continue;
       entry.files.push(Path.resolve(output));
     }
