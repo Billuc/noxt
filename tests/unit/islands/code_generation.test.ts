@@ -23,7 +23,7 @@ describe("generateScriptForIsland", () => {
     const script = generateScriptForIsland(hash, importPath);
 
     expect(script).toContain("import { renderIsland } from");
-    expect(script).toContain("runtime/island.ts");
+    expect(script).toMatch(/runtime(\/|\\\\)island.ts/);
     expect(script).toContain('import Island from "./components/MyIsland";');
     expect(script).toContain('renderIsland(Island, "testhash123");');
   });

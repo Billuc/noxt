@@ -1,10 +1,7 @@
 /**
  * Unit tests for src/core/code_generator.ts
  */
-import {
-  generateLinkUtilsCode,
-  generateAssetUtilsCode,
-} from "../../../src/core/code_generation";
+import { generateLinkUtilsCode } from "../../../src/core/code_generation";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
@@ -105,26 +102,5 @@ describe("generated link function", () => {
   it("should return just the path when query is undefined", async () => {
     const mod = await generateAndLoad("/about");
     expect(mod.link("/about")).toBe("/about");
-  });
-});
-
-describe("generateAssetUtilsCode", () => {
-  it("should generate code with a single asset", () => {
-    const result = generateAssetUtilsCode(["/image.png"]);
-    expect(result).toContain('type AssetId = "/image.png";');
-    expect(result).toContain("function asset(id: AssetId): string");
-    expect(result).toContain("return id;");
-    expect(result).toContain("export { asset, type AssetId }");
-  });
-
-  it("should generate code with multiple assets", () => {
-    const result = generateAssetUtilsCode(["/image.png", "/style.css"]);
-    expect(result).toContain('type AssetId = "/image.png" | "/style.css";');
-  });
-
-  it("should handle empty asset list", () => {
-    const result = generateAssetUtilsCode([]);
-    expect(result).toContain("type AssetId = never;");
-    expect(result).toContain("function asset(id: AssetId): string");
   });
 });
