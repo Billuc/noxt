@@ -15,7 +15,7 @@
  **/
 import * as path from "node:path";
 import {
-  API_CACHE_FILE,
+  ASSETS_CACHE_FILE,
   ASSETS_DIR,
   getFilesMatchingGlob,
   writeFile,
@@ -47,7 +47,7 @@ export async function generateAssetUtilsFile(
 
   let code = generateAssetUtilsCode(assetIds, base);
 
-  const utilsFile = path.resolve(API_CACHE_FILE);
+  const utilsFile = path.resolve(ASSETS_CACHE_FILE);
   await writeFile(utilsFile, code);
   console.log("Generated assets utils at .cache/assets.ts");
 }

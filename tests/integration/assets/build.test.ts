@@ -150,7 +150,7 @@ describe("assets/build", () => {
   });
 
   describe("generateAssetUtilsFile", () => {
-    const utilsFile = () => path.resolve(TEST_DIR, ".cache", "api.ts");
+    const utilsFile = () => path.resolve(TEST_DIR, ".cache", "assets.ts");
 
     it("should generate the exact expected file for an empty assets list", async () => {
       await generateAssetUtilsFile([]);
