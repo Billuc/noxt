@@ -28,13 +28,15 @@ export function getRouteName(pathFromPages: string, base?: string): string {
     .replaceAll("\\", "/")
     .slice(0, -extension.length);
 
-  if (basename === "index") return "/";
+  const noIndexBasename = basename.endsWith("index")
+    ? basename.slice(0, -5)
+    : basename;
+  const trimmedBase = base?.endsWith("/") ? base.slice(0, -1) : (base ?? "");
+  const trimmedBasename = noIndexBasename.endsWith("/")
+    ? noIndexBasename.slice(0, -1)
+    : noIndexBasename;
 
-  return (
-    (base ?? "") +
-    "/" +
-    (basename.endsWith("/index") ? basename.slice(0, -6) : basename)
-  );
+  return trimmedBase + "/" + trimmedBasename;
 }
 
 export function routeToHtmlPath(routeName: string): string {

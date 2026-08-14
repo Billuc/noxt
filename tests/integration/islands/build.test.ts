@@ -166,20 +166,6 @@ describe("islands/build", () => {
       expect(islands).toEqual([]);
     });
 
-    it("should discover islands with .tsx extension", async () => {
-      const islands = await discoverIslands();
-      expect(islands.some((i) => i.sourceFile.absolute.endsWith(".tsx"))).toBe(
-        true,
-      );
-    });
-
-    it("should discover islands with .ts extension", async () => {
-      const islands = await discoverIslands();
-      expect(islands.some((i) => i.sourceFile.absolute.endsWith(".ts"))).toBe(
-        true,
-      );
-    });
-
     it("should discover islands with various JS-related extension", async () => {
       await resetTestProject(setupTestProjectWithExtensions);
 
@@ -205,9 +191,12 @@ describe("islands/build", () => {
     it("should handle nested directories within islands folder", async () => {
       await resetTestProject(setupTestProjectWithNestedDirs);
       const islands = await discoverIslands();
-      expect(islands.length).toBeGreaterThanOrEqual(1);
+      expect(islands.length).toBe(2);
       expect(
         islands.some((i) => i.sourceFile.absolute.includes("RootIsland")),
+      ).toBe(true);
+      expect(
+        islands.some((i) => i.sourceFile.absolute.includes("NestedIsland")),
       ).toBe(true);
     });
 

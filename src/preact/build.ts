@@ -25,10 +25,17 @@ import { renderPreactToHtml } from "./render";
 export async function discoverPreactPages(
   base?: string,
 ): Promise<PreactPageEntry[]> {
-  const pageFiles = await getFilesMatchingGlob(
-    "**/*.{tsx,ts,jsx,js}",
-    path.resolve(PAGES_DIR),
-  );
+  let pageFiles: Path[];
+  try {
+    pageFiles = await getFilesMatchingGlob(
+      "**/*.{tsx,ts,jsx,js}",
+      path.resolve(PAGES_DIR),
+    );
+  } catch {
+    console.log("No pages directory found !");
+    return [];
+  }
+
   return pageFiles.map((file) => ({
     url: getRouteName(file.relativeTo(PAGES_DIR), base),
     file,

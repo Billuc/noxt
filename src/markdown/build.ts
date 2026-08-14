@@ -32,10 +32,17 @@ import { renderMarkdownToHtml } from "./render";
 export async function discoverMarkdownPages(
   base?: string,
 ): Promise<MarkdownPageEntry[]> {
-  const pageFiles = await getFilesMatchingGlob(
-    "**/*.{md}",
-    path.resolve(PAGES_DIR),
-  );
+  let pageFiles: Path[];
+  try {
+    pageFiles = await getFilesMatchingGlob(
+      "**/*.{md}",
+      path.resolve(PAGES_DIR),
+    );
+  } catch {
+    console.log("No pages directory found !");
+    return [];
+  }
+
   return pageFiles.map((file) => ({
     url: getRouteName(file.relativeTo(PAGES_DIR), base),
     file,

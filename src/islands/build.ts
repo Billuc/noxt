@@ -23,7 +23,7 @@ export async function discoverIslands(): Promise<IslandSourceEntry[]> {
   let islandFiles: Path[];
   try {
     islandFiles = await getFilesMatchingGlob(
-      "*.{tsx,ts,jsx,js}",
+      "**/*.{tsx,ts,jsx,js}",
       path.resolve(ISLANDS_DIR),
     );
   } catch {
