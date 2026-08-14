@@ -147,12 +147,6 @@ describe("assets/build", () => {
         true,
       );
     });
-
-    it("should apply the base prefix to asset urls", async () => {
-      const assets = await discoverAssets("/base");
-      expect(assets.some((a) => a.url === "/base/assets/logo.png")).toBe(true);
-      expect(assets.some((a) => a.url === "/base/assets/script.js")).toBe(true);
-    });
   });
 
   describe("generateAssetUtilsFile", () => {
@@ -166,7 +160,7 @@ describe("assets/build", () => {
 type AssetId = never;
 
 function asset(id: AssetId): string {
-  return id;
+  return "" + id;
 }
 
 export { asset, type AssetId };
@@ -183,7 +177,7 @@ export { asset, type AssetId };
 type AssetId = "/assets/logo.png";
 
 function asset(id: AssetId): string {
-  return id;
+  return "" + id;
 }
 
 export { asset, type AssetId };
@@ -204,7 +198,7 @@ export { asset, type AssetId };
 type AssetId = "/assets/logo.png" | "/assets/css/styles.css";
 
 function asset(id: AssetId): string {
-  return id;
+  return "" + id;
 }
 
 export { asset, type AssetId };

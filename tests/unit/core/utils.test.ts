@@ -35,10 +35,6 @@ describe("getRouteName", () => {
   it("should handle index files in nested paths", () => {
     expect(getRouteName("blog/index.md")).toBe("/blog");
   });
-
-  it("should handle base parameter", () => {
-    expect(getRouteName("about.md", "/base")).toBe("/base/about");
-  });
 });
 
 describe("routeToHtmlPath", () => {

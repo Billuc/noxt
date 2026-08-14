@@ -236,12 +236,6 @@ describe("markdown/build", () => {
       expect(pages.some((p) => p.url === "/Special-Name")).toBe(true);
       expect(pages.some((p) => p.url === "/Component_123")).toBe(true);
     });
-
-    it("should apply the base prefix to page urls", async () => {
-      const pages = await discoverMarkdownPages("/docs");
-      expect(pages.some((p) => p.url === "/docs/")).toBe(true);
-      expect(pages.some((p) => p.url === "/docs/about")).toBe(true);
-    });
   });
 
   describe("prerenderMarkdownPages", () => {

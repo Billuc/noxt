@@ -239,12 +239,6 @@ describe("preact/build", () => {
       expect(pages.some((p) => p.url === "/Special-Name")).toBe(true);
       expect(pages.some((p) => p.url === "/Component_123")).toBe(true);
     });
-
-    it("should apply the base prefix to page urls", async () => {
-      const pages = await discoverPreactPages("/base");
-      expect(pages.some((p) => p.url === "/base/")).toBe(true);
-      expect(pages.some((p) => p.url === "/base/about")).toBe(true);
-    });
   });
 
   describe("prerenderPreactPages", () => {

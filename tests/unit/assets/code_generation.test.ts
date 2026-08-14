@@ -9,7 +9,7 @@ describe("generateAssetUtilsCode", () => {
     const result = generateAssetUtilsCode(["/image.png"]);
     expect(result).toContain('type AssetId = "/image.png";');
     expect(result).toContain("function asset(id: AssetId): string");
-    expect(result).toContain("return id;");
+    expect(result).toContain('return "" + id;');
     expect(result).toContain("export { asset, type AssetId }");
   });
 

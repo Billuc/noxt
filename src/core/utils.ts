@@ -35,7 +35,7 @@ export function getRouteName(pathFromPages: string): string {
     ? noIndexBasename.slice(0, -1)
     : noIndexBasename;
 
-  return trimmedBasename === "" ? "/" : trimmedBasename;
+  return "/" + trimmedBasename;
 }
 
 export function routeToHtmlPath(routeName: string): string {

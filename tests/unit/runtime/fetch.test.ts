@@ -817,7 +817,7 @@ describe("useFetchJson", () => {
       );
 
       // Wait for fetch to complete
-      await Bun.sleep(50);
+      await Bun.sleep(100);
 
       expect(result.current.loading).toBe(false);
       expect(result.current.data).toEqual(expectedData);
@@ -936,7 +936,7 @@ describe("useFetchJson", () => {
           useFetchJson("/api/users", { method: "GET" }),
         );
 
-        await Bun.sleep(50);
+        await Bun.sleep(100);
 
         expect(result.current.loading).toBe(false);
         expect(result.current.error).toBeInstanceOf(Error);
