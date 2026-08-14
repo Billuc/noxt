@@ -123,6 +123,38 @@ layout: src/layouts/MissingLayout.tsx
   );
 }
 
+async function setupTestProjectWithBaseLayout() {
+  await mkdir(PAGES_DIR, { recursive: true });
+  await mkdir(path.join(TEST_DIR, "src", "layouts"), { recursive: true });
+
+  await writeFile(
+    path.join(TEST_DIR, "src", "layouts", "BaseLayout.tsx"),
+    `import { h, type ComponentChildren } from "preact";
+import { useContext } from "preact/hooks";
+import { BaseContext } from "../../../../../../src/core/context";
+
+export default function BaseLayout({
+  children,
+}: {
+  children?: ComponentChildren;
+}) {
+  const base = useContext(BaseContext);
+  return h("div", { "data-base": base }, children);
+}
+`,
+  );
+
+  await writeFile(
+    path.join(PAGES_DIR, "with-base.md"),
+    `---
+layout: src/layouts/BaseLayout.tsx
+---
+
+# Base page
+`,
+  );
+}
+
 async function cleanupTestProject() {
   await rm(TEST_DIR, { recursive: true, force: true });
 }
@@ -383,6 +415,17 @@ describe("markdown/build", () => {
       expect(rendered[2]!.file.absolute).toMatch(
         /\.cache[\\/]NoFrontmatter\.[a-zA-Z0-9-_]+\.html$/,
       );
+    });
+
+    it("should pass the base to prerendered markdown pages", async () => {
+      await resetTestProject(setupTestProjectWithBaseLayout);
+      const discovered = await discoverMarkdownPages();
+      const rendered = await prerenderMarkdownPages(discovered, "/docs");
+
+      const basePage = rendered.find((p) => p.url === "/with-base");
+      expect(basePage).toBeDefined();
+      const content = await readFile(basePage!.file.absolute, "utf-8");
+      expect(content).toContain('data-base="/docs"');
     });
   });
 });

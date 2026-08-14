@@ -122,6 +122,23 @@ export default function Component123() { return h("div", null, "123"); }`,
   );
 }
 
+async function setupTestProjectWithBasePage() {
+  await mkdir(PAGES_DIR, { recursive: true });
+
+  await writeFile(
+    path.join(PAGES_DIR, "base-page.tsx"),
+    `import { h } from "preact";
+import { useContext } from "preact/hooks";
+import { BaseContext } from "../../../../../../src/core/context";
+
+export default function BasePage() {
+  const base = useContext(BaseContext);
+  return h("div", { "data-base": base }, "Base page");
+}
+`,
+  );
+}
+
 async function cleanupTestProject() {
   await rm(TEST_DIR, { recursive: true, force: true });
 }
@@ -358,6 +375,17 @@ describe("preact/build", () => {
       const [home, about] = rendered;
       expect(home!.file.absolute).toMatch(/\.cache[\\/]Home\..+\.html$/);
       expect(about!.file.absolute).toMatch(/\.cache[\\/]About\..+\.html$/);
+    });
+
+    it("should pass the base to prerendered preact pages", async () => {
+      await resetTestProject(setupTestProjectWithBasePage);
+      const discovered = await discoverPreactPages();
+      const rendered = await prerenderPreactPages(discovered, "/base");
+
+      const basePage = rendered.find((p) => p.url === "/base-page");
+      expect(basePage).toBeDefined();
+      const content = await readFile(basePage!.file.absolute, "utf-8");
+      expect(content).toContain('data-base="/base"');
     });
   });
 });

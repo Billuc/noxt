@@ -234,5 +234,20 @@ export { asset, type AssetId };
 
       expect(content).not.toBe("to overwrite");
     });
+
+    it("should apply the base prefix to the generated asset function", async () => {
+      await generateAssetUtilsFile(
+        [
+          createAssetEntry(
+            "/assets/logo.png",
+            path.join(ASSETS_DIR, "logo.png"),
+          ),
+        ],
+        "/base",
+      );
+
+      const content = await Bun.file(utilsFile()).text();
+      expect(content).toContain('return "/base" + id;');
+    });
   });
 });

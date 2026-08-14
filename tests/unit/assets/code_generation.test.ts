@@ -23,4 +23,14 @@ describe("generateAssetUtilsCode", () => {
     expect(result).toContain("type AssetId = never;");
     expect(result).toContain("function asset(id: AssetId): string");
   });
+
+  it("should prefix the base path to asset urls", () => {
+    const result = generateAssetUtilsCode(["/image.png"], "/base");
+    expect(result).toContain('return "/base" + id;');
+  });
+
+  it("should not prefix anything when base is empty", () => {
+    const result = generateAssetUtilsCode(["/image.png"], "");
+    expect(result).toContain('return "" + id;');
+  });
 });

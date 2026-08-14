@@ -19,6 +19,15 @@ async function generateAndLoad(...routeNames: string[]) {
   return import(path.resolve(filePath));
 }
 
+async function generateAndLoadWithBase(base: string, ...routeNames: string[]) {
+  const code = generateLinkUtilsCode(routeNames, base);
+  const fileName = `utils.${counter++}.ts`;
+  const filePath = path.join(CACHE_DIR, fileName);
+  await mkdir(CACHE_DIR, { recursive: true });
+  await writeFile(filePath, code);
+  return import(path.resolve(filePath));
+}
+
 beforeAll(async () => {
   await rm(CACHE_DIR, { recursive: true, force: true });
 });
@@ -57,6 +66,16 @@ describe("generateLinkUtilsCode", () => {
   it("should handle empty route list", () => {
     const result = generateLinkUtilsCode([]);
     expect(result).toContain("type RouteId = never;");
+  });
+
+  it("should set BASE to the provided base", () => {
+    const result = generateLinkUtilsCode(["/", "/about"], "/docs");
+    expect(result).toContain('export const BASE = "/docs";');
+  });
+
+  it("should set BASE to an empty string when no base is provided", () => {
+    const result = generateLinkUtilsCode(["/"]);
+    expect(result).toContain('export const BASE = "";');
   });
 });
 
@@ -102,5 +121,16 @@ describe("generated link function", () => {
   it("should return just the path when query is undefined", async () => {
     const mod = await generateAndLoad("/about");
     expect(mod.link("/about")).toBe("/about");
+  });
+
+  it("should prefix route paths with the base", async () => {
+    const mod = await generateAndLoadWithBase("/docs", "/", "/about");
+    expect(mod.link("/")).toBe("/docs/");
+    expect(mod.link("/about")).toBe("/docs/about");
+  });
+
+  it("should prefix query params after the base", async () => {
+    const mod = await generateAndLoadWithBase("/base", "/search");
+    expect(mod.link("/search", { q: "x" })).toBe("/base/search?q=x");
   });
 });
