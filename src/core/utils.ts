@@ -22,7 +22,7 @@ import path from "node:path";
  * @param pathFromPages - Relative path from the pages directory
  * @returns Route name (e.g., "about.md" -> "/about", "index.md" -> "/")
  */
-export function getRouteName(pathFromPages: string, base?: string): string {
+export function getRouteName(pathFromPages: string): string {
   const extension = path.extname(pathFromPages);
   const basename = pathFromPages
     .replaceAll("\\", "/")
@@ -31,12 +31,11 @@ export function getRouteName(pathFromPages: string, base?: string): string {
   const noIndexBasename = basename.endsWith("index")
     ? basename.slice(0, -5)
     : basename;
-  const trimmedBase = base?.endsWith("/") ? base.slice(0, -1) : (base ?? "");
   const trimmedBasename = noIndexBasename.endsWith("/")
     ? noIndexBasename.slice(0, -1)
     : noIndexBasename;
 
-  return trimmedBase + "/" + trimmedBasename;
+  return trimmedBasename === "" ? "/" : trimmedBasename;
 }
 
 export function routeToHtmlPath(routeName: string): string {
@@ -45,8 +44,8 @@ export function routeToHtmlPath(routeName: string): string {
   return path.join(relative, "index.html");
 }
 
-export function toPublicPath(cwdRelativePath: string, base: string): string {
-  const trimmed = trim(cwdRelativePath.replaceAll("\\", "/"), "/");
+export function toPublicPath(relativePath: string, base: string = ""): string {
+  const trimmed = trim(relativePath.replaceAll("\\", "/"), "/");
   const trimmedBase = trim(base, "/");
   return "/" + (trimmedBase ? trimmedBase + "/" : "") + trimmed;
 }

@@ -45,7 +45,7 @@ export async function generateStaticPages(
     let outputPath = DIST_DIR + routeName + "/index.html";
     outputPath = outputPath.replaceAll("/", path.sep);
     await copyFile(route.file.absolute, outputPath);
-    manifest[route.url] = outputPath;
+    manifest[toPublicPath(route.url, base ?? "")] = outputPath;
   }
 
   for (const entry of islandEntries) {
@@ -61,7 +61,7 @@ export async function generateStaticPages(
     const assetRelPath = asset.file.relativeTo(ASSETS_DIR);
     let outputPath = distPath("assets", assetRelPath);
     await copyFile(asset.file.absolute, outputPath);
-    manifest[asset.url] = outputPath;
+    manifest[toPublicPath(asset.url, base ?? "")] = outputPath;
   }
 
   return manifest;

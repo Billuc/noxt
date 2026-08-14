@@ -29,9 +29,7 @@ import type { IslandEntry } from "../islands";
 import { parseMarkdown } from "./parse";
 import { renderMarkdownToHtml } from "./render";
 
-export async function discoverMarkdownPages(
-  base?: string,
-): Promise<MarkdownPageEntry[]> {
+export async function discoverMarkdownPages(): Promise<MarkdownPageEntry[]> {
   let pageFiles: Path[];
   try {
     pageFiles = await getFilesMatchingGlob(
@@ -44,7 +42,7 @@ export async function discoverMarkdownPages(
   }
 
   return pageFiles.map((file) => ({
-    url: getRouteName(file.relativeTo(PAGES_DIR), base),
+    url: getRouteName(file.relativeTo(PAGES_DIR)),
     file,
   }));
 }

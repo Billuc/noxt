@@ -35,11 +35,11 @@ export async function generateRouteMap(
   const manifest: Record<string, string> = {};
 
   for (const route of routes) {
-    manifest[(base ?? "") + route.url] = route.file.relativeToCwd();
+    manifest[toPublicPath(route.url, base ?? "")] = route.file.relativeToCwd();
   }
 
   for (const { url, file: assetPath } of assetFiles) {
-    manifest[url] = assetPath.relativeToCwd();
+    manifest[toPublicPath(url, base ?? "")] = assetPath.relativeToCwd();
   }
 
   for (const entry of islandEntries) {

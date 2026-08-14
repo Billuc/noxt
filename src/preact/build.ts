@@ -22,9 +22,7 @@ import type { PreactPage, PreactPageEntry } from "./types";
 import { getFilesMatchingGlob, PAGES_DIR, writeFile, Path } from "../core/fs";
 import { renderPreactToHtml } from "./render";
 
-export async function discoverPreactPages(
-  base?: string,
-): Promise<PreactPageEntry[]> {
+export async function discoverPreactPages(): Promise<PreactPageEntry[]> {
   let pageFiles: Path[];
   try {
     pageFiles = await getFilesMatchingGlob(
@@ -37,7 +35,7 @@ export async function discoverPreactPages(
   }
 
   return pageFiles.map((file) => ({
-    url: getRouteName(file.relativeTo(PAGES_DIR), base),
+    url: getRouteName(file.relativeTo(PAGES_DIR)),
     file,
   }));
 }

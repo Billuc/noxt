@@ -25,7 +25,7 @@ import { Path } from "../core/fs";
 import type { AssetEntry } from "./types";
 import { generateAssetUtilsCode } from "./code_generation";
 
-export async function discoverAssets(base?: string): Promise<AssetEntry[]> {
+export async function discoverAssets(): Promise<AssetEntry[]> {
   let assetFiles: Path[];
   try {
     assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
@@ -34,15 +34,18 @@ export async function discoverAssets(base?: string): Promise<AssetEntry[]> {
     return [];
   }
   return assetFiles.map((file) => ({
-    url: toPublicPath(file.relativeTo("src"), base ?? ""),
+    url: toPublicPath(file.relativeTo("src")),
     file: file,
   }));
 }
 
-export async function generateAssetUtilsFile(assets: AssetEntry[]) {
+export async function generateAssetUtilsFile(
+  assets: AssetEntry[],
+  base?: string,
+) {
   const assetIds = assets.map((a) => a.url);
 
-  let code = generateAssetUtilsCode(assetIds);
+  let code = generateAssetUtilsCode(assetIds, base);
 
   const utilsFile = path.resolve(API_CACHE_FILE);
   await writeFile(utilsFile, code);

@@ -13,7 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-export function generateAssetUtilsCode(assetIds: string[]): string {
+export function generateAssetUtilsCode(
+  assetIds: string[],
+  base?: string,
+): string {
   const assetIdType =
     assetIds.length === 0
       ? "never"
@@ -23,7 +26,7 @@ export function generateAssetUtilsCode(assetIds: string[]): string {
 type AssetId = ${assetIdType};
 
 function asset(id: AssetId): string {
-  return id;
+  return ${JSON.stringify(base ?? "")} + id;
 }
 
 export { asset, type AssetId };
