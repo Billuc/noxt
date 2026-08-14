@@ -2,7 +2,6 @@
 
 Ideas of things that could be implemented:
 
-- ~~Move folders to src~~ Remove src from routes (like for apis)
 - ~~Build pipeline~~ Adapt functions for build pipeline
 - Is base really required everywhere ?
 - Remove zod and valibot and use superscript instead
