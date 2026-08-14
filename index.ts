@@ -23,7 +23,11 @@ import type {
   APIEndpoint,
   SearchParamSchema,
 } from "./src/api";
-import { discoverAssets, type AssetEntry } from "./src/assets";
+import {
+  discoverAssets,
+  generateAssetUtilsFile,
+  type AssetEntry,
+} from "./src/assets";
 import {
   Island,
   discoverIslands,
@@ -52,6 +56,7 @@ export {
   query,
   mutation,
   discoverAssets,
+  generateAssetUtilsFile,
   discoverIslands,
   prerenderIslands,
   Island,
