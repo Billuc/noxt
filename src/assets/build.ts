@@ -34,7 +34,7 @@ export async function discoverAssets(base?: string): Promise<AssetEntry[]> {
     return [];
   }
   return assetFiles.map((file) => ({
-    url: toPublicPath(file.relativeToCwd(), base ?? ""),
+    url: toPublicPath(file.relativeTo("src"), base ?? ""),
     file: file,
   }));
 }
