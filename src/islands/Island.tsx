@@ -47,7 +47,9 @@ export function Island<T>(props: Props<T>) {
   for (const file of entry.files) {
     const pathFromCache = file.relativeTo(CACHE_DIR);
     if (/.*\.(js|jsx|ts|tsx)$/.test(pathFromCache)) {
-      scripts.push(<script src={toPublicPath(pathFromCache, base)}></script>);
+      scripts.push(
+        <script type="module" src={toPublicPath(pathFromCache, base)}></script>,
+      );
     } else if (pathFromCache.endsWith(".css")) {
       cssLinks.push(
         <link rel="stylesheet" href={toPublicPath(pathFromCache, base)}></link>,
