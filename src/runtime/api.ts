@@ -122,6 +122,7 @@ export function useApi<
 
 export function getApiHandlers<TDefinitions extends ApiEndpointDefinitions>(
   apiMap: TDefinitions,
+  base: string = "",
 ): ApiEndpoints<TDefinitions> {
   const routes: any = {};
 
@@ -130,7 +131,7 @@ export function getApiHandlers<TDefinitions extends ApiEndpointDefinitions>(
     for (const [method, endpoint] of Object.entries(routeData)) {
       handlers[method as keyof typeof handlers] = endpoint.handler;
     }
-    routes[route] = handlers;
+    routes[base + route] = handlers;
   }
 
   return routes;

@@ -82,6 +82,7 @@ function generateRouterTypeCode(apiMap: ApiByFileMap): string {
 
 export function generateApiUtilsCode(
   entries: APIEndpointEntry<any, any>[],
+  base?: string,
 ): string {
   const apiMap = groupByRoute(entries);
 
@@ -91,7 +92,7 @@ import type { InferDefinitions } from "noxt/api";
 ${generateImportsCode(apiMap).join("\n")}
 
 const apiRoutesData = ${generateRouterTypeCode(apiMap)} as const;
-const handlers = getApiHandlers(apiRoutesData);
+const handlers = getApiHandlers(apiRoutesData, ${JSON.stringify(base)});
 
 type ApiRoutes = InferDefinitions<typeof apiRoutesData>;
 
