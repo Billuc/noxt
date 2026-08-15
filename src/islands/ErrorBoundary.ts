@@ -39,8 +39,8 @@ export class IslandErrorBoundary extends Component<
   override componentDidCatch(error: unknown) {
     console.warn(
       `Island "${this.props.name ?? "unknown"}" failed during prerendering, ` +
-        "falling back to client-only mode.",
-      error,
+        "falling back to client-only mode.\n",
+      error instanceof Error ? error.message : String(error),
     );
     this.setState({ hasError: true });
   }

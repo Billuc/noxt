@@ -70,10 +70,12 @@ class QueryEndpointBuilder<
           });
           const body = toBody(result);
           return new Response(body, response);
-        } catch {
+        } catch (err) {
+          console.error(err);
           return new Response("Internal Server Error", { status: 500 });
         }
-      } catch {
+      } catch (err) {
+        console.error(err);
         return new Response("Bad argument", { status: 400 });
       }
     });
