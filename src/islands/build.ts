@@ -70,6 +70,7 @@ export async function prerenderIslands(
     prerendered.push({
       component,
       hash,
+      sourceFile: source.sourceFile,
       renderScriptFile: Path.create(scriptPath),
     });
     console.log(
@@ -95,7 +96,7 @@ async function bundleIslands(
     outdir: path.resolve(ISLANDS_CACHE_DIR),
     minify: !devMode,
     sourcemap: devMode,
-    splitting: !devMode,
+    splitting: false, // !devMode,
     jsxImportSource: "preact",
     jsx: "automatic",
     jsxDev: devMode,
@@ -109,7 +110,7 @@ async function bundleIslands(
   const entriesMap: Record<string, IslandEntry> = {};
 
   islands.forEach((ie) => {
-    entriesMap[standardizePath(ie.renderScriptFile.absolute)] = {
+    entriesMap[standardizePath(ie.sourceFile.absolute)] = {
       component: ie.component,
       hash: ie.hash,
       files: [],

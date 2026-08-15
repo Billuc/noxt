@@ -24,6 +24,7 @@ export interface IslandSourceEntry {
 export interface PrerenderedIslandEntry {
   component: FunctionComponent<any>;
   hash: string;
+  sourceFile: Path;
   renderScriptFile: Path;
 }
 
