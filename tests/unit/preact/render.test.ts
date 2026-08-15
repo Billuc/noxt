@@ -2,8 +2,9 @@
  * Unit tests for src/preact/render.ts
  */
 import { renderPreactToHtml } from "../../../src/preact/render";
+import { Island } from "../../../src/islands";
 import { describe, it, expect } from "bun:test";
-import { h } from "preact";
+import { h, Fragment } from "preact";
 import { BaseContext } from "../../../src/core/context";
 import { useContext } from "preact/hooks";
 
@@ -66,5 +67,33 @@ describe("renderPreactToHtml", () => {
     };
     const result = await renderPreactToHtml(Component, "/base");
     expect(result).toContain("<div>/base</div>");
+  });
+
+  it("should fall back to client-only for islands that throw during prerendering", async () => {
+    const ThrowingIsland = () => {
+      if (typeof window === "undefined") {
+        throw new Error("browser-only feature");
+      }
+      return h("div", {}, "client content");
+    };
+    const HealthyIsland = () => h("div", {}, "server content");
+
+    const islandEntries = [
+      { component: ThrowingIsland, hash: "throwing", files: [] },
+      { component: HealthyIsland, hash: "healthy", files: [] },
+    ];
+
+    const Page = () =>
+      h(Fragment, {}, [
+        h(Island, { component: ThrowingIsland, props: {} }),
+        h(Island, { component: HealthyIsland, props: {} }),
+      ]);
+
+    const result = await renderPreactToHtml(Page, undefined, islandEntries);
+
+    expect(result).toContain('data-island="throwing"');
+    expect(result).not.toContain("client content");
+    expect(result).toContain('data-island="healthy"');
+    expect(result).toContain("server content");
   });
 });

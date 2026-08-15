@@ -14,8 +14,8 @@
  *  limitations under the License.
  **/
 import { h } from "preact";
-import { renderToStringAsync } from "preact-render-to-string";
 import { BaseProvider, IslandMapProvider } from "../core/context";
+import { renderToHtmlString } from "../core/render";
 import { sanitizePrerendered } from "../core/utils";
 import type { IslandEntry } from "../islands";
 
@@ -37,6 +37,6 @@ export async function renderPreactToHtml(
   if (islandEntries !== undefined) {
     element = h(IslandMapProvider, { entries: islandEntries }, element);
   }
-  const content = await renderToStringAsync(element);
+  const content = await renderToHtmlString(element);
   return sanitizePrerendered(content);
 }

@@ -14,9 +14,9 @@
  *  limitations under the License.
  **/
 import { h } from "preact";
-import { renderToStringAsync } from "preact-render-to-string";
 import { micromark } from "micromark";
 import { BaseProvider, IslandMapProvider } from "../core/context";
+import { renderToHtmlString } from "../core/render";
 import { sanitizePrerendered } from "../core/utils";
 import type { MarkdownData } from "./types";
 import type { IslandEntry } from "../islands";
@@ -45,7 +45,7 @@ export async function renderMarkdownToHtml(
   if (islandEntries !== undefined) {
     fullPage = h(IslandMapProvider, { entries: islandEntries }, fullPage);
   }
-  let htmlContent = await renderToStringAsync(fullPage);
+  let htmlContent = await renderToHtmlString(fullPage);
   htmlContent = sanitizePrerendered(htmlContent);
   htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);
   return "<!DOCTYPE html>" + htmlContent;

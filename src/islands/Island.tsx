@@ -20,10 +20,12 @@ import * as devalue from "devalue";
 import { toPublicPath } from "../core/utils";
 import { BaseContext, IslandMapContext } from "../core/context";
 import { CACHE_DIR } from "../core/fs";
+import { IslandErrorBoundary } from "./ErrorBoundary";
 
 type Props<T> = h.JSX.IntrinsicAttributes & {
   component: FunctionComponent<T>;
   props: T;
+  "client:only"?: boolean;
 };
 
 export function Island<T>(props: Props<T>) {
@@ -56,7 +58,11 @@ export function Island<T>(props: Props<T>) {
   return (
     <>
       <div data-island={entry.hash} data-props={devalue.stringify(finalProps)}>
-        <Component key={key} {...finalProps} />
+        {props["client:only"] ? null : (
+          <IslandErrorBoundary name={Component.displayName ?? Component.name}>
+            <Component key={key} {...finalProps} />
+          </IslandErrorBoundary>
+        )}
       </div>
       {scripts}
       {cssLinks}

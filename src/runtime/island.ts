@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { hydrate, h } from "preact";
+import { hydrate, h, render } from "preact";
 import type { ComponentType } from "preact";
 import * as devalue from "devalue";
 
@@ -25,6 +25,10 @@ export function renderIsland(Component: ComponentType<any>, hash: string) {
 
   elements.forEach((element) => {
     const props = devalue.parse(element.getAttribute("data-props") || "[{}]");
-    hydrate(h(Component, props, []), element);
+    if (element.childNodes.length === 0) {
+      render(h(Component, props, []), element);
+    } else {
+      hydrate(h(Component, props, []), element);
+    }
   });
 }
