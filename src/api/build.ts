@@ -58,8 +58,11 @@ export async function discoverAPIs(): Promise<APIEndpointEntry<any, any>[]> {
   return entries;
 }
 
-export async function generateAPIFile(entries: APIEndpointEntry<any, any>[]) {
-  let code = generateApiUtilsCode(entries);
+export async function generateAPIFile(
+  entries: APIEndpointEntry<any, any>[],
+  base?: string,
+) {
+  let code = generateApiUtilsCode(entries, base);
 
   const utilsFile = path.resolve(API_CACHE_FILE);
   await writeFile(utilsFile, code);
