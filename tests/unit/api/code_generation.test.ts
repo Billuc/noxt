@@ -34,7 +34,7 @@ import type { InferDefinitions } from "noxt/api";
 const apiRoutesData = {
   
 } as const;
-const handlers = getApiHandlers(apiRoutesData);
+const handlers = getApiHandlers(apiRoutesData, "");
 
 type ApiRoutes = InferDefinitions<typeof apiRoutesData>;
 
