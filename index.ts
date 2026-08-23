@@ -25,7 +25,7 @@ import type {
 } from "./src/api";
 import {
   discoverAssets,
-  generateAssetUtilsFile,
+  generateAssetUtils,
   type AssetEntry,
 } from "./src/assets";
 import {
@@ -53,7 +53,7 @@ export {
   query,
   mutation,
   discoverAssets,
-  generateAssetUtilsFile,
+  generateAssetUtils,
   discoverIslands,
   prerenderIslands,
   Island,

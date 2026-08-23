@@ -13,7 +13,7 @@ import {
   prerenderMarkdownPages,
   BuildPipeline,
 } from "noxt";
-import { generateAssetUtilsFile } from "../../src/assets";
+import { generateAssetUtils } from "../../src/assets";
 
 process.env["NOXT_MODE"] = "dev";
 
@@ -23,7 +23,7 @@ const context = await BuildPipeline.newPipeline()
   .with(discoverMarkdownPages)
   .with((ctx) => ({ pageFiles: [...ctx.preactFiles, ...ctx.markdownFiles] }))
   .do(generateRouteUtils)
-  .do(generateAssetUtilsFile)
+  .do(generateAssetUtils)
   .with(discoverAPIs)
   .do(generateAPIFile)
   .with(discoverIslands)

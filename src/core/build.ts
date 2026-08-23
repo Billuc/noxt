@@ -25,7 +25,7 @@ import { generateLinkUtilsCode } from "./code_generation";
 import { getRouteName, toPublicPath } from "./utils";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";
-import type { RouteData } from "./types";
+import type { PageFunction, QueryParams, RouteData } from "./types";
 import type { AssetEntry } from "../assets";
 
 export async function generateRouteMap({
@@ -70,13 +70,39 @@ export async function generateRouteUtils({
 }: {
   pageFiles: Path[];
   base?: string;
-}): Promise<void> {
+}): Promise<{ page: PageFunction }> {
   const routeNames = pageFiles.map((file) =>
     getRouteName(file.relativeTo(PAGES_DIR)),
   );
-  const linkCode = generateLinkUtilsCode(routeNames, base);
+  const linkCode = generateLinkUtilsCode(routeNames);
 
   const utilsFile = path.resolve(UTILS_CACHE_FILE);
   await writeFile(utilsFile, linkCode);
   console.log("Generated utils at .cache/utils.ts");
+
+  const page = preparePageFunction(routeNames, base);
+  return { page };
+}
+
+function preparePageFunction(pageNames: string[], base?: string): PageFunction {
+  function link<PageId extends string>(
+    pageId: PageId,
+    query?: QueryParams,
+  ): string {
+    if (!pageNames.includes(pageId)) {
+      throw new Error(`Unknown page with URL '${pageId}'`);
+    }
+
+    const url = base + pageId;
+    if (!query) return url;
+    const entries = Object.entries(query);
+    if (entries.length === 0) return url;
+    const params = new URLSearchParams();
+    for (const [k, v] of entries) {
+      params.append(k, String(v));
+    }
+    return url + "?" + params.toString();
+  }
+
+  return link;
 }
