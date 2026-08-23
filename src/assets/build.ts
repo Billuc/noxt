@@ -25,24 +25,29 @@ import { Path } from "../core/fs";
 import type { AssetEntry } from "./types";
 import { generateAssetUtilsCode } from "./code_generation";
 
-export async function discoverAssets(): Promise<AssetEntry[]> {
+export async function discoverAssets(): Promise<{ assets: AssetEntry[] }> {
   let assetFiles: Path[];
   try {
     assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
   } catch {
     console.log("No assets folder found");
-    return [];
+    return { assets: [] };
   }
-  return assetFiles.map((file) => ({
+
+  const assets = assetFiles.map((file) => ({
     url: toPublicPath(file.relativeTo("src")),
     file: file,
   }));
+  return { assets };
 }
 
-export async function generateAssetUtilsFile(
-  assets: AssetEntry[],
-  base?: string,
-) {
+export async function generateAssetUtilsFile({
+  assets,
+  base,
+}: {
+  assets: AssetEntry[];
+  base?: string;
+}) {
   const assetIds = assets.map((a) => a.url);
 
   let code = generateAssetUtilsCode(assetIds, base);

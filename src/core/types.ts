@@ -30,12 +30,6 @@ type MaybePromise<T> = T | Promise<T>;
 export class BuildPipeline<TContext extends {}> {
   private constructor(private _fn: () => MaybePromise<TContext>) {}
 
-  then<TNewContext extends TContext>(
-    action: (context: TContext) => MaybePromise<TNewContext>,
-  ): BuildPipeline<TNewContext> {
-    return new BuildPipeline(async () => action(await this._fn()));
-  }
-
   with<TAdditionalContext extends {}>(
     action: (context: TContext) => MaybePromise<TAdditionalContext>,
   ): BuildPipeline<TContext & TAdditionalContext> {
@@ -43,6 +37,16 @@ export class BuildPipeline<TContext extends {}> {
       const context = await this._fn();
       const additionalContext = await action(context);
       return { ...context, ...additionalContext };
+    });
+  }
+
+  do(
+    action: (context: TContext) => MaybePromise<any>,
+  ): BuildPipeline<TContext> {
+    return new BuildPipeline(async () => {
+      const context = await this._fn();
+      await action(context);
+      return context;
     });
   }
 
