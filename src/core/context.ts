@@ -20,6 +20,53 @@ import {
   type FunctionComponent,
 } from "preact";
 import type { IslandEntry } from "../islands";
+import type { QueryParams } from "./types";
+
+export interface PageContextInterface {
+  base?: string;
+  islands?: IslandEntry[];
+  page?: <PageId extends string>(pageId: PageId, query: QueryParams) => string;
+  asset?: <AssetId extends string>(assetId: AssetId) => string;
+}
+
+function defaultPageFunction(_pageId: string, _query: QueryParams): string {
+  throw new Error(
+    "No page function has been provided ! Did you run generatePageUtils before ?",
+  );
+}
+
+function defaultAssetFunction(_assetId: string): string {
+  throw new Error(
+    "No asset function has been provided ! Did you run generateAssetUtils before ?",
+  );
+}
+
+export class PageContextData {
+  constructor(
+    public base: string = "",
+    public islandMap: Map<FunctionComponent<any>, IslandEntry> = new Map(),
+    public page: <PageId extends string>(
+      pageId: PageId,
+      query: QueryParams,
+    ) => string = defaultPageFunction,
+    public asset: <AssetId extends string>(
+      assetId: AssetId,
+    ) => string = defaultAssetFunction,
+  ) {}
+
+  static from(data: PageContextInterface): PageContextData {
+    const islandMap = new Map<FunctionComponent<any>, IslandEntry>();
+    for (const island of data.islands ?? []) {
+      islandMap.set(island.component, island);
+    }
+
+    return new PageContextData(data.base, islandMap, data.page, data.asset);
+  }
+}
+
+export const PageContext = createContext<PageContextData>(
+  new PageContextData(),
+);
 
 export const BaseContext = createContext("");
 

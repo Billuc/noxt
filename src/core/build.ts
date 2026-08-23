@@ -85,7 +85,7 @@ export async function generateRouteUtils({
 }
 
 function preparePageFunction(pageNames: string[], base?: string): PageFunction {
-  function link<PageId extends string>(
+  function page<PageId extends string>(
     pageId: PageId,
     query?: QueryParams,
   ): string {
@@ -104,5 +104,5 @@ function preparePageFunction(pageNames: string[], base?: string): PageFunction {
     return url + "?" + params.toString();
   }
 
-  return link;
+  return page;
 }
