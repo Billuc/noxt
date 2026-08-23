@@ -32,12 +32,12 @@ interface RouteData {
 }
 
 export async function generateStaticPages({
-  routes,
+  pages,
   islands,
   assets,
   base,
 }: {
-  routes: RouteData[];
+  pages: RouteData[];
   islands: IslandEntry[];
   assets: AssetEntry[];
   base?: string;
@@ -45,7 +45,7 @@ export async function generateStaticPages({
   console.log("Exporting static files...");
   const manifest: Record<string, string> = {};
 
-  for (const route of routes) {
+  for (const route of pages) {
     const routeName = route.url === "/" ? "" : route.url;
     let outputPath = DIST_DIR + routeName + "/index.html";
     outputPath = outputPath.replaceAll("/", path.sep);

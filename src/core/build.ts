@@ -19,9 +19,10 @@ import {
   writeFile,
   ROUTES_CACHE_FILE,
   UTILS_CACHE_FILE,
+  PAGES_DIR,
 } from "./fs";
 import { generateLinkUtilsCode } from "./code_generation";
-import { toPublicPath } from "./utils";
+import { getRouteName, toPublicPath } from "./utils";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";
 import type { RouteData } from "./types";
@@ -64,13 +65,15 @@ export async function generateRouteMap({
 }
 
 export async function generateRouteUtils({
-  pages,
+  pageFiles,
   base,
 }: {
-  pages: RouteData[];
+  pageFiles: Path[];
   base?: string;
 }): Promise<void> {
-  const routeNames = pages.map(({ url }) => url);
+  const routeNames = pageFiles.map((file) =>
+    getRouteName(file.relativeTo(PAGES_DIR)),
+  );
   const linkCode = generateLinkUtilsCode(routeNames, base);
 
   const utilsFile = path.resolve(UTILS_CACHE_FILE);

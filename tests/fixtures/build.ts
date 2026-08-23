@@ -11,34 +11,30 @@ import {
   discoverIslands,
   prerenderPreactPages,
   prerenderMarkdownPages,
+  BuildPipeline,
 } from "noxt";
 import { generateAssetUtilsFile } from "../../src/assets";
 
 process.env["NOXT_MODE"] = "dev";
 
-// Generate utils.ts before prerendering so pages can import link() and asset()
-const assetFiles = await discoverAssets();
-const preactPages = await discoverPreactPages();
-const markdownPages = await discoverMarkdownPages();
-const allPages = [...preactPages, ...markdownPages];
-await generateRouteUtils(allPages);
-await generateAssetUtilsFile(assetFiles);
+const context = await BuildPipeline.newPipeline()
+  .with(discoverAssets)
+  .with(discoverPreactPages)
+  .with(discoverMarkdownPages)
+  .with((ctx) => ({ pageFiles: [...ctx.preactFiles, ...ctx.markdownFiles] }))
+  .do(generateRouteUtils)
+  .do(generateAssetUtilsFile)
+  .with(discoverAPIs)
+  .do(generateAPIFile)
+  .with(discoverIslands)
+  .with(prerenderIslands)
+  .with(prerenderPreactPages)
+  .with(prerenderMarkdownPages)
+  .with((ctx) => ({
+    pages: [...ctx.preactPages, ...ctx.markdownPages],
+  }))
+  .with(generateRouteMap)
+  .with(generateStaticPages)
+  .build();
 
-// Discover and generate API
-const apiEntries = await discoverAPIs();
-await generateAPIFile(apiEntries);
-
-let islandFiles = await discoverIslands();
-const islands = await prerenderIslands(islandFiles);
-
-const preactRoutes = await prerenderPreactPages(preactPages, "", islands);
-const markdownRoutes = await prerenderMarkdownPages(markdownPages, "", islands);
-const allRoutes = [...preactRoutes, ...markdownRoutes];
-const routeMap = await generateRouteMap(allRoutes, islands, assetFiles);
-const staticManifest = await generateStaticPages(
-  allRoutes,
-  islands,
-  assetFiles,
-);
-
-console.log(staticManifest);
+console.log(context.manifest);
