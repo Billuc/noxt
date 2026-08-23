@@ -16,11 +16,6 @@
 import type { FunctionComponent } from "preact";
 import type { Path } from "../core/fs";
 
-export interface IslandSourceEntry {
-  component: FunctionComponent<any>;
-  sourceFile: Path;
-}
-
 export interface PrerenderedIslandEntry {
   component: FunctionComponent<any>;
   hash: string;

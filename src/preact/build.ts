@@ -18,11 +18,13 @@ import path from "node:path";
 import * as crypto from "node:crypto";
 import type { FunctionComponent } from "preact";
 import type { IslandEntry } from "../islands";
-import type { PreactPage, PreactPageEntry } from "./types";
+import type { PreactPage } from "./types";
 import { getFilesMatchingGlob, PAGES_DIR, writeFile, Path } from "../core/fs";
 import { renderPreactToHtml } from "./render";
 
-export async function discoverPreactPages(): Promise<PreactPageEntry[]> {
+export async function discoverPreactPages(): Promise<{
+  preactFiles: Path[];
+}> {
   let pageFiles: Path[];
   try {
     pageFiles = await getFilesMatchingGlob(
@@ -31,34 +33,36 @@ export async function discoverPreactPages(): Promise<PreactPageEntry[]> {
     );
   } catch {
     console.log("No pages directory found !");
-    return [];
+    return { preactFiles: [] };
   }
 
-  return pageFiles.map((file) => ({
-    url: getRouteName(file.relativeTo(PAGES_DIR)),
-    file,
-  }));
+  return { preactFiles: pageFiles };
 }
 
-export async function prerenderPreactPages(
-  entries: PreactPageEntry[],
-  base?: string,
-  islandEntries?: IslandEntry[],
-): Promise<PreactPage[]> {
+export async function prerenderPreactPages({
+  preactFiles,
+  base,
+  islands,
+}: {
+  preactFiles: Path[];
+  base?: string;
+  islands?: IslandEntry[];
+}): Promise<{ preactPages: PreactPage[] }> {
   const pages: PreactPage[] = [];
 
-  for (const entry of entries) {
-    console.log(`Prerendering page [${entry.url}]`);
+  for (const file of preactFiles) {
+    const url = getRouteName(file.relativeTo(PAGES_DIR));
+    console.log(`Prerendering page [${url}]`);
 
     try {
       let prerenderedFile: Path = await prerenderPreact(
-        entry.file.absolute,
+        file.absolute,
         base,
-        islandEntries,
+        islands,
       );
 
       pages.push({
-        url: entry.url,
+        url: url,
         file: prerenderedFile,
       });
     } catch (err) {
@@ -67,14 +71,14 @@ export async function prerenderPreactPages(
     }
   }
 
-  return pages;
+  return { preactPages: pages };
 }
 
 /** Prerenders a Preact page component to HTML and caches it. */
 async function prerenderPreact(
   pagePath: string,
   base?: string,
-  islandEntries?: IslandEntry[],
+  islands?: IslandEntry[],
 ): Promise<Path> {
   const mod = await import(pagePath);
   const Page = mod.default as FunctionComponent<any> | undefined;
@@ -84,7 +88,7 @@ async function prerenderPreact(
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 
-  const prerenderedPage = await renderPreactToHtml(Page, base, islandEntries);
+  const prerenderedPage = await renderPreactToHtml(Page, base, islands);
   await writeFile(prerenderPath, prerenderedPage);
 
   return Path.create(prerenderPath);

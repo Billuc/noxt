@@ -24,12 +24,14 @@ import {
   Path,
 } from "../core/fs";
 import { getRouteName } from "../core/utils";
-import type { MarkdownPage, MarkdownPageEntry } from "./types";
+import type { MarkdownPage } from "./types";
 import type { IslandEntry } from "../islands";
 import { parseMarkdown } from "./parse";
 import { renderMarkdownToHtml } from "./render";
 
-export async function discoverMarkdownPages(): Promise<MarkdownPageEntry[]> {
+export async function discoverMarkdownPages(): Promise<{
+  markdownFiles: Path[];
+}> {
   let pageFiles: Path[];
   try {
     pageFiles = await getFilesMatchingGlob(
@@ -38,34 +40,36 @@ export async function discoverMarkdownPages(): Promise<MarkdownPageEntry[]> {
     );
   } catch {
     console.log("No pages directory found !");
-    return [];
+    return { markdownFiles: [] };
   }
 
-  return pageFiles.map((file) => ({
-    url: getRouteName(file.relativeTo(PAGES_DIR)),
-    file,
-  }));
+  return { markdownFiles: pageFiles };
 }
 
-export async function prerenderMarkdownPages(
-  entries: MarkdownPageEntry[],
-  base?: string,
-  islandEntries?: IslandEntry[],
-): Promise<MarkdownPage[]> {
+export async function prerenderMarkdownPages({
+  markdownFiles,
+  base,
+  islands,
+}: {
+  markdownFiles: Path[];
+  base?: string;
+  islands?: IslandEntry[];
+}): Promise<{ markdownPages: MarkdownPage[] }> {
   const pages: MarkdownPage[] = [];
 
-  for (const entry of entries) {
-    console.log(`Prerendering page [${entry.url}]`);
+  for (const file of markdownFiles) {
+    const url = getRouteName(file.relativeTo(PAGES_DIR));
+    console.log(`Prerendering page [${url}]`);
 
     try {
       let prerenderedFile: Path = await prerenderMarkdown(
-        entry.file.absolute,
+        file.absolute,
         base,
-        islandEntries,
+        islands,
       );
 
       pages.push({
-        url: entry.url,
+        url: url,
         file: prerenderedFile,
       });
     } catch (err) {
@@ -74,14 +78,14 @@ export async function prerenderMarkdownPages(
     }
   }
 
-  return pages;
+  return { markdownPages: pages };
 }
 
 /** Prerenders a markdown page to HTML using its frontmatter-defined layout. */
 async function prerenderMarkdown(
   markdownPath: string,
   base?: string,
-  islandEntries?: IslandEntry[],
+  islands?: IslandEntry[],
 ): Promise<Path> {
   const content = await readFile(markdownPath);
 
@@ -95,7 +99,7 @@ async function prerenderMarkdown(
   const prerenderedPage = await renderMarkdownToHtml(
     markdownData,
     base,
-    islandEntries,
+    islands,
   );
   await writeFile(prerenderPath, prerenderedPage);
 

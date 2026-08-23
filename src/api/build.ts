@@ -25,7 +25,9 @@ import { generateApiUtilsCode } from "./code_generation";
 import { type APIEndpointEntry, APIEndpoint, HTTP_METHODS } from "./types";
 import path from "node:path";
 
-export async function discoverAPIs(): Promise<APIEndpointEntry<any, any>[]> {
+export async function discoverAPIs(): Promise<{
+  endpointEntries: APIEndpointEntry<any, any>[];
+}> {
   let pageFiles: Path[];
   try {
     pageFiles = await getFilesMatchingGlob(
@@ -34,7 +36,7 @@ export async function discoverAPIs(): Promise<APIEndpointEntry<any, any>[]> {
     );
   } catch {
     console.log("No api directory found !");
-    return [];
+    return { endpointEntries: [] };
   }
 
   const entries: APIEndpointEntry<any, any>[] = [];
@@ -55,14 +57,17 @@ export async function discoverAPIs(): Promise<APIEndpointEntry<any, any>[]> {
     }
   }
 
-  return entries;
+  return { endpointEntries: entries };
 }
 
-export async function generateAPIFile(
-  entries: APIEndpointEntry<any, any>[],
-  base?: string,
-) {
-  let code = generateApiUtilsCode(entries, base);
+export async function generateAPIFile({
+  endpointEntries,
+  base,
+}: {
+  endpointEntries: APIEndpointEntry<any, any>[];
+  base?: string;
+}) {
+  let code = generateApiUtilsCode(endpointEntries, base);
 
   const utilsFile = path.resolve(API_CACHE_FILE);
   await writeFile(utilsFile, code);

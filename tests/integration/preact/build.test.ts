@@ -5,7 +5,7 @@ import {
   discoverPreactPages,
   prerenderPreactPages,
 } from "../../../src/preact/build";
-import type { PreactPageEntry } from "../../../src/preact/types";
+import type { PreactFile } from "../../../src/preact/types";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import {
@@ -342,7 +342,7 @@ describe("preact/build", () => {
     });
 
     it("should prerender a single page correctly", async () => {
-      const entries: PreactPageEntry[] = [
+      const entries: PreactFile[] = [
         {
           url: "/about",
           file: Path.create(path.join(PAGES_DIR, "about.ts")),
@@ -358,7 +358,7 @@ describe("preact/build", () => {
     });
 
     it("should prerender multiple pages correctly", async () => {
-      const entries: PreactPageEntry[] = [
+      const entries: PreactFile[] = [
         {
           url: "/",
           file: Path.create(path.join(PAGES_DIR, "index.tsx")),
