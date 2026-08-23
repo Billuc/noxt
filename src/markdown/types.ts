@@ -15,11 +15,6 @@
  **/
 import type { Path } from "../core/fs";
 
-export interface MarkdownPageEntry {
-  url: string;
-  file: Path;
-}
-
 export interface MarkdownPage {
   url: string;
   file: Path;

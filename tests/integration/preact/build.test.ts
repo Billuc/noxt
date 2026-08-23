@@ -5,7 +5,6 @@ import {
   discoverPreactPages,
   prerenderPreactPages,
 } from "../../../src/preact/build";
-import type { PreactPageEntry } from "../../../src/preact/types";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import {
@@ -164,109 +163,104 @@ describe("preact/build", () => {
 
   describe("discoverPreactPages", () => {
     it("should discover preact pages from pages directory", async () => {
-      const pages = await discoverPreactPages();
-      expect(pages.length).toBe(3);
-      expect(pages.some((p) => p.url === "/")).toBe(true);
-      expect(pages.some((p) => p.url === "/about")).toBe(true);
+      const { preactFiles } = await discoverPreactPages();
+      expect(preactFiles.length).toBe(3);
+      expect(preactFiles.some((p) => p.absolute.endsWith("index.tsx"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith("about.ts"))).toBe(true);
     });
 
-    it("should return PreactPageEntry objects with url and file", async () => {
-      const pages = await discoverPreactPages();
-      for (const entry of pages) {
-        expect(entry).toHaveProperty("url");
-        expect(entry).toHaveProperty("file");
-        expect(entry.file).toBeInstanceOf(Path);
-        expect(typeof entry.url).toBe("string");
-        expect(entry.url.startsWith("/")).toBe(true);
+    it("should return Path objects for preact files", async () => {
+      const { preactFiles } = await discoverPreactPages();
+      for (const file of preactFiles) {
+        expect(file).toBeInstanceOf(Path);
       }
     });
 
     it("should return empty array when no preact pages exist", async () => {
       await rm(PAGES_DIR, { recursive: true, force: true });
       await mkdir(PAGES_DIR, { recursive: true });
-      const pages = await discoverPreactPages();
-      expect(pages).toEqual([]);
+      const { preactFiles } = await discoverPreactPages();
+      expect(preactFiles).toEqual([]);
     });
 
     it("should return empty array when no pages folder exist", async () => {
       await rm(PAGES_DIR, { recursive: true, force: true });
-      const pages = await discoverPreactPages();
-      expect(pages).toEqual([]);
+      const { preactFiles } = await discoverPreactPages();
+      expect(preactFiles).toEqual([]);
     });
 
     it("should discover pages with various JS-related extensions", async () => {
       await resetTestProject(setupTestProjectWithExtensions);
 
-      const pages = await discoverPreactPages();
+      const { preactFiles } = await discoverPreactPages();
 
-      expect(pages.some((p) => p.file.absolute.endsWith(".ts"))).toBe(true);
-      expect(pages.some((p) => p.file.absolute.endsWith(".tsx"))).toBe(true);
-      expect(pages.some((p) => p.file.absolute.endsWith(".js"))).toBe(true);
-      expect(pages.some((p) => p.file.absolute.endsWith(".jsx"))).toBe(true);
-      expect(pages.some((p) => p.file.absolute.endsWith(".foo"))).toBe(false);
-      expect(pages.some((p) => p.file.absolute.endsWith(".md"))).toBe(false);
+      expect(preactFiles.some((p) => p.absolute.endsWith(".ts"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith(".tsx"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith(".js"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith(".jsx"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith(".foo"))).toBe(false);
+      expect(preactFiles.some((p) => p.absolute.endsWith(".md"))).toBe(false);
     });
 
     it("should handle nested directories within pages folder", async () => {
       await resetTestProject(setupTestProjectWithNestedDirs);
-      const pages = await discoverPreactPages();
+      const { preactFiles } = await discoverPreactPages();
 
-      expect(pages.some((p) => p.url === "/root")).toBe(true);
-      expect(pages.some((p) => p.url === "/blog")).toBe(true);
-      expect(pages.some((p) => p.url === "/blog/post1")).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith("root.tsx"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith(path.join("blog", "index.tsx")))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith(path.join("blog", "post1.tsx")))).toBe(true);
     });
 
     it("should map index files to the root route", async () => {
-      const pages = await discoverPreactPages();
-      const indexEntry = pages.find((p) =>
-        p.file.absolute.endsWith("index.tsx"),
+      const { preactFiles } = await discoverPreactPages();
+      const indexFile = preactFiles.find((p) =>
+        p.absolute.endsWith("index.tsx"),
       );
-      expect(indexEntry?.url).toBe("/");
+      expect(indexFile).toBeDefined();
     });
 
     it("should map nested index files to their directory route", async () => {
       await resetTestProject(setupTestProjectWithNestedDirs);
-      const pages = await discoverPreactPages();
-      const blogIndex = pages.find(
+      const { preactFiles } = await discoverPreactPages();
+      const blogIndex = preactFiles.find(
         (p) =>
-          p.url === "/blog" &&
-          p.file.absolute.endsWith(path.join("blog", "index.tsx")),
+          p.absolute.endsWith(path.join("blog", "index.tsx")),
       );
       expect(blogIndex).toBeDefined();
     });
 
     it("should return Path objects with correct absolute paths", async () => {
-      const pages = await discoverPreactPages();
+      const { preactFiles } = await discoverPreactPages();
 
       expect(
-        pages.some(
-          (p) => p.file.absolute === path.join(PAGES_DIR, "index.tsx"),
+        preactFiles.some(
+          (p) => p.absolute === path.join(PAGES_DIR, "index.tsx"),
         ),
       ).toBe(true);
       expect(
-        pages.some((p) => p.file.absolute === path.join(PAGES_DIR, "about.ts")),
+        preactFiles.some((p) => p.absolute === path.join(PAGES_DIR, "about.ts")),
       ).toBe(true);
     });
 
     it("should handle pages with special characters in their names", async () => {
       await resetTestProject(setupTestProjectWithSpecialChars);
-      const pages = await discoverPreactPages();
+      const { preactFiles } = await discoverPreactPages();
 
-      expect(pages.length).toBe(2);
-      expect(pages.some((p) => p.url === "/Special-Name")).toBe(true);
-      expect(pages.some((p) => p.url === "/Component_123")).toBe(true);
+      expect(preactFiles.length).toBe(2);
+      expect(preactFiles.some((p) => p.absolute.endsWith("Special-Name.tsx"))).toBe(true);
+      expect(preactFiles.some((p) => p.absolute.endsWith("Component_123.tsx"))).toBe(true);
     });
   });
 
   describe("prerenderPreactPages", () => {
     it("should handle empty page list", async () => {
-      const rendered = await prerenderPreactPages([]);
+      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: [] });
       expect(rendered).toEqual([]);
     });
 
     it("should prerender pages and return PreactPage objects", async () => {
-      const discovered = await discoverPreactPages();
-      const rendered = await prerenderPreactPages(discovered);
+      const { preactFiles: discovered } = await discoverPreactPages();
+      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: discovered });
 
       expect(rendered.length).toBe(2);
       for (const entry of rendered) {
@@ -279,9 +273,9 @@ describe("preact/build", () => {
     });
 
     it("should generate html files in cache directory", async () => {
-      const discovered = await discoverPreactPages();
+      const { preactFiles: discovered } = await discoverPreactPages();
 
-      await prerenderPreactPages(discovered);
+      await prerenderPreactPages({ preactFiles: discovered });
 
       const cacheDir = path.join(TEST_DIR, ".cache");
       expect(await exists(cacheDir)).toBe(true);
@@ -294,8 +288,8 @@ describe("preact/build", () => {
     });
 
     it("should write rendered html content to the cache file", async () => {
-      const discovered = await discoverPreactPages();
-      const rendered = await prerenderPreactPages(discovered);
+      const { preactFiles: discovered } = await discoverPreactPages();
+      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: discovered });
 
       for (const page of rendered) {
         const content = await readFile(page.file.absolute, "utf-8");
@@ -309,18 +303,18 @@ describe("preact/build", () => {
     });
 
     it("should skip pages without default export", async () => {
-      const discovered = await discoverPreactPages();
-      const rendered = await prerenderPreactPages(discovered);
+      const { preactFiles: discovered } = await discoverPreactPages();
+      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: discovered });
 
       expect(rendered.some((p) => p.url === "/NoDefault")).toBe(false);
     });
 
     it("should generate consistent hashes for the same page", async () => {
-      const discovered = await discoverPreactPages();
-      const rendered1 = await prerenderPreactPages(discovered);
+      const { preactFiles: discovered } = await discoverPreactPages();
+      const { preactPages: rendered1 } = await prerenderPreactPages({ preactFiles: discovered });
       await resetTestProject();
-      const discovered2 = await discoverPreactPages();
-      const rendered2 = await prerenderPreactPages(discovered2);
+      const { preactFiles: discovered2 } = await discoverPreactPages();
+      const { preactPages: rendered2 } = await prerenderPreactPages({ preactFiles: discovered2 });
 
       expect(rendered1.length).toBe(rendered2.length);
       const urls1 = rendered1.map((p) => p.url).sort();
@@ -334,21 +328,17 @@ describe("preact/build", () => {
     });
 
     it("should verify generated files exist", async () => {
-      const discovered = await discoverPreactPages();
-      const rendered = await prerenderPreactPages(discovered);
+      const { preactFiles: discovered } = await discoverPreactPages();
+      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: discovered });
       for (const page of rendered) {
         expect(await exists(page.file.absolute)).toBe(true);
       }
     });
 
     it("should prerender a single page correctly", async () => {
-      const entries: PreactPageEntry[] = [
-        {
-          url: "/about",
-          file: Path.create(path.join(PAGES_DIR, "about.ts")),
-        },
-      ];
-      const rendered = await prerenderPreactPages(entries);
+      const { preactPages: rendered } = await prerenderPreactPages({
+        preactFiles: [Path.create(path.join(PAGES_DIR, "about.ts"))],
+      });
 
       expect(rendered.length).toBe(1);
       expect(rendered[0]!.url).toBe("/about");
@@ -358,17 +348,12 @@ describe("preact/build", () => {
     });
 
     it("should prerender multiple pages correctly", async () => {
-      const entries: PreactPageEntry[] = [
-        {
-          url: "/",
-          file: Path.create(path.join(PAGES_DIR, "index.tsx")),
-        },
-        {
-          url: "/about",
-          file: Path.create(path.join(PAGES_DIR, "about.ts")),
-        },
-      ];
-      const rendered = await prerenderPreactPages(entries);
+      const { preactPages: rendered } = await prerenderPreactPages({
+        preactFiles: [
+          Path.create(path.join(PAGES_DIR, "index.tsx")),
+          Path.create(path.join(PAGES_DIR, "about.ts")),
+        ],
+      });
 
       expect(rendered.length).toBe(2);
       expect(rendered.map((p) => p.url)).toEqual(["/", "/about"]);
@@ -379,8 +364,8 @@ describe("preact/build", () => {
 
     it("should pass the base to prerendered preact pages", async () => {
       await resetTestProject(setupTestProjectWithBasePage);
-      const discovered = await discoverPreactPages();
-      const rendered = await prerenderPreactPages(discovered, "/base");
+      const { preactFiles: discovered } = await discoverPreactPages();
+      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: discovered, base: "/base" });
 
       const basePage = rendered.find((p) => p.url === "/base-page");
       expect(basePage).toBeDefined();

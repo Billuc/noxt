@@ -92,7 +92,7 @@ import type { InferDefinitions } from "noxt/api";
 ${generateImportsCode(apiMap).join("\n")}
 
 const apiRoutesData = ${generateRouterTypeCode(apiMap)} as const;
-const handlers = getApiHandlers(apiRoutesData, ${JSON.stringify(base)});
+const handlers = getApiHandlers(apiRoutesData, ${JSON.stringify(base ?? "")});
 
 type ApiRoutes = InferDefinitions<typeof apiRoutesData>;
 

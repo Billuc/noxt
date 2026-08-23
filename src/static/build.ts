@@ -31,16 +31,21 @@ interface RouteData {
   file: Path;
 }
 
-export async function generateStaticPages(
-  routes: RouteData[],
-  islandEntries: IslandEntry[],
-  assetFiles: AssetEntry[],
-  base?: string,
-): Promise<Record<string, string>> {
+export async function generateStaticPages({
+  pages,
+  islands,
+  assets,
+  base,
+}: {
+  pages: RouteData[];
+  islands: IslandEntry[];
+  assets: AssetEntry[];
+  base?: string;
+}): Promise<{ manifest: Record<string, string> }> {
   console.log("Exporting static files...");
   const manifest: Record<string, string> = {};
 
-  for (const route of routes) {
+  for (const route of pages) {
     const routeName = route.url === "/" ? "" : route.url;
     let outputPath = DIST_DIR + routeName + "/index.html";
     outputPath = outputPath.replaceAll("/", path.sep);
@@ -48,7 +53,7 @@ export async function generateStaticPages(
     manifest[toPublicPath(route.url, base ?? "")] = outputPath;
   }
 
-  for (const entry of islandEntries) {
+  for (const entry of islands) {
     for (const file of entry.files) {
       const islandRelPath = file.relativeTo(ISLANDS_CACHE_DIR);
       let outputPath = distPath("_islands", islandRelPath);
@@ -57,12 +62,12 @@ export async function generateStaticPages(
     }
   }
 
-  for (const asset of assetFiles) {
+  for (const asset of assets) {
     const assetRelPath = asset.file.relativeTo(ASSETS_DIR);
     let outputPath = distPath("assets", assetRelPath);
     await copyFile(asset.file.absolute, outputPath);
     manifest[toPublicPath(asset.url, base ?? "")] = outputPath;
   }
 
-  return manifest;
+  return { manifest };
 }

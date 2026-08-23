@@ -279,16 +279,18 @@ describe("api/build", () => {
 
   describe("discoverAPIs", () => {
     it("should discover API endpoints from api directory", async () => {
-      const endpoints = await discoverAPIs();
-      expect(endpoints.length).toBeGreaterThan(0);
-      expect(endpoints.some((e) => e.route === "/api/users")).toBe(true);
-      expect(endpoints.some((e) => e.route === "/api/health")).toBe(true);
-      expect(endpoints.some((e) => e.route === "/api/posts")).toBe(true);
+      const { endpointEntries } = await discoverAPIs();
+      expect(endpointEntries.length).toBeGreaterThan(0);
+      expect(endpointEntries.some((e) => e.route === "/api/users")).toBe(true);
+      expect(endpointEntries.some((e) => e.route === "/api/health")).toBe(true);
+      expect(endpointEntries.some((e) => e.route === "/api/posts")).toBe(true);
     });
 
     it("should discover all HTTP methods for a route", async () => {
-      const endpoints = await discoverAPIs();
-      const postsEndpoints = endpoints.filter((e) => e.route === "/api/posts");
+      const { endpointEntries } = await discoverAPIs();
+      const postsEndpoints = endpointEntries.filter(
+        (e) => e.route === "/api/posts",
+      );
 
       expect(postsEndpoints.length).toBeGreaterThanOrEqual(3);
       expect(postsEndpoints.some((e) => e.method === "GET")).toBe(true);
@@ -297,9 +299,9 @@ describe("api/build", () => {
     });
 
     it("should return APIEndpointEntry objects with correct structure", async () => {
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
-      for (const entry of endpoints) {
+      for (const entry of endpointEntries) {
         expect(entry).toHaveProperty("method");
         expect(entry).toHaveProperty("route");
         expect(entry).toHaveProperty("input");
@@ -320,39 +322,45 @@ describe("api/build", () => {
 
     it("should return empty array when no api directory exists", async () => {
       await rm(API_DIR, { recursive: true, force: true });
-      const endpoints = await discoverAPIs();
-      expect(endpoints).toEqual([]);
+      const { endpointEntries } = await discoverAPIs();
+      expect(endpointEntries).toEqual([]);
     });
 
     it("should discover endpoints with .ts extension", async () => {
-      const endpoints = await discoverAPIs();
-      expect(endpoints.some((e) => e.file.absolute.endsWith(".ts"))).toBe(true);
-    });
-
-    it("should discover endpoints with .js extension", async () => {
-      await resetTestProject(setupTestProjectWithExtensions);
-      const endpoints = await discoverAPIs();
-
-      expect(endpoints.some((e) => e.file.absolute.endsWith(".ts"))).toBe(true);
-      expect(endpoints.some((e) => e.file.absolute.endsWith(".js"))).toBe(true);
-    });
-
-    it("should handle nested directories within api folder", async () => {
-      await resetTestProject(setupTestProjectWithNestedDirs);
-      const endpoints = await discoverAPIs();
-
-      expect(endpoints.length).toBeGreaterThanOrEqual(3);
-      expect(endpoints.some((e) => e.route === "/api/root")).toBe(true);
-      expect(endpoints.some((e) => e.route === "/api/v1/api")).toBe(true);
-      expect(endpoints.some((e) => e.route === "/api/v1/users/list")).toBe(
+      const { endpointEntries } = await discoverAPIs();
+      expect(endpointEntries.some((e) => e.file.absolute.endsWith(".ts"))).toBe(
         true,
       );
     });
 
-    it("should return Path objects with correct absolute paths", async () => {
-      const endpoints = await discoverAPIs();
+    it("should discover endpoints with .js extension", async () => {
+      await resetTestProject(setupTestProjectWithExtensions);
+      const { endpointEntries } = await discoverAPIs();
 
-      for (const entry of endpoints) {
+      expect(endpointEntries.some((e) => e.file.absolute.endsWith(".ts"))).toBe(
+        true,
+      );
+      expect(endpointEntries.some((e) => e.file.absolute.endsWith(".js"))).toBe(
+        true,
+      );
+    });
+
+    it("should handle nested directories within api folder", async () => {
+      await resetTestProject(setupTestProjectWithNestedDirs);
+      const { endpointEntries } = await discoverAPIs();
+
+      expect(endpointEntries.length).toBeGreaterThanOrEqual(3);
+      expect(endpointEntries.some((e) => e.route === "/api/root")).toBe(true);
+      expect(endpointEntries.some((e) => e.route === "/api/v1/api")).toBe(true);
+      expect(
+        endpointEntries.some((e) => e.route === "/api/v1/users/list"),
+      ).toBe(true);
+    });
+
+    it("should return Path objects with correct absolute paths", async () => {
+      const { endpointEntries } = await discoverAPIs();
+
+      for (const entry of endpointEntries) {
         expect(entry.file.absolute).toBeTruthy();
         expect(entry.file.absolute).toContain(API_DIR);
       }
@@ -360,27 +368,31 @@ describe("api/build", () => {
 
     it("should handle endpoints with special characters in their names", async () => {
       await resetTestProject(setupTestProjectWithSpecialChars);
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
-      expect(endpoints.length).toBe(2);
-      expect(endpoints.some((e) => e.route === "/api/user-profile")).toBe(true);
-      expect(endpoints.some((e) => e.route === "/api/api_v2")).toBe(true);
+      expect(endpointEntries.length).toBe(2);
+      expect(endpointEntries.some((e) => e.route === "/api/user-profile")).toBe(
+        true,
+      );
+      expect(endpointEntries.some((e) => e.route === "/api/api_v2")).toBe(true);
     });
 
     it("should only discover exports that are APIEndpoint instances", async () => {
       await resetTestProject(setupTestProjectWithNonEndpointExports);
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
       // Should find GET and POST from mixed.ts, but not helperFunction or config
-      expect(endpoints.length).toBe(2);
-      expect(endpoints.some((e) => e.method === "GET")).toBe(true);
-      expect(endpoints.some((e) => e.method === "POST")).toBe(true);
+      expect(endpointEntries.length).toBe(2);
+      expect(endpointEntries.some((e) => e.method === "GET")).toBe(true);
+      expect(endpointEntries.some((e) => e.method === "POST")).toBe(true);
     });
 
     it("should correctly parse route names from file paths", async () => {
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
-      const usersEndpoints = endpoints.filter((e) => e.route.includes("users"));
+      const usersEndpoints = endpointEntries.filter((e) =>
+        e.route.includes("users"),
+      );
       expect(usersEndpoints.length).toBeGreaterThan(0);
 
       for (const usersEndpoint of usersEndpoints) {
@@ -389,9 +401,9 @@ describe("api/build", () => {
     });
 
     it("should preserve input and output schemas", async () => {
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
-      const usersGetEndpoint = endpoints.find(
+      const usersGetEndpoint = endpointEntries.find(
         (e) => e.route.includes("users") && e.method === "GET",
       );
 
@@ -403,9 +415,9 @@ describe("api/build", () => {
     it("should have the route shortened if filename is index", async () => {
       await resetTestProject(setupTestProjectWithIndexEndpoint);
 
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
-      expect(endpoints.some((e) => e.route === "/api/health")).toBeTrue();
+      expect(endpointEntries.some((e) => e.route === "/api/health")).toBeTrue();
     });
   });
 
@@ -413,7 +425,7 @@ describe("api/build", () => {
     const utilsFile = () => path.resolve(TEST_DIR, ".cache", "api.ts");
 
     it("should generate the exact expected file for an empty endpoints list", async () => {
-      await generateAPIFile([]);
+      await generateAPIFile({ endpointEntries: [] });
 
       const content = await Bun.file(utilsFile()).text();
       expect(content).toBe(`// Auto-generated by noxt
@@ -424,7 +436,7 @@ import type { InferDefinitions } from "noxt/api";
 const apiRoutesData = {
   
 } as const;
-const handlers = getApiHandlers(apiRoutesData);
+const handlers = getApiHandlers(apiRoutesData, "");
 
 type ApiRoutes = InferDefinitions<typeof apiRoutesData>;
 
@@ -434,7 +446,9 @@ export { type ApiRoutes, handlers };
 
     it("should generate import and apiRoutesData for a single controlled endpoint", async () => {
       const usersFile = path.join(TEST_DIR, "src", "api", "users.ts");
-      await generateAPIFile([createEntry("GET", "/api/users", usersFile)]);
+      await generateAPIFile({
+        endpointEntries: [createEntry("GET", "/api/users", usersFile)],
+      });
 
       const content = await Bun.file(utilsFile()).text();
       expect(content).toMatch(
@@ -450,12 +464,14 @@ export { type ApiRoutes, handlers };
     it("should generate one import per file and merge methods in apiRoutesData", async () => {
       const usersFile = path.join(TEST_DIR, "src", "api", "users.ts");
       const postsFile = path.join(TEST_DIR, "src", "api", "posts.ts");
-      await generateAPIFile([
-        createEntry("GET", "/api/users", usersFile),
-        createEntry("POST", "/api/users", usersFile),
-        createEntry("GET", "/api/posts", postsFile),
-        createEntry("DELETE", "/api/posts", postsFile),
-      ]);
+      await generateAPIFile({
+        endpointEntries: [
+          createEntry("GET", "/api/users", usersFile),
+          createEntry("POST", "/api/users", usersFile),
+          createEntry("GET", "/api/posts", postsFile),
+          createEntry("DELETE", "/api/posts", postsFile),
+        ],
+      });
 
       const content = await Bun.file(utilsFile()).text();
       expect(content).toMatch(
@@ -474,8 +490,8 @@ export { type ApiRoutes, handlers };
     });
 
     it("should generate imports matching discovered endpoints", async () => {
-      const endpoints = await discoverAPIs();
-      await generateAPIFile(endpoints);
+      const { endpointEntries } = await discoverAPIs();
+      await generateAPIFile({ endpointEntries });
 
       const content = await Bun.file(utilsFile()).text();
       expect(content).toMatch(
@@ -490,8 +506,8 @@ export { type ApiRoutes, handlers };
     });
 
     it("should generate the full apiRoutesData for discovered endpoints", async () => {
-      const endpoints = await discoverAPIs();
-      await generateAPIFile(endpoints);
+      const { endpointEntries } = await discoverAPIs();
+      await generateAPIFile({ endpointEntries });
 
       const content = await Bun.file(utilsFile()).text();
       expect(content).toContain(`const apiRoutesData = {
@@ -511,19 +527,19 @@ export { type ApiRoutes, handlers };
     });
 
     it("should create cache directory if it doesn't exist", async () => {
-      const endpoints = await discoverAPIs();
-      await generateAPIFile(endpoints);
+      const { endpointEntries } = await discoverAPIs();
+      await generateAPIFile({ endpointEntries });
 
       const cacheDir = path.resolve(TEST_DIR, ".cache");
       expect(await exists(cacheDir)).toBe(true);
     });
 
     it("should overwrite existing API file", async () => {
-      const endpoints = await discoverAPIs();
+      const { endpointEntries } = await discoverAPIs();
 
       await mkdir(path.dirname(utilsFile()), { recursive: true });
       await writeFile(utilsFile(), "to overwrite");
-      await generateAPIFile(endpoints);
+      await generateAPIFile({ endpointEntries });
       const content = await Bun.file(utilsFile()).text();
 
       expect(content).not.toBe("to overwrite");

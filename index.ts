@@ -33,19 +33,16 @@ import {
   discoverIslands,
   prerenderIslands,
   type IslandEntry,
-  type IslandSourceEntry,
 } from "./src/islands";
 import {
   discoverMarkdownPages,
   prerenderMarkdownPages,
   type MarkdownPage,
-  type MarkdownPageEntry,
 } from "./src/markdown";
 import {
   discoverPreactPages,
   prerenderPreactPages,
   type PreactPage,
-  type PreactPageEntry,
 } from "./src/preact";
 import { generateServiceWorker } from "./src/pwa";
 import { generateStaticPages } from "./src/static";
@@ -77,9 +74,6 @@ export type {
   SearchParamSchema,
   AssetEntry,
   IslandEntry,
-  IslandSourceEntry,
   MarkdownPage,
-  MarkdownPageEntry,
   PreactPage,
-  PreactPageEntry,
 };

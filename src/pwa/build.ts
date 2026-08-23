@@ -13,15 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { writeFile, distPath } from "../core/fs";
+import { writeFile, distPath, Path } from "../core/fs";
 import { generateServiceWorkerCode } from "./code_generation";
 
-export async function generateServiceWorker(
-  manifest: Record<string, string>,
-): Promise<string> {
+export async function generateServiceWorker({
+  manifest,
+}: {
+  manifest: Record<string, string>;
+}): Promise<{ serviceWorkerFile: Path }> {
   const code = generateServiceWorkerCode(manifest);
-  const swPath = distPath("sw.js");
-  await writeFile(swPath, code);
-  console.log(`Generated service worker at ${swPath}`);
-  return swPath;
+  const swPath = Path.resolve(distPath("sw.js"));
+  await writeFile(swPath.absolute, code);
+  console.log(`Generated service worker at ${swPath.absolute}`);
+  return { serviceWorkerFile: swPath };
 }

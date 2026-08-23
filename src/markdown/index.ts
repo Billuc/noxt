@@ -14,4 +14,4 @@
  *  limitations under the License.
  **/
 export { discoverMarkdownPages, prerenderMarkdownPages } from "./build";
-export type { MarkdownPage, MarkdownPageEntry } from "./types";
+export type { MarkdownPage } from "./types";

@@ -2,7 +2,7 @@
 
 Ideas of things that could be implemented:
 
-- ~~Build pipeline~~ Adapt functions for build pipeline
+- ~~Build pipeline Adapt functions for build pipeline~~
 - Remove zod and valibot and use superscript instead
 - Move to jest and JSDOM and @testing-library/preact (or maybe preact directly)
 - dev server ?

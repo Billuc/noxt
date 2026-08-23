@@ -15,11 +15,6 @@
  **/
 import type { Path } from "../core/fs";
 
-export interface PreactPageEntry {
-  url: string;
-  file: Path;
-}
-
 export interface PreactPage {
   url: string;
   file: Path;

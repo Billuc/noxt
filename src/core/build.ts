@@ -19,31 +19,38 @@ import {
   writeFile,
   ROUTES_CACHE_FILE,
   UTILS_CACHE_FILE,
+  PAGES_DIR,
 } from "./fs";
 import { generateLinkUtilsCode } from "./code_generation";
-import { toPublicPath } from "./utils";
+import { getRouteName, toPublicPath } from "./utils";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";
-import type { FileEntry, RouteData } from "./types";
+import type { RouteData } from "./types";
+import type { AssetEntry } from "../assets";
 
-export async function generateRouteMap(
-  routes: RouteData[],
-  islandEntries: IslandEntry[],
-  assetFiles: FileEntry[],
-  base?: string,
-): Promise<Path> {
+export async function generateRouteMap({
+  pages,
+  islands,
+  assets,
+  base,
+}: {
+  pages?: RouteData[];
+  islands?: IslandEntry[];
+  assets?: AssetEntry[];
+  base?: string;
+}): Promise<{ routeMapFile: Path }> {
   const manifest: Record<string, string> = {};
 
-  for (const route of routes) {
+  for (const route of pages ?? []) {
     manifest[toPublicPath(route.url, base ?? "")] = route.file.relativeToCwd();
   }
 
-  for (const { url, file: assetPath } of assetFiles) {
-    manifest[toPublicPath(url, base ?? "")] = assetPath.relativeToCwd();
+  for (const asset of assets ?? []) {
+    manifest[toPublicPath(asset.url, base ?? "")] = asset.file.relativeToCwd();
   }
 
-  for (const entry of islandEntries) {
-    for (const file of entry.files) {
+  for (const island of islands ?? []) {
+    for (const file of island.files) {
       manifest[toPublicPath(file.relativeTo(CACHE_DIR), base ?? "")] =
         file.relativeToCwd();
     }
@@ -53,14 +60,20 @@ export async function generateRouteMap(
   await writeFile(routesFile, JSON.stringify(manifest));
   console.log("Generated route map at .cache/routes.json");
 
-  return Path.create(routesFile);
+  const routeMapFile = Path.create(routesFile);
+  return { routeMapFile };
 }
 
-export async function generateRouteUtils(
-  pageFiles: FileEntry[],
-  base?: string,
-): Promise<void> {
-  const routeNames = pageFiles.map(({ url }) => url);
+export async function generateRouteUtils({
+  pageFiles,
+  base,
+}: {
+  pageFiles: Path[];
+  base?: string;
+}): Promise<void> {
+  const routeNames = pageFiles.map((file) =>
+    getRouteName(file.relativeTo(PAGES_DIR)),
+  );
   const linkCode = generateLinkUtilsCode(routeNames, base);
 
   const utilsFile = path.resolve(UTILS_CACHE_FILE);

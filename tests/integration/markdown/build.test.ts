@@ -5,7 +5,6 @@ import {
   discoverMarkdownPages,
   prerenderMarkdownPages,
 } from "../../../src/markdown/build";
-import type { MarkdownPageEntry } from "../../../src/markdown/types";
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import path from "node:path";
 import {
@@ -180,105 +179,102 @@ describe("markdown/build", () => {
 
   describe("discoverMarkdownPages", () => {
     it("should discover markdown pages from pages directory", async () => {
-      const pages = await discoverMarkdownPages();
-      expect(pages.length).toBe(3);
-      expect(pages.some((p) => p.url === "/")).toBe(true);
-      expect(pages.some((p) => p.url === "/about")).toBe(true);
-      expect(pages.some((p) => p.url === "/NoFrontmatter")).toBe(true);
+      const { markdownFiles } = await discoverMarkdownPages();
+      expect(markdownFiles.length).toBe(3);
+      // The URL is computed later, so we check file names
+      expect(markdownFiles.some((p) => p.absolute.endsWith("index.md"))).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith("about.md"))).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith("NoFrontmatter.md"))).toBe(true);
     });
 
-    it("should return MarkdownPageEntry objects with url and file", async () => {
-      const pages = await discoverMarkdownPages();
-      for (const entry of pages) {
-        expect(entry).toHaveProperty("url");
-        expect(entry).toHaveProperty("file");
-        expect(entry.file).toBeInstanceOf(Path);
-        expect(typeof entry.url).toBe("string");
-        expect(entry.url.startsWith("/")).toBe(true);
+    it("should return Path objects for markdown files", async () => {
+      const { markdownFiles } = await discoverMarkdownPages();
+      for (const file of markdownFiles) {
+        expect(file).toBeInstanceOf(Path);
       }
     });
 
     it("should return empty array when no markdown pages exist", async () => {
       await rm(PAGES_DIR, { recursive: true, force: true });
       await mkdir(PAGES_DIR, { recursive: true });
-      const pages = await discoverMarkdownPages();
-      expect(pages).toEqual([]);
+      const { markdownFiles } = await discoverMarkdownPages();
+      expect(markdownFiles).toEqual([]);
     });
 
     it("should only discover .md files", async () => {
       await resetTestProject(setupTestProjectWithExtensions);
-      const pages = await discoverMarkdownPages();
+      const { markdownFiles } = await discoverMarkdownPages();
 
-      expect(pages.length).toBe(1);
-      expect(pages[0]!.file.absolute.endsWith(".md")).toBe(true);
-      expect(pages.some((p) => p.file.absolute.endsWith(".markdown"))).toBe(
+      expect(markdownFiles.length).toBe(1);
+      expect(markdownFiles[0]!.absolute.endsWith(".md")).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith(".markdown"))).toBe(
         false,
       );
-      expect(pages.some((p) => p.file.absolute.endsWith(".mdx"))).toBe(false);
-      expect(pages.some((p) => p.file.absolute.endsWith(".tsx"))).toBe(false);
-      expect(pages.some((p) => p.file.absolute.endsWith(".foo"))).toBe(false);
+      expect(markdownFiles.some((p) => p.absolute.endsWith(".mdx"))).toBe(false);
+      expect(markdownFiles.some((p) => p.absolute.endsWith(".tsx"))).toBe(false);
+      expect(markdownFiles.some((p) => p.absolute.endsWith(".foo"))).toBe(false);
     });
 
     it("should handle nested directories within pages folder", async () => {
       await resetTestProject(setupTestProjectWithNestedDirs);
-      const pages = await discoverMarkdownPages();
+      const { markdownFiles } = await discoverMarkdownPages();
 
-      expect(pages.some((p) => p.url === "/root")).toBe(true);
-      expect(pages.some((p) => p.url === "/blog")).toBe(true);
-      expect(pages.some((p) => p.url === "/blog/post1")).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith("root.md"))).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith(path.join("blog", "index.md")))).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith(path.join("blog", "post1.md")))).toBe(true);
     });
 
     it("should map index files to the root route", async () => {
-      const pages = await discoverMarkdownPages();
-      const indexEntry = pages.find((p) =>
-        p.file.absolute.endsWith("index.md"),
+      const { markdownFiles } = await discoverMarkdownPages();
+      const indexFile = markdownFiles.find((p) =>
+        p.absolute.endsWith("index.md"),
       );
-      expect(indexEntry?.url).toBe("/");
+      expect(indexFile).toBeDefined();
     });
 
     it("should map nested index files to their directory route", async () => {
       await resetTestProject(setupTestProjectWithNestedDirs);
-      const pages = await discoverMarkdownPages();
-      const blogIndex = pages.find(
-        (p) => p.url === "/blog" && p.file.absolute.endsWith("index.md"),
+      const { markdownFiles } = await discoverMarkdownPages();
+      const blogIndex = markdownFiles.find(
+        (p) => p.absolute.endsWith(path.join("blog", "index.md")),
       );
       expect(blogIndex).toBeDefined();
     });
 
     it("should return Path objects with correct absolute paths", async () => {
-      const pages = await discoverMarkdownPages();
+      const { markdownFiles } = await discoverMarkdownPages();
       expect(
-        pages.some((p) => p.file.absolute === path.join(PAGES_DIR, "index.md")),
+        markdownFiles.some((p) => p.absolute === path.join(PAGES_DIR, "index.md")),
       ).toBe(true);
       expect(
-        pages.some((p) => p.file.absolute === path.join(PAGES_DIR, "about.md")),
+        markdownFiles.some((p) => p.absolute === path.join(PAGES_DIR, "about.md")),
       ).toBe(true);
       expect(
-        pages.some(
-          (p) => p.file.absolute === path.join(PAGES_DIR, "NoFrontmatter.md"),
+        markdownFiles.some(
+          (p) => p.absolute === path.join(PAGES_DIR, "NoFrontmatter.md"),
         ),
       ).toBe(true);
     });
 
     it("should handle pages with special characters in their names", async () => {
       await resetTestProject(setupTestProjectWithSpecialChars);
-      const pages = await discoverMarkdownPages();
+      const { markdownFiles } = await discoverMarkdownPages();
 
-      expect(pages.length).toBe(2);
-      expect(pages.some((p) => p.url === "/Special-Name")).toBe(true);
-      expect(pages.some((p) => p.url === "/Component_123")).toBe(true);
+      expect(markdownFiles.length).toBe(2);
+      expect(markdownFiles.some((p) => p.absolute.endsWith("Special-Name.md"))).toBe(true);
+      expect(markdownFiles.some((p) => p.absolute.endsWith("Component_123.md"))).toBe(true);
     });
   });
 
   describe("prerenderMarkdownPages", () => {
     it("should handle empty page list", async () => {
-      const rendered = await prerenderMarkdownPages([]);
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: [] });
       expect(rendered).toEqual([]);
     });
 
     it("should prerender pages and return MarkdownPage objects", async () => {
-      const discovered = await discoverMarkdownPages();
-      const rendered = await prerenderMarkdownPages(discovered);
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered });
 
       expect(rendered.length).toBe(3);
       for (const entry of rendered) {
@@ -291,9 +287,9 @@ describe("markdown/build", () => {
     });
 
     it("should generate html files in cache directory", async () => {
-      const discovered = await discoverMarkdownPages();
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
 
-      await prerenderMarkdownPages(discovered);
+      await prerenderMarkdownPages({ markdownFiles: discovered });
 
       const cacheDir = path.join(TEST_DIR, ".cache");
       expect(await exists(cacheDir)).toBe(true);
@@ -308,8 +304,8 @@ describe("markdown/build", () => {
     });
 
     it("should write rendered markdown html content to the cache file", async () => {
-      const discovered = await discoverMarkdownPages();
-      const rendered = await prerenderMarkdownPages(discovered);
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered });
 
       const aboutPage = rendered.find((p) => p.url === "/about");
       expect(aboutPage).toBeDefined();
@@ -321,8 +317,8 @@ describe("markdown/build", () => {
 
     it("should use the custom layout defined in frontmatter", async () => {
       await resetTestProject(setupTestProjectWithLayouts);
-      const discovered = await discoverMarkdownPages();
-      const rendered = await prerenderMarkdownPages(discovered);
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered });
 
       const layoutPage = rendered.find((p) => p.url === "/with-layout");
       expect(layoutPage).toBeDefined();
@@ -334,19 +330,19 @@ describe("markdown/build", () => {
 
     it("should skip pages whose layout cannot be resolved", async () => {
       await resetTestProject(setupTestProjectWithLayouts);
-      const discovered = await discoverMarkdownPages();
-      const rendered = await prerenderMarkdownPages(discovered);
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered });
 
       expect(rendered.some((p) => p.url === "/broken-layout")).toBe(false);
       expect(rendered.some((p) => p.url === "/with-layout")).toBe(true);
     });
 
     it("should generate consistent file names for the same page", async () => {
-      const discovered = await discoverMarkdownPages();
-      const rendered1 = await prerenderMarkdownPages(discovered);
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered1 } = await prerenderMarkdownPages({ markdownFiles: discovered });
       await resetTestProject();
-      const discovered2 = await discoverMarkdownPages();
-      const rendered2 = await prerenderMarkdownPages(discovered2);
+      const { markdownFiles: discovered2 } = await discoverMarkdownPages();
+      const { markdownPages: rendered2 } = await prerenderMarkdownPages({ markdownFiles: discovered2 });
 
       expect(rendered1.length).toBe(rendered2.length);
       const urls1 = rendered1.map((p) => p.url).sort();
@@ -360,21 +356,17 @@ describe("markdown/build", () => {
     });
 
     it("should verify generated files exist", async () => {
-      const discovered = await discoverMarkdownPages();
-      const rendered = await prerenderMarkdownPages(discovered);
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered });
       for (const page of rendered) {
         expect(await exists(page.file.absolute)).toBe(true);
       }
     });
 
     it("should prerender a single page correctly", async () => {
-      const entries: MarkdownPageEntry[] = [
-        {
-          url: "/about",
-          file: Path.create(path.join(PAGES_DIR, "about.md")),
-        },
-      ];
-      const rendered = await prerenderMarkdownPages(entries);
+      const { markdownPages: rendered } = await prerenderMarkdownPages({
+        markdownFiles: [Path.create(path.join(PAGES_DIR, "about.md"))],
+      });
 
       expect(rendered.length).toBe(1);
       expect(rendered[0]!.url).toBe("/about");
@@ -384,21 +376,13 @@ describe("markdown/build", () => {
     });
 
     it("should prerender multiple pages correctly", async () => {
-      const entries: MarkdownPageEntry[] = [
-        {
-          url: "/",
-          file: Path.create(path.join(PAGES_DIR, "index.md")),
-        },
-        {
-          url: "/about",
-          file: Path.create(path.join(PAGES_DIR, "about.md")),
-        },
-        {
-          url: "/NoFrontmatter",
-          file: Path.create(path.join(PAGES_DIR, "NoFrontmatter.md")),
-        },
-      ];
-      const rendered = await prerenderMarkdownPages(entries);
+      const { markdownPages: rendered } = await prerenderMarkdownPages({
+        markdownFiles: [
+          Path.create(path.join(PAGES_DIR, "index.md")),
+          Path.create(path.join(PAGES_DIR, "about.md")),
+          Path.create(path.join(PAGES_DIR, "NoFrontmatter.md")),
+        ],
+      });
 
       expect(rendered.length).toBe(3);
       expect(rendered.map((p) => p.url)).toEqual([
@@ -419,8 +403,8 @@ describe("markdown/build", () => {
 
     it("should pass the base to prerendered markdown pages", async () => {
       await resetTestProject(setupTestProjectWithBaseLayout);
-      const discovered = await discoverMarkdownPages();
-      const rendered = await prerenderMarkdownPages(discovered, "/docs");
+      const { markdownFiles: discovered } = await discoverMarkdownPages();
+      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered, base: "/docs" });
 
       const basePage = rendered.find((p) => p.url === "/with-base");
       expect(basePage).toBeDefined();
