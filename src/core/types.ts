@@ -36,6 +36,16 @@ export class BuildPipeline<TContext extends {}> {
     return new BuildPipeline(async () => action(await this._fn()));
   }
 
+  with<TAdditionalContext extends {}>(
+    action: (context: TContext) => MaybePromise<TAdditionalContext>,
+  ): BuildPipeline<TContext & TAdditionalContext> {
+    return new BuildPipeline(async () => {
+      const context = await this._fn();
+      const additionalContext = await action(context);
+      return { ...context, ...additionalContext };
+    });
+  }
+
   build(): MaybePromise<TContext> {
     return this._fn();
   }
