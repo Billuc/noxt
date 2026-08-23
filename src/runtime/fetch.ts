@@ -13,123 +13,103 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "preact/hooks";
 
 /** Supported HTTP methods for fetch requests. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-/** Represents a non-OK HTTP response (e.g. 4xx/5xx). */
-export class FetchError extends Error {
-  status: number;
-
-  public constructor(status: number, message: string) {
-    super(message);
-    this.name = "FetchError";
-    this.status = status;
-  }
-}
-
-/** Options to configure a useFetch request. */
-export interface UseFetchOptions<T> {
-  method?: HttpMethod;
-  body?: any;
-  headers?: Record<string, string>;
-  initial?: T;
-}
-
-/** Options to configure a fetchJson request. */
-export interface FetchJsonOptions {
-  method?: HttpMethod;
-  body?: any;
-  headers?: Record<string, string>;
-  abortController?: AbortController;
-}
-
 /** Return type of the useFetch hook. */
-export interface UseFetchReturn<T> {
+export interface UseDataFetchReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<T | null>;
 }
 
-/** Return type of the fetchJson function. */
-export type FetchJsonReturn<T> =
-  | { data: T | null; error: null }
-  | { data: null; error: Error };
+export type FetchRequestInit<TBody extends {} | [] = any> = {
+  cache?: RequestCache;
+  credentials?: RequestCredentials;
+  headers?:
+    | [string, string][]
+    | {
+        [x: string]: string;
+      };
+  integrity?: string;
+  keepalive?: boolean;
+  method?: string;
+  mode?: RequestMode;
+  redirect?: RequestRedirect;
+  referrer?: string;
+  referrerPolicy?: ReferrerPolicy;
+} & { objectBody?: TBody };
 
-export async function fetchJson<T>(
-  url: string,
-  options?: FetchJsonOptions,
-): Promise<FetchJsonReturn<T>> {
-  try {
-    const {
-      method = "GET",
-      body,
-      headers: customHeaders = {},
-      abortController,
-    } = options ?? {};
-
-    const finalHeaders: Record<string, string> = { ...customHeaders };
-    const finalUrl =
-      url.startsWith("http://") || url.startsWith("https://")
-        ? new URL(url)
-        : new URL(url, window.location.origin);
-    let finalBody: BodyInit | null | undefined = undefined;
-
-    if (body != null) {
-      if (method === "GET") {
-        for (const [k, v] of Object.entries(body)) {
-          finalUrl.searchParams.append(k, String(v));
-        }
-      } else {
-        finalBody = JSON.stringify(body);
-        finalHeaders["Content-Type"] = "application/json";
-      }
-    }
-
-    const response = await fetch(finalUrl, {
-      method,
-      headers: finalHeaders,
-      body: finalBody,
-      signal: abortController?.signal,
-    });
-
-    if (!response.ok) {
-      throw new FetchError(response.status, response.statusText);
-    }
-
-    const json: T = await response.json();
-    return { data: json, error: null };
-  } catch (err) {
-    if (!(err instanceof Error)) {
-      return { data: null, error: Error(String(err)) };
-    }
-    if (err.name === "AbortError") {
-      return { data: null, error: null };
-    }
-    return { data: null, error: err };
+export class FetchError extends Error {
+  constructor(public response: Response) {
+    super(`Error ${response.status}: ${response.statusText}`);
   }
 }
 
-/** A hook that fetches JSON data from a URL with loading/error state and automatic re-fetch. */
-export function useFetch<T = any>(
+export function requestFrom(
   url: string,
-  options?: UseFetchOptions<T>,
-): UseFetchReturn<T> {
-  const [data, setData] = useState<T | null>(options?.initial ?? null);
-  const [loading, setLoading] = useState(!options?.initial);
+  initWithBody?: FetchRequestInit,
+  signal?: AbortSignal,
+): Request {
+  const {
+    headers = {},
+    method = "GET",
+    objectBody = undefined,
+    ...rest
+  } = initWithBody ?? {};
+
+  const finalHeaders = new Headers(headers);
+  const finalUrl =
+    url.startsWith("http://") || url.startsWith("https://")
+      ? new URL(url)
+      : new URL(url, window.location.origin);
+  let finalBody: BodyInit | null | undefined = undefined;
+
+  if (!!objectBody) {
+    if (method === "GET") {
+      for (const [k, v] of Object.entries(objectBody)) {
+        const values = v instanceof Array ? v : [v];
+        for (const value of values) {
+          finalUrl.searchParams.append(k, String(value));
+        }
+      }
+    } else {
+      finalBody = JSON.stringify(objectBody);
+      finalHeaders.set("Content-Type", "application/json");
+    }
+  }
+
+  return new Request(finalUrl, {
+    body: finalBody,
+    method: method,
+    headers: finalHeaders,
+    signal,
+    ...rest,
+  });
+}
+
+export function useAsync<TInput = any, TResult = any>(
+  input: TInput,
+  asyncFn: (input: TInput, signal: AbortSignal) => Promise<TResult>,
+): UseDataFetchReturn<TResult> {
+  const [data, setData] = useState<TResult | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   // Refs to track abort controller, latest options/url, and mount state across renders
   const abortControllerRef = useRef<AbortController | null>(null);
-  const optionsRef = useRef(options);
-  const urlRef = useRef(url);
+  const inputRef = useRef(input);
   const mountedRef = useRef(true);
 
-  optionsRef.current = options;
-  urlRef.current = url;
-
-  const refresh = useCallback(async (): Promise<T | null> => {
+  const refresh = useCallback(async (): Promise<TResult | null> => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -141,20 +121,27 @@ export function useFetch<T = any>(
     setError(null);
 
     try {
-      const { data, error } = await fetchJson<T>(urlRef.current, {
-        ...optionsRef.current,
-        abortController: abortControllerRef.current,
-      });
-      if (!!error) {
-        if (mountedRef.current) {
-          setError(error);
-        }
-        throw error;
-      }
-      if (mountedRef.current && !!data) {
+      const data = await asyncFn(
+        inputRef.current,
+        abortControllerRef.current.signal,
+      );
+      if (mountedRef.current) {
         setData(data);
       }
       return data;
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.name !== "AbortError") {
+          setError(err);
+          throw err;
+        }
+      } else {
+        const error = Error(String(err));
+        setError(error);
+        throw error;
+      }
+
+      return null;
     } finally {
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null;
@@ -165,12 +152,14 @@ export function useFetch<T = any>(
     }
   }, []);
 
+  useEffect(() => {
+    inputRef.current = input;
+    refresh().catch(() => {});
+  }, [input]);
+
   // Fetch data on mount and abort on unmount
-  useLayoutEffect(() => {
+  useEffect(() => {
     mountedRef.current = true;
-    if (!options?.initial) {
-      refresh().catch(() => {});
-    }
     return () => {
       mountedRef.current = false;
       if (abortControllerRef.current) {
@@ -180,4 +169,32 @@ export function useFetch<T = any>(
   }, []);
 
   return { data, loading, error, refresh };
+}
+
+export async function fetchJson<TResult = any>(
+  url: string,
+  options: FetchRequestInit,
+  signal: AbortSignal,
+): Promise<TResult> {
+  const request = requestFrom(url, options, signal);
+  const response = await fetch(request);
+
+  if (!response.ok) {
+    throw new FetchError(response);
+  }
+
+  const data = (await response.json()) as TResult;
+  return data;
+}
+
+export function useFetchJson<TResult = any>(
+  url: string,
+  options: FetchRequestInit,
+): UseDataFetchReturn<TResult> {
+  const key = useMemo(() => JSON.stringify([url, options]), [url, options]);
+  const input = useMemo(() => ({ url, options }), [key]);
+
+  return useAsync(input, ({ url, options }, signal) =>
+    fetchJson(url, options, signal),
+  );
 }

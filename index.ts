@@ -13,9 +13,73 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { prepareIsland } from "./src/shell/island";
-import { prepareRoutes } from "./index.macro";
-import { defineIsland } from "./src/core/island";
-import { staticPrerender } from "./src/shell/static";
+import { generateRouteMap, generateRouteUtils } from "./src/core/build";
+import { BuildPipeline } from "./src/core/types";
 
-export { prepareIsland, prepareRoutes, defineIsland, staticPrerender };
+import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
+import type {
+  IQueryEndpointBuilder,
+  IMutationEndpointBuilder,
+  APIEndpoint,
+  SearchParamSchema,
+} from "./src/api";
+import {
+  discoverAssets,
+  generateAssetUtilsFile,
+  type AssetEntry,
+} from "./src/assets";
+import {
+  Island,
+  discoverIslands,
+  prerenderIslands,
+  type IslandEntry,
+  type IslandSourceEntry,
+} from "./src/islands";
+import {
+  discoverMarkdownPages,
+  prerenderMarkdownPages,
+  type MarkdownPage,
+  type MarkdownPageEntry,
+} from "./src/markdown";
+import {
+  discoverPreactPages,
+  prerenderPreactPages,
+  type PreactPage,
+  type PreactPageEntry,
+} from "./src/preact";
+import { generateServiceWorker } from "./src/pwa";
+import { generateStaticPages } from "./src/static";
+
+export {
+  discoverAPIs,
+  generateAPIFile,
+  query,
+  mutation,
+  discoverAssets,
+  generateAssetUtilsFile,
+  discoverIslands,
+  prerenderIslands,
+  Island,
+  discoverMarkdownPages,
+  prerenderMarkdownPages,
+  discoverPreactPages,
+  prerenderPreactPages,
+  generateRouteMap,
+  generateRouteUtils,
+  generateServiceWorker,
+  generateStaticPages,
+  BuildPipeline,
+};
+export type {
+  IQueryEndpointBuilder,
+  IMutationEndpointBuilder,
+  APIEndpoint,
+  SearchParamSchema,
+  AssetEntry,
+  IslandEntry,
+  IslandSourceEntry,
+  MarkdownPage,
+  MarkdownPageEntry,
+  PreactPage,
+  PreactPageEntry,
+};

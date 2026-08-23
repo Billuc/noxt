@@ -1,0 +1,131 @@
+import * as path from "node:path";
+import * as esbuild from "esbuild";
+import * as crypto from "node:crypto";
+import type { FunctionComponent } from "preact";
+
+import type {
+  IslandEntry,
+  IslandSourceEntry,
+  PrerenderedIslandEntry,
+} from "./types";
+import {
+  getFilesMatchingGlob,
+  ISLANDS_CACHE_DIR,
+  ISLANDS_DIR,
+  writeFile,
+  Path,
+} from "../core/fs";
+import { isDev } from "../core/env";
+import { generateScriptForIsland } from "./code_generation";
+import { standardizePath } from "./utils";
+
+export async function discoverIslands(): Promise<IslandSourceEntry[]> {
+  let islandFiles: Path[];
+  try {
+    islandFiles = await getFilesMatchingGlob(
+      "**/*.{tsx,ts,jsx,js}",
+      path.resolve(ISLANDS_DIR),
+    );
+  } catch {
+    console.log("No islands directory found !");
+    return [];
+  }
+
+  const entries: IslandSourceEntry[] = [];
+  for (const file of islandFiles) {
+    const mod = await import(file.absolute);
+    const Island = mod.default as FunctionComponent<any>; // TODO: better assertion
+
+    if (!Island) {
+      console.warn(
+        `Island file ${file.relativeToCwd()} has no default export, skipping`,
+      );
+      continue;
+    }
+
+    entries.push({
+      component: Island,
+      sourceFile: file,
+    });
+  }
+
+  return entries;
+}
+
+export async function prerenderIslands(
+  islandSources: IslandSourceEntry[],
+): Promise<IslandEntry[]> {
+  const prerendered: PrerenderedIslandEntry[] = [];
+
+  for (const source of islandSources) {
+    const { component, sourceFile } = source;
+    const hash = crypto.hash("sha256", sourceFile.absolute, "base64url");
+    const fileName =
+      (component.displayName ?? component.name) + "." + hash + ".js";
+    const scriptPath = path.resolve(".cache", fileName);
+
+    const scriptContent = generateScriptForIsland(hash, sourceFile.absolute);
+    await writeFile(scriptPath, scriptContent);
+
+    prerendered.push({
+      component,
+      hash,
+      sourceFile: source.sourceFile,
+      renderScriptFile: Path.create(scriptPath),
+    });
+    console.log(
+      `Prerendered island [${component.displayName ?? component.name}]`,
+    );
+  }
+
+  console.log(`Bundling islands`);
+  return bundleIslands(prerendered);
+}
+
+async function bundleIslands(
+  islands: PrerenderedIslandEntry[],
+): Promise<IslandEntry[]> {
+  const devMode = isDev();
+  const entrypoints = islands.map((ie) => {
+    return ie.renderScriptFile.absolute;
+  });
+
+  const result = await esbuild.build({
+    entryPoints: entrypoints,
+    absWorkingDir: process.cwd(),
+    outdir: path.resolve(ISLANDS_CACHE_DIR),
+    minify: !devMode,
+    sourcemap: devMode,
+    splitting: false, // !devMode,
+    jsxImportSource: "preact",
+    jsx: "automatic",
+    jsxDev: devMode,
+    jsxFactory: "h",
+    bundle: true,
+    format: "esm",
+    logLevel: "info",
+    metafile: true,
+  });
+
+  const entriesMap: Record<string, IslandEntry> = {};
+
+  islands.forEach((ie) => {
+    entriesMap[standardizePath(ie.sourceFile.absolute)] = {
+      component: ie.component,
+      hash: ie.hash,
+      files: [],
+    };
+  });
+
+  for (const output in result.metafile.outputs) {
+    const inputs = result.metafile.outputs[output]?.inputs ?? {};
+    for (const input in inputs) {
+      const entry =
+        entriesMap[standardizePath(path.resolve(process.cwd(), input))];
+      if (!entry) continue;
+      entry.files.push(Path.resolve(output));
+    }
+  }
+
+  return Object.values(entriesMap);
+}

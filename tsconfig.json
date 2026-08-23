@@ -6,6 +6,9 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "allowJs": true,
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
 
     // Bundler mode
     "moduleResolution": "bundler",
@@ -21,8 +24,8 @@
     "noImplicitOverride": true,
 
     // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
 
     "types": ["bun"]

@@ -14,7 +14,6 @@
   "homepage": "https://github.com/Billuc/noxt#readme",
   "files": [
     "index.ts",
-    "index.macro.ts",
     "src/",
     "LICENSE"
   ],
@@ -22,22 +21,28 @@
     ".": {
       "import": "./index.ts",
       "require": "./index.ts",
-      "default": "./index.ts",
-      "macro": "./index.macro.ts"
+      "default": "./index.ts"
     },
-    "./runtime": "./src/runtime/index.ts"
+    "./runtime": "./src/runtime/index.ts",
+    "./api": "./src/api/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "happy-dom": "^20.9.0"
+    "happy-dom": "^20.9.0",
+    "htm": "^3.1.1"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@preact/signals": "^2.10.0",
+    "@testing-library/preact": "^3.2.4",
     "devalue": "^5.8.1",
-    "htm": "^3.1.1",
+    "esbuild": "^0.28.1",
+    "micromark": "^4.0.2",
     "preact": "^10.29.2",
-    "preact-render-to-string": "^6.7.0"
+    "preact-render-to-string": "^6.7.0",
+    "valibot": "^1.4.2",
+    "yaml": "^2.9.0"
   }
 }

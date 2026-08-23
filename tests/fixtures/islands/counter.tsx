@@ -1,6 +1,5 @@
 import { useState } from "preact/hooks";
-import { html } from "htm/preact";
-import { defineIsland } from "noxt";
+import { h, Fragment } from "preact";
 
 function Counter({
   initialValue = 0,
@@ -10,11 +9,13 @@ function Counter({
   date?: Date;
 }) {
   const [count, setCount] = useState(initialValue);
-  const dateLabel = date?.toLocaleString() ?? "undefined";
-  return html`
-    <button onClick=${() => setCount((c) => c + 1)}>${count}</button>
-    <div>Prepared at ${dateLabel}</div>
-  `;
+  const dateLabel = (date ?? new Date()).toLocaleString();
+  return (
+    <>
+      <button onClick={() => setCount((c) => c + 1)}>{count}</button>
+      <div>Prepared at {dateLabel}</div>
+    </>
+  );
 }
 
-export default defineIsland(Counter, import.meta.path);
+export default Counter;

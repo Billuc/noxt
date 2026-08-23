@@ -1,0 +1,1 @@
+export { generateServiceWorker } from "./build";
