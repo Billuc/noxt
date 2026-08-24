@@ -28,6 +28,8 @@ import type { MarkdownPage } from "./types";
 import type { IslandEntry } from "../islands";
 import { parseMarkdown } from "./parse";
 import { renderMarkdownToHtml } from "./render";
+import type { AssetFunction } from "../assets/types";
+import type { PageFunction } from "../core/types";
 
 export async function discoverMarkdownPages(): Promise<{
   markdownFiles: Path[];
@@ -50,10 +52,14 @@ export async function prerenderMarkdownPages({
   markdownFiles,
   base,
   islands,
+  asset,
+  page,
 }: {
   markdownFiles: Path[];
   base?: string;
   islands?: IslandEntry[];
+  asset?: AssetFunction;
+  page?: PageFunction;
 }): Promise<{ markdownPages: MarkdownPage[] }> {
   const pages: MarkdownPage[] = [];
 
@@ -66,6 +72,8 @@ export async function prerenderMarkdownPages({
         file.absolute,
         base,
         islands,
+        asset,
+        page,
       );
 
       pages.push({
@@ -86,6 +94,8 @@ async function prerenderMarkdown(
   markdownPath: string,
   base?: string,
   islands?: IslandEntry[],
+  asset?: AssetFunction,
+  page?: PageFunction,
 ): Promise<Path> {
   const content = await readFile(markdownPath);
 
@@ -100,6 +110,8 @@ async function prerenderMarkdown(
     markdownData,
     base,
     islands,
+    asset,
+    page,
   );
   await writeFile(prerenderPath, prerenderedPage);
 

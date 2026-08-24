@@ -14,10 +14,12 @@
  *  limitations under the License.
  **/
 import { h } from "preact";
-import { BaseProvider, IslandMapProvider } from "../core/context";
+import { PageContext, PageContextData } from "../core/context";
 import { renderToHtmlString } from "../core/render";
 import { sanitizePrerendered } from "../core/utils";
 import type { IslandEntry } from "../islands";
+import type { AssetFunction } from "../assets/types";
+import type { PageFunction } from "../core/types";
 
 /**
  * Renders a Preact component to HTML string with DOCTYPE.
@@ -29,14 +31,21 @@ export async function renderPreactToHtml(
   component: preact.ComponentType,
   base?: string,
   islandEntries?: IslandEntry[],
+  asset?: AssetFunction,
+  page?: PageFunction,
 ): Promise<string> {
-  let element: any = h(component, {}, []);
-  if (base !== undefined) {
-    element = h(BaseProvider, { value: base }, element);
-  }
-  if (islandEntries !== undefined) {
-    element = h(IslandMapProvider, { entries: islandEntries }, element);
-  }
-  const content = await renderToHtmlString(element);
+  const contextData = PageContextData.from({
+    base,
+    islands: islandEntries,
+    asset,
+    page,
+  });
+  const fullPage = h(
+    PageContext.Provider,
+    { value: contextData },
+    h(component, {}, []),
+  );
+
+  const content = await renderToHtmlString(fullPage);
   return sanitizePrerendered(content);
 }

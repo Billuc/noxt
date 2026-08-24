@@ -13,12 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import {
-  createContext,
-  h,
-  type ComponentChildren,
-  type FunctionComponent,
-} from "preact";
+import { createContext, type FunctionComponent } from "preact";
 import type { IslandEntry } from "../islands";
 import type { QueryParams } from "./types";
 
@@ -67,33 +62,3 @@ export class PageContextData {
 export const PageContext = createContext<PageContextData>(
   new PageContextData(),
 );
-
-export const BaseContext = createContext("");
-
-export function BaseProvider({
-  value,
-  children,
-}: {
-  value: string;
-  children?: ComponentChildren;
-}) {
-  return h(BaseContext.Provider, { value }, children);
-}
-
-export const IslandMapContext = createContext<
-  Map<FunctionComponent<any>, IslandEntry>
->(new Map());
-
-export function IslandMapProvider({
-  entries,
-  children,
-}: {
-  entries: IslandEntry[];
-  children?: ComponentChildren;
-}) {
-  const map = new Map<FunctionComponent<any>, IslandEntry>();
-  for (const entry of entries) {
-    map.set(entry.component, entry);
-  }
-  return h(IslandMapContext.Provider, { value: map }, children);
-}

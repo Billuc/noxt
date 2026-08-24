@@ -17,12 +17,7 @@ import { h, type ComponentChildren, type ComponentType } from "preact";
 import * as path from "node:path";
 
 function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {
-  return (
-    <html>
-      <head></head>
-      <body>{children}</body>
-    </html>
-  );
+  return h("html", {}, [h("head", {}, []), h("body", {}, children)]);
 }
 
 export async function getLayout(
