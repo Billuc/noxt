@@ -32,8 +32,10 @@ export async function discoverIslands(): Promise<{ islandFiles: Path[] }> {
 
 export async function prerenderIslands({
   islandFiles,
+  base,
 }: {
   islandFiles: Path[];
+  base?: string;
 }): Promise<{ islands: IslandEntry[] }> {
   const prerendered: PrerenderedIslandEntry[] = [];
 
@@ -52,7 +54,7 @@ export async function prerenderIslands({
     const fileName = (Island.displayName ?? Island.name) + "." + hash + ".js";
     const scriptPath = path.resolve(".cache", fileName);
 
-    const scriptContent = generateScriptForIsland(hash, file.absolute);
+    const scriptContent = generateScriptForIsland(hash, file.absolute, base);
     await writeFile(scriptPath, scriptContent);
 
     prerendered.push({
