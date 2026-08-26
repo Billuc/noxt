@@ -26,7 +26,7 @@ import {
 export function renderIsland(
   Component: ComponentType<any>,
   hash: string,
-  base: string,
+  base: string = "",
 ) {
   const elements = document.querySelectorAll<HTMLElement>(
     `[data-island="${hash}"]`,
