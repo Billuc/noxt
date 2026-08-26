@@ -19,3 +19,5 @@ export interface AssetEntry {
   url: string;
   file: Path;
 }
+
+export type AssetFunction = <AssetId extends string>(id: AssetId) => string;

@@ -21,6 +21,8 @@ import type { IslandEntry } from "../islands";
 import type { PreactPage } from "./types";
 import { getFilesMatchingGlob, PAGES_DIR, writeFile, Path } from "../core/fs";
 import { renderPreactToHtml } from "./render";
+import type { AssetFunction } from "../assets/types";
+import type { PageFunction } from "../core/types";
 
 export async function discoverPreactPages(): Promise<{
   preactFiles: Path[];
@@ -43,10 +45,14 @@ export async function prerenderPreactPages({
   preactFiles,
   base,
   islands,
+  asset,
+  page,
 }: {
   preactFiles: Path[];
   base?: string;
   islands?: IslandEntry[];
+  asset?: AssetFunction;
+  page?: PageFunction;
 }): Promise<{ preactPages: PreactPage[] }> {
   const pages: PreactPage[] = [];
 
@@ -59,6 +65,8 @@ export async function prerenderPreactPages({
         file.absolute,
         base,
         islands,
+        asset,
+        page,
       );
 
       pages.push({
@@ -79,6 +87,8 @@ async function prerenderPreact(
   pagePath: string,
   base?: string,
   islands?: IslandEntry[],
+  asset?: AssetFunction,
+  page?: PageFunction,
 ): Promise<Path> {
   const mod = await import(pagePath);
   const Page = mod.default as FunctionComponent<any> | undefined;
@@ -88,7 +98,13 @@ async function prerenderPreact(
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 
-  const prerenderedPage = await renderPreactToHtml(Page, base, islands);
+  const prerenderedPage = await renderPreactToHtml(
+    Page,
+    base,
+    islands,
+    asset,
+    page,
+  );
   await writeFile(prerenderPath, prerenderedPage);
 
   return Path.create(prerenderPath);

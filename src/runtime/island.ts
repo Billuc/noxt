@@ -16,19 +16,39 @@
 import { hydrate, h, render } from "preact";
 import type { ComponentType } from "preact";
 import * as devalue from "devalue";
+import { UtilsContext, UtilsContextData } from "../core/context";
+import {
+  createClientAssetFunction,
+  createClientPageFunction,
+} from "../core/url";
 
 /** Hydrates all island elements matching the given hash with the given component. */
-export function renderIsland(Component: ComponentType<any>, hash: string) {
+export function renderIsland(
+  Component: ComponentType<any>,
+  hash: string,
+  base: string = "",
+) {
   const elements = document.querySelectorAll<HTMLElement>(
     `[data-island="${hash}"]`,
+  );
+  const utilsContextData = new UtilsContextData(
+    createClientPageFunction(base),
+    createClientAssetFunction(base),
   );
 
   elements.forEach((element) => {
     const props = devalue.parse(element.getAttribute("data-props") || "[{}]");
+    const islandComponent = h(Component, props, []);
+    const islandWithProvider = h(
+      UtilsContext.Provider,
+      { value: utilsContextData },
+      islandComponent,
+    );
+
     if (element.childNodes.length === 0) {
-      render(h(Component, props, []), element);
+      render(islandWithProvider, element);
     } else {
-      hydrate(h(Component, props, []), element);
+      hydrate(islandWithProvider, element);
     }
   });
 }

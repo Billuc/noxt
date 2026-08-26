@@ -27,8 +27,10 @@ Object.assign(globalThis, {
 });
 
 import { renderIsland } from "../../../src/runtime/island";
+import { UtilsContext } from "../../../src/core/context";
 import { describe, it, expect, afterEach } from "bun:test";
 import { h } from "preact";
+import { useContext } from "preact/hooks";
 
 describe("renderIsland", () => {
   afterEach(() => {
@@ -44,7 +46,7 @@ describe("renderIsland", () => {
     el.setAttribute("data-props", "[{}]");
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.querySelector("#test")).not.toBeNull();
   });
@@ -59,7 +61,7 @@ describe("renderIsland", () => {
     el.setAttribute("data-props", devalue.stringify({ name: "World" }));
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.textContent).toBe("World");
   });
@@ -72,7 +74,7 @@ describe("renderIsland", () => {
     el.setAttribute("data-island", hash);
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.textContent).toBe("No props");
   });
@@ -80,7 +82,7 @@ describe("renderIsland", () => {
   it("should do nothing when no elements match the hash", () => {
     const TestComponent = () => h("div", {}, "Should not render");
 
-    renderIsland(TestComponent, "no-match");
+    renderIsland(TestComponent, "no-match", "");
 
     expect(document.body.innerHTML).toBe("");
   });
@@ -100,7 +102,7 @@ describe("renderIsland", () => {
     el2.setAttribute("data-props", devalue.stringify({ index: 2 }));
     document.body.appendChild(el2);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el1.textContent).toBe("Item 1");
     expect(el2.textContent).toBe("Item 2");
@@ -122,5 +124,58 @@ describe("renderIsland", () => {
     renderIsland(TestComponent, hash);
 
     expect(el.textContent).toBe("Count: 3, Items: a,b,c");
+  });
+
+  it("should expose page and asset utils prefixed with the base", () => {
+    const TestComponent = () => {
+      const { page, asset } = useContext(UtilsContext);
+      return h("div", {}, `${page("/about", { q: 1 })} ${asset("/img.png")}`);
+    };
+    const hash = "utils-base";
+
+    const el = document.createElement("div");
+    el.setAttribute("data-island", hash);
+    document.body.appendChild(el);
+
+    renderIsland(TestComponent, hash, "/base");
+
+    expect(el.textContent).toBe("/base/about?q=1 /base/img.png");
+  });
+
+  it("should default the base to an empty string when not provided", () => {
+    const TestComponent = () => {
+      const { page } = useContext(UtilsContext);
+      return h("div", {}, page("/about"));
+    };
+    const hash = "utils-no-base";
+
+    const el = document.createElement("div");
+    el.setAttribute("data-island", hash);
+    document.body.appendChild(el);
+
+    renderIsland(TestComponent, hash);
+
+    expect(el.textContent).toBe("/about");
+  });
+
+  it("should share the same utils instance across hydrated elements", () => {
+    const seen: any[] = [];
+    const TestComponent = () => {
+      seen.push(useContext(UtilsContext));
+      return h("span", null);
+    };
+    const hash = "utils-shared";
+
+    for (const index of [1, 2]) {
+      const el = document.createElement("div");
+      el.setAttribute("data-island", hash);
+      el.setAttribute("data-props", devalue.stringify({ index }));
+      document.body.appendChild(el);
+    }
+
+    renderIsland(TestComponent, hash, "/base");
+
+    expect(seen.length).toBe(2);
+    expect(seen[0]).toBe(seen[1]);
   });
 });

@@ -15,12 +15,14 @@
  **/
 import { h } from "preact";
 import { micromark } from "micromark";
-import { BaseProvider, IslandMapProvider } from "../core/context";
+import { providePageContext } from "../core/context";
 import { renderToHtmlString } from "../core/render";
 import { sanitizePrerendered } from "../core/utils";
 import type { MarkdownData } from "./types";
 import type { IslandEntry } from "../islands";
 import { getLayout } from "./layout";
+import type { PageFunction } from "../core/types";
+import type { AssetFunction } from "../assets/types";
 
 const MARKDOWN_PLACEHOLDER = "---MARKDOWN:CHILDREN---";
 
@@ -34,17 +36,17 @@ export async function renderMarkdownToHtml(
   markdownData: MarkdownData,
   base?: string,
   islandEntries?: IslandEntry[],
+  asset?: AssetFunction,
+  page?: PageFunction,
 ): Promise<string> {
   const Layout = await getLayout(markdownData.frontmatter);
   const markdownHTML = micromark(markdownData.content);
 
-  let fullPage: any = h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER);
-  if (base !== undefined) {
-    fullPage = h(BaseProvider, { value: base }, fullPage);
-  }
-  if (islandEntries !== undefined) {
-    fullPage = h(IslandMapProvider, { entries: islandEntries }, fullPage);
-  }
+  const fullPage = providePageContext(
+    { base, islands: islandEntries, asset, page },
+    h(Layout, markdownData.frontmatter, MARKDOWN_PLACEHOLDER),
+  );
+
   let htmlContent = await renderToHtmlString(fullPage);
   htmlContent = sanitizePrerendered(htmlContent);
   htmlContent = htmlContent.replace(MARKDOWN_PLACEHOLDER, markdownHTML);

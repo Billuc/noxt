@@ -18,7 +18,7 @@ import { h, Fragment } from "preact";
 import { useContext } from "preact/hooks";
 import * as devalue from "devalue";
 import { toPublicPath } from "../core/utils";
-import { BaseContext, IslandMapContext } from "../core/context";
+import { PageContext } from "../core/context";
 import { CACHE_DIR } from "../core/fs";
 import { IslandErrorBoundary } from "./ErrorBoundary";
 
@@ -30,8 +30,7 @@ type Props<T> = h.JSX.IntrinsicAttributes & {
 
 export function Island<T>(props: Props<T>) {
   const { component: Component, props: finalProps, key } = props;
-  const base = useContext(BaseContext);
-  const islandMap = useContext(IslandMapContext);
+  const { base, islandMap } = useContext(PageContext);
 
   const entry = islandMap.get(Component);
   if (!entry) {

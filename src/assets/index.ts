@@ -1,2 +1,2 @@
-export { discoverAssets, generateAssetUtilsFile } from "./build";
-export type { AssetEntry } from "./types";
+export { discoverAssets, generateAssetUtils } from "./build";
+export type { AssetEntry, AssetFunction } from "./types";

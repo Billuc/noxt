@@ -22,7 +22,7 @@ import {
 } from "../core/fs";
 import { toPublicPath } from "../core/utils";
 import { Path } from "../core/fs";
-import type { AssetEntry } from "./types";
+import type { AssetEntry, AssetFunction } from "./types";
 import { generateAssetUtilsCode } from "./code_generation";
 
 export async function discoverAssets(): Promise<{ assets: AssetEntry[] }> {
@@ -41,18 +41,35 @@ export async function discoverAssets(): Promise<{ assets: AssetEntry[] }> {
   return { assets };
 }
 
-export async function generateAssetUtilsFile({
+export async function generateAssetUtils({
   assets,
   base,
 }: {
   assets: AssetEntry[];
   base?: string;
-}) {
+}): Promise<{ asset: AssetFunction }> {
   const assetIds = assets.map((a) => a.url);
 
-  let code = generateAssetUtilsCode(assetIds, base);
+  let code = generateAssetUtilsCode(assetIds);
 
   const utilsFile = path.resolve(ASSETS_CACHE_FILE);
   await writeFile(utilsFile, code);
   console.log("Generated assets utils at .cache/assets.ts");
+
+  const asset = prepareAssetFunction(assetIds, base);
+  return { asset };
+}
+
+function prepareAssetFunction(
+  assetIds: string[],
+  base?: string,
+): AssetFunction {
+  function asset<AssetId extends string>(id: AssetId): string {
+    if (!assetIds.includes(id)) {
+      throw new Error(`Unknown asset with ID '${id}'`);
+    }
+    return (base ?? "") + id;
+  }
+
+  return asset;
 }
