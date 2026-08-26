@@ -23,6 +23,7 @@ import {
 } from "./fs";
 import { generateLinkUtilsCode } from "./code_generation";
 import { getRouteName, toPublicPath } from "./utils";
+import { buildUrlWithQuery } from "./url";
 import { Path } from "./fs";
 import type { IslandEntry } from "../islands";
 import type { PageFunction, QueryParams, RouteData } from "./types";
@@ -93,15 +94,7 @@ function preparePageFunction(pageNames: string[], base?: string): PageFunction {
       throw new Error(`Unknown page with URL '${pageId}'`);
     }
 
-    const url = base + pageId;
-    if (!query) return url;
-    const entries = Object.entries(query);
-    if (entries.length === 0) return url;
-    const params = new URLSearchParams();
-    for (const [k, v] of entries) {
-      params.append(k, String(v));
-    }
-    return url + "?" + params.toString();
+    return buildUrlWithQuery(base + pageId, query);
   }
 
   return page;

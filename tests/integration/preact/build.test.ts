@@ -128,10 +128,10 @@ async function setupTestProjectWithBasePage() {
     path.join(PAGES_DIR, "base-page.tsx"),
     `import { h } from "preact";
 import { useContext } from "preact/hooks";
-import { BaseContext } from "../../../../../../src/core/context";
+import { PageContext } from "../../../../../../src/core/context";
 
 export default function BasePage() {
-  const base = useContext(BaseContext);
+  const base = useContext(PageContext).base;
   return h("div", { "data-base": base }, "Base page");
 }
 `,

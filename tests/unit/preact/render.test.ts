@@ -5,7 +5,7 @@ import { renderPreactToHtml } from "../../../src/preact/render";
 import { Island } from "../../../src/islands";
 import { describe, it, expect } from "bun:test";
 import { h, Fragment } from "preact";
-import { BaseContext } from "../../../src/core/context";
+import { PageContext } from "../../../src/core/context";
 import { useContext } from "preact/hooks";
 
 describe("renderPreactToHtml", () => {
@@ -62,7 +62,7 @@ describe("renderPreactToHtml", () => {
 
   it("should pass base parameter", async () => {
     const Component = () => {
-      const base = useContext(BaseContext);
+      const base = useContext(PageContext).base;
       return h("div", {}, base);
     };
     const result = await renderPreactToHtml(Component, "/base");

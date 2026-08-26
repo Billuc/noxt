@@ -130,14 +130,14 @@ async function setupTestProjectWithBaseLayout() {
     path.join(TEST_DIR, "src", "layouts", "BaseLayout.tsx"),
     `import { h, type ComponentChildren } from "preact";
 import { useContext } from "preact/hooks";
-import { BaseContext } from "../../../../../../src/core/context";
+import { PageContext } from "../../../../../../src/core/context";
 
 export default function BaseLayout({
   children,
 }: {
   children?: ComponentChildren;
 }) {
-  const base = useContext(BaseContext);
+  const base = useContext(PageContext).base;
   return h("div", { "data-base": base }, children);
 }
 `,

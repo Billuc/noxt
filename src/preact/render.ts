@@ -14,7 +14,7 @@
  *  limitations under the License.
  **/
 import { h } from "preact";
-import { PageContext, PageContextData } from "../core/context";
+import { providePageContext } from "../core/context";
 import { renderToHtmlString } from "../core/render";
 import { sanitizePrerendered } from "../core/utils";
 import type { IslandEntry } from "../islands";
@@ -34,15 +34,8 @@ export async function renderPreactToHtml(
   asset?: AssetFunction,
   page?: PageFunction,
 ): Promise<string> {
-  const contextData = PageContextData.from({
-    base,
-    islands: islandEntries,
-    asset,
-    page,
-  });
-  const fullPage = h(
-    PageContext.Provider,
-    { value: contextData },
+  const fullPage = providePageContext(
+    { base, islands: islandEntries, asset, page },
     h(component, {}, []),
   );
 

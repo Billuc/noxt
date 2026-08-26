@@ -44,7 +44,7 @@ describe("renderIsland", () => {
     el.setAttribute("data-props", "[{}]");
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.querySelector("#test")).not.toBeNull();
   });
@@ -59,7 +59,7 @@ describe("renderIsland", () => {
     el.setAttribute("data-props", devalue.stringify({ name: "World" }));
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.textContent).toBe("World");
   });
@@ -72,7 +72,7 @@ describe("renderIsland", () => {
     el.setAttribute("data-island", hash);
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.textContent).toBe("No props");
   });
@@ -80,7 +80,7 @@ describe("renderIsland", () => {
   it("should do nothing when no elements match the hash", () => {
     const TestComponent = () => h("div", {}, "Should not render");
 
-    renderIsland(TestComponent, "no-match");
+    renderIsland(TestComponent, "no-match", "");
 
     expect(document.body.innerHTML).toBe("");
   });
@@ -100,7 +100,7 @@ describe("renderIsland", () => {
     el2.setAttribute("data-props", devalue.stringify({ index: 2 }));
     document.body.appendChild(el2);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el1.textContent).toBe("Item 1");
     expect(el2.textContent).toBe("Item 2");
@@ -119,7 +119,7 @@ describe("renderIsland", () => {
     );
     document.body.appendChild(el);
 
-    renderIsland(TestComponent, hash);
+    renderIsland(TestComponent, hash, "");
 
     expect(el.textContent).toBe("Count: 3, Items: a,b,c");
   });
