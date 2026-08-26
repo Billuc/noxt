@@ -19,7 +19,17 @@ import type { Path } from "../core/fs";
 export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
-export type SearchParamSchema = s.Struct<any, any>;
+type SearchParamValue = number | boolean | string;
+
+export type SearchParams = {
+  [k: string]: SearchParamValue | SearchParamValue[] | undefined;
+};
+export type Structify<T> = {
+  [k in keyof T]: s.Struct<T[k]>;
+};
+
+export type Schema<T> = s.Struct<T, Structify<T>>;
+export type SearchParamSchema<T extends SearchParams> = Schema<T>;
 
 export type SomeSchema = s.Struct<any, any>;
 
@@ -29,55 +39,48 @@ export type APIHandler<TInput, TOutput> = (data: {
   response: ResponseInit;
 }) => Promise<TOutput> | TOutput;
 
-export class APIEndpoint<
-  TInput extends SomeSchema,
-  TOutput extends SomeSchema,
-> {
+export class APIEndpoint<TInput extends {}, TOutput extends {}> {
   constructor(
-    public input: TInput,
-    public output: TOutput,
+    public input: Schema<TInput>,
+    public output: Schema<TOutput>,
     public handler: (request: Request) => Promise<Response>,
   ) {}
 }
 
 export interface IQueryEndpointBuilder<
-  TInput extends SearchParamSchema,
-  TOutput extends SomeSchema,
+  TInput extends SearchParams,
+  TOutput extends {},
 > {
-  input<TInput2 extends SearchParamSchema>(
-    Input: TInput2,
+  input<TInput2 extends SearchParams>(
+    Input: SearchParamSchema<TInput2>,
   ): IQueryEndpointBuilder<TInput2, TOutput>;
 
-  output<TOutput2 extends SomeSchema>(
-    Output: TOutput2,
+  output<TOutput2 extends {}>(
+    Output: Schema<TOutput2>,
   ): IQueryEndpointBuilder<TInput, TOutput2>;
 
-  get _input(): TInput;
-  get _output(): TOutput;
+  get _input(): Schema<TInput>;
+  get _output(): Schema<TOutput>;
 
-  endpoint(
-    fn: APIHandler<s.Infer<TInput>, s.Infer<TOutput>>,
-  ): APIEndpoint<TInput, TOutput>;
+  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
 }
 
 export interface IMutationEndpointBuilder<
-  TInput extends SomeSchema,
-  TOutput extends SomeSchema,
+  TInput extends SearchParams,
+  TOutput extends {},
 > {
-  input<TInput2 extends SomeSchema>(
-    Input: TInput2,
+  input<TInput2 extends SearchParams>(
+    Input: SearchParamSchema<TInput2>,
   ): IMutationEndpointBuilder<TInput2, TOutput>;
 
-  output<TOutput2 extends SomeSchema>(
-    Output: TOutput2,
+  output<TOutput2 extends {}>(
+    Output: Schema<TOutput2>,
   ): IMutationEndpointBuilder<TInput, TOutput2>;
 
-  get _input(): TInput;
-  get _output(): TOutput;
+  get _input(): Schema<TInput>;
+  get _output(): Schema<TOutput>;
 
-  endpoint(
-    fn: APIHandler<s.Infer<TInput>, s.Infer<TOutput>>,
-  ): APIEndpoint<TInput, TOutput>;
+  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
 }
 
 export type ApiDefinitions = Record<
@@ -109,7 +112,9 @@ export type InferDefinitions<TDefinitions extends ApiDefinitions> = {
 
 export type ApiEndpointDefinitions = Record<
   string,
-  Partial<Record<HttpMethod, APIEndpoint<s.Struct<any, any>, s.Struct<any, any>>>>
+  Partial<
+    Record<HttpMethod, APIEndpoint<s.Struct<any, any>, s.Struct<any, any>>>
+  >
 >;
 
 export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> = {

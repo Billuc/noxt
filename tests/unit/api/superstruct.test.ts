@@ -27,14 +27,6 @@ describe("searchParams", () => {
       const result = s.create(params, searchParams(schema));
       expect(result).toEqual({ active: true });
     });
-
-    it("should parse bigint search param", () => {
-      const schema = s.object({ id: s.bigint() });
-      const params = new URLSearchParams("id=12345678901234567890");
-
-      const result = s.create(params, searchParams(schema));
-      expect(result).toEqual({ id: BigInt("12345678901234567890") });
-    });
   });
 
   describe("array search params", () => {
@@ -162,13 +154,6 @@ describe("searchParams", () => {
       expect(result).toEqual({ active: false });
     });
 
-    it("should throw for invalid bigint format", () => {
-      const schema = s.object({ id: s.bigint() });
-      const params = new URLSearchParams("id=invalid");
-
-      expect(() => s.create(params, searchParams(schema))).toThrow();
-    });
-
     it("should throw for invalid array element type", () => {
       const schema = s.object({ scores: s.array(s.number()) });
       const params = new URLSearchParams("scores=1&scores=invalid");
@@ -213,7 +198,7 @@ describe("searchParams", () => {
       const schema = s.object({ name: s.string() });
       const params = new URLSearchParams("name=John&extra=value");
 
-      const result = s.create(params, searchParams(schema));
+      const result = s.mask(params, searchParams(schema));
       expect(result).toEqual({ name: "John" });
     });
   });

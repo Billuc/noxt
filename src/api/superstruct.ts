@@ -14,93 +14,70 @@
  *  limitations under the License.
  **/
 import * as s from "superstruct";
-import type { SearchParamSchema, SomeSchema } from "./types";
+import type { SearchParams, SearchParamSchema, SomeSchema } from "./types";
 
-type DecodedSearchParamsValue = number | bigint | boolean | string;
-type DecodedSearchParams = Record<
-  string,
-  DecodedSearchParamsValue | DecodedSearchParamsValue[]
->;
+const numberValue = s.coerce(s.number(), s.string(), (value) =>
+  parseFloat(value),
+);
+const booleanValue = s.coerce(
+  s.boolean(),
+  s.string(),
+  (value) => value === "true",
+);
+const stringValue = s.string();
 
-const URLSearchParamsStruct = s.define(
+const URLSearchParamsStruct: s.Struct<URLSearchParams> = s.define(
   "URLSearchParams",
   (v) => v instanceof URLSearchParams,
 );
 
-function isOptionalStruct(struct: s.Struct<any, any>): boolean {
-  // superstruct optional allows undefined
-  try {
-    return s.is(undefined, struct as any);
-  } catch {
-    return false;
+function makeBaseValueSchema(Schema: SomeSchema): SomeSchema {
+  if (s.is(true, Schema)) {
+    return booleanValue;
   }
-}
-
-function isArrayStruct(struct: s.Struct<any, any>): boolean {
-  return (struct as any).type === "array";
-}
-
-function getArrayItem(struct: s.Struct<any, any>): s.Struct<any, any> {
-  return (struct as any).schema as s.Struct<any, any>;
-}
-
-function parseValue(str: string, Schema: SomeSchema): DecodedSearchParamsValue {
-  const type = (Schema as any).type as string;
-  // For optional structs, type is inner type, so same check works
-  if (type === "boolean") return str === "true";
-  if (type === "number") return Number(str);
-  if (type === "bigint") return BigInt(str);
-  if (type === "string") return str;
-  // fallback: if type is unknown, try to infer via is checks
-  if (s.is(true, Schema as any) && s.is(false, Schema as any)) {
-    // heuristic not needed
+  if (s.is(3.14, Schema)) {
+    return numberValue;
   }
-  return str;
+  return stringValue;
 }
 
-function decodeSearchParams(
-  Schema: SearchParamSchema,
+function decodeSearchParams<TSchema extends SearchParams>(
+  Schema: SearchParamSchema<TSchema>,
   searchParams: URLSearchParams,
-): Record<string, unknown> {
-  const decoded: DecodedSearchParams = {};
-  const entries = (Schema as any).schema as Record<string, s.Struct<any, any>>;
+): TSchema {
+  const result: any = {};
 
-  for (const [key, field] of Object.entries(entries)) {
-    const fieldValues = searchParams.getAll(key);
+  for (const k of Object.keys(Schema.schema)) {
+    const vSchema = Schema.schema[k]!;
+    const paramValues = searchParams.getAll(k);
 
-    if (isArrayStruct(field as s.Struct<any, any>)) {
-      const Item = getArrayItem(field as s.Struct<any, any>);
-      decoded[key] = (fieldValues ?? []).map((str) => parseValue(str, Item as SomeSchema));
+    if (s.is([], vSchema)) {
+      const itemSchema = makeBaseValueSchema(vSchema.schema as SomeSchema);
+      result[k] = paramValues.map((v) => s.create(v, itemSchema));
+    } else if (s.is(undefined, vSchema)) {
+      const itemSchema = makeBaseValueSchema(vSchema);
+      result[k] =
+        paramValues.length === 0
+          ? undefined
+          : s.create(paramValues[0], itemSchema);
     } else {
-      const fieldValue = fieldValues?.[0];
-      if (fieldValue === undefined) {
-        // if optional, skip; else let superstruct validation fail for missing required
-        if (isOptionalStruct(field as s.Struct<any, any>)) continue;
-        continue;
-      }
-      decoded[key] = parseValue(fieldValue, field as SomeSchema);
+      result[k] = s.create(paramValues[0], makeBaseValueSchema(vSchema));
     }
   }
 
-  return decoded;
+  return result as TSchema;
 }
 
-export function searchParams<TSchema extends SearchParamSchema>(
-  Schema: TSchema,
-): s.Struct<s.Infer<TSchema>, unknown> {
-  return s.coerce(
-    Schema as s.Struct<any, any>,
-    URLSearchParamsStruct as s.Struct<URLSearchParams, any>,
-    (value) => decodeSearchParams(Schema, value as URLSearchParams),
-  ) as unknown as s.Struct<s.Infer<TSchema>, unknown>;
+export function searchParams<TSchema extends SearchParams>(
+  Schema: SearchParamSchema<TSchema>,
+): s.Struct<TSchema, unknown> {
+  return s.coerce(Schema, URLSearchParamsStruct, (value) =>
+    decodeSearchParams(Schema, value),
+  );
 }
 
 export function body<TSchema extends SomeSchema>(
   Schema: TSchema,
 ): s.Struct<s.Infer<TSchema>, unknown> {
-  return s.coerce(
-    Schema as s.Struct<any, any>,
-    s.string(),
-    (value) => JSON.parse(value as string),
-  ) as unknown as s.Struct<s.Infer<TSchema>, unknown>;
+  return s.coerce(Schema, s.string(), (value) => JSON.parse(value));
 }
