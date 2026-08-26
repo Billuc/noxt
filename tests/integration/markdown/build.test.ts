@@ -130,15 +130,15 @@ async function setupTestProjectWithBaseLayout() {
     path.join(TEST_DIR, "src", "layouts", "BaseLayout.tsx"),
     `import { h, type ComponentChildren } from "preact";
 import { useContext } from "preact/hooks";
-import { PageContext } from "../../../../../../src/core/context";
+import { UtilsContext } from "noxt/runtime";
 
 export default function BaseLayout({
   children,
 }: {
   children?: ComponentChildren;
 }) {
-  const base = useContext(PageContext).base;
-  return h("div", { "data-base": base }, children);
+  const { asset } = useContext(UtilsContext);
+  return h("div", { "data-asset": asset("/style.css") }, children);
 }
 `,
   );
@@ -401,15 +401,19 @@ describe("markdown/build", () => {
       );
     });
 
-    it("should pass the base to prerendered markdown pages", async () => {
+    it("should pass utils with base to prerendered markdown pages", async () => {
       await resetTestProject(setupTestProjectWithBaseLayout);
       const { markdownFiles: discovered } = await discoverMarkdownPages();
-      const { markdownPages: rendered } = await prerenderMarkdownPages({ markdownFiles: discovered, base: "/docs" });
+      const { markdownPages: rendered } = await prerenderMarkdownPages({
+        markdownFiles: discovered,
+        base: "/docs",
+        asset: (assetId) => "/docs" + assetId,
+      });
 
       const basePage = rendered.find((p) => p.url === "/with-base");
       expect(basePage).toBeDefined();
       const content = await readFile(basePage!.file.absolute, "utf-8");
-      expect(content).toContain('data-base="/docs"');
+      expect(content).toContain('data-asset="/docs/style.css"');
     });
   });
 });

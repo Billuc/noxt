@@ -14,7 +14,8 @@
  *  limitations under the License.
  **/
 import { generateRouteMap, generateRouteUtils } from "./src/core/build";
-import { BuildPipeline } from "./src/core/types";
+import { BuildPipeline, type PageFunction } from "./src/core/types";
+import { UtilsContext } from "./src/core/context";
 
 import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
 import type {
@@ -27,6 +28,7 @@ import {
   discoverAssets,
   generateAssetUtils,
   type AssetEntry,
+  type AssetFunction,
 } from "./src/assets";
 import {
   Island,
@@ -57,6 +59,7 @@ export {
   discoverIslands,
   prerenderIslands,
   Island,
+  UtilsContext,
   discoverMarkdownPages,
   prerenderMarkdownPages,
   discoverPreactPages,
@@ -73,7 +76,9 @@ export type {
   APIEndpoint,
   SearchParamSchema,
   AssetEntry,
+  AssetFunction,
   IslandEntry,
   MarkdownPage,
+  PageFunction,
   PreactPage,
 };

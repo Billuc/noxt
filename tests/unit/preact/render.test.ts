@@ -5,7 +5,7 @@ import { renderPreactToHtml } from "../../../src/preact/render";
 import { Island } from "../../../src/islands";
 import { describe, it, expect } from "bun:test";
 import { h, Fragment } from "preact";
-import { PageContext } from "../../../src/core/context";
+import { UtilsContext } from "../../../src/core/context";
 import { useContext } from "preact/hooks";
 
 describe("renderPreactToHtml", () => {
@@ -60,13 +60,29 @@ describe("renderPreactToHtml", () => {
     expect(result).toContain("Hello World");
   });
 
-  it("should pass base parameter", async () => {
+  it("should provide page and asset utils to components", async () => {
     const Component = () => {
-      const base = useContext(PageContext).base;
-      return h("div", {}, base);
+      const { page, asset } = useContext(UtilsContext);
+      return h("div", {}, `${page("/about")} ${asset("/img.png")}`);
     };
-    const result = await renderPreactToHtml(Component, "/base");
-    expect(result).toContain("<div>/base</div>");
+    const result = await renderPreactToHtml(
+      Component,
+      "/base",
+      undefined,
+      (assetId) => "/base" + assetId,
+      (pageId) => "/base" + pageId,
+    );
+    expect(result).toContain("<div>/base/about /base/img.png</div>");
+  });
+
+  it("should throw when using page utils without a provided page function", async () => {
+    const Component = () => {
+      const { page } = useContext(UtilsContext);
+      return h("div", {}, page("/about"));
+    };
+    await expect(renderPreactToHtml(Component)).rejects.toThrow(
+      "No page function has been provided",
+    );
   });
 
   it("should fall back to client-only for islands that throw during prerendering", async () => {

@@ -37,7 +37,7 @@ export async function discoverMarkdownPages(): Promise<{
   let pageFiles: Path[];
   try {
     pageFiles = await getFilesMatchingGlob(
-      "**/*.{md}",
+      "**/*.md",
       path.resolve(PAGES_DIR),
     );
   } catch {

@@ -21,6 +21,9 @@ export {
   useFetchJson,
 } from "./fetch";
 export { ApiRouter, useApi, getApiHandlers } from "./api";
+export { UtilsContext } from "../core/context";
+export type { PageFunction } from "../core/types";
+export type { AssetFunction } from "../assets/types";
 
 export { sharedSignal } from "./signal";
 export type { Signal } from "@preact/signals-core";

@@ -128,11 +128,11 @@ async function setupTestProjectWithBasePage() {
     path.join(PAGES_DIR, "base-page.tsx"),
     `import { h } from "preact";
 import { useContext } from "preact/hooks";
-import { PageContext } from "../../../../../../src/core/context";
+import { UtilsContext } from "noxt/runtime";
 
 export default function BasePage() {
-  const base = useContext(PageContext).base;
-  return h("div", { "data-base": base }, "Base page");
+  const { asset } = useContext(UtilsContext);
+  return h("div", { "data-asset": asset("/img.png") }, "Base page");
 }
 `,
   );
@@ -362,15 +362,19 @@ describe("preact/build", () => {
       expect(about!.file.absolute).toMatch(/\.cache[\\/]About\..+\.html$/);
     });
 
-    it("should pass the base to prerendered preact pages", async () => {
+    it("should pass utils with base to prerendered preact pages", async () => {
       await resetTestProject(setupTestProjectWithBasePage);
       const { preactFiles: discovered } = await discoverPreactPages();
-      const { preactPages: rendered } = await prerenderPreactPages({ preactFiles: discovered, base: "/base" });
+      const { preactPages: rendered } = await prerenderPreactPages({
+        preactFiles: discovered,
+        base: "/base",
+        asset: (assetId) => "/base" + assetId,
+      });
 
       const basePage = rendered.find((p) => p.url === "/base-page");
       expect(basePage).toBeDefined();
       const content = await readFile(basePage!.file.absolute, "utf-8");
-      expect(content).toContain('data-base="/base"');
+      expect(content).toContain('data-asset="/base/img.png"');
     });
   });
 });
