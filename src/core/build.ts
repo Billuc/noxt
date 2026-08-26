@@ -94,7 +94,7 @@ function preparePageFunction(pageNames: string[], base?: string): PageFunction {
       throw new Error(`Unknown page with URL '${pageId}'`);
     }
 
-    return buildUrlWithQuery(base + pageId, query);
+    return buildUrlWithQuery((base ?? "") + pageId, query);
   }
 
   return page;
