@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { generateApiUtilsCode } from "../../../src/api/code_generation";
 import type { APIEndpointEntry } from "../../../src/api/types";
-import * as v from "valibot";
+import * as s from "superstruct";
 import { Path } from "../../../src/core/fs";
 
 // Helper to create mock entries
@@ -9,8 +9,8 @@ function createEntry(
   method: string,
   route: string,
   filePath: string,
-  input: any = v.null(),
-  output: any = v.null(),
+  input: any = s.literal(null) as any,
+  output: any = s.literal(null) as any,
 ): APIEndpointEntry<any, any> {
   return {
     method: method as any,

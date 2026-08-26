@@ -39,10 +39,10 @@ async function setupTestProject() {
   await writeFile(
     path.join(API_DIR, "users.ts"),
     `import { query, mutation } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
-const QueryInput = v.object({ id: v.string() });
-const QueryOutput = v.object({ name: v.string(), email: v.string() });
+const QueryInput = s.object({ id: s.string() });
+const QueryOutput = s.object({ name: s.string(), email: s.string() });
 
 export const GET = query()
   .input(QueryInput)
@@ -51,8 +51,8 @@ export const GET = query()
     return { name: "John Doe", email: "john@example.com" };
   });
 
-const MutationInput = v.object({ name: v.string(), email: v.string() });
-const MutationOutput = v.object({ id: v.string(), created: v.boolean() });
+const MutationInput = s.object({ name: s.string(), email: s.string() });
+const MutationOutput = s.object({ id: s.string(), created: s.boolean() });
 
 export const POST = mutation()
   .input(MutationInput)
@@ -67,7 +67,7 @@ export const POST = mutation()
   await writeFile(
     path.join(API_DIR, "health.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -80,14 +80,14 @@ export const GET = query()
   await writeFile(
     path.join(API_DIR, "posts.ts"),
     `import { query, mutation } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
-const PostInput = v.object({ title: v.string(), content: v.string() });
-const PostOutput = v.object({ id: v.string(), title: v.string() });
+const PostInput = s.object({ title: s.string(), content: s.string() });
+const PostOutput = s.object({ id: s.string(), title: s.string() });
 
 // GET all posts
 export const GET = query()
-  .output(v.array(PostOutput))
+  .output(s.array(PostOutput))
   .endpoint(async () => {
     return [{ id: "1", title: "First post" }];
   });
@@ -102,8 +102,8 @@ export const POST = mutation()
 
 // DELETE a post
 export const DELETE = mutation()
-  .input(v.object({ id: v.string() }))
-  .output(v.object({ success: v.boolean() }))
+  .input(s.object({ id: s.string() }))
+  .output(s.object({ success: s.boolean() }))
   .endpoint(async ({ input }) => {
     return { success: true };
   });
@@ -119,7 +119,7 @@ async function setupTestProjectWithNestedDirs() {
   await writeFile(
     path.join(API_DIR, "root.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -131,7 +131,7 @@ export const GET = query()
   await writeFile(
     path.join(API_DIR, "v1", "api.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -143,7 +143,7 @@ export const GET = query()
   await writeFile(
     path.join(API_DIR, "v1", "users", "list.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -159,7 +159,7 @@ async function setupTestProjectWithExtensions() {
   await writeFile(
     path.join(API_DIR, "endpoint.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -171,7 +171,7 @@ export const GET = query()
   await writeFile(
     path.join(API_DIR, "endpoint.js"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -187,7 +187,7 @@ async function setupTestProjectWithSpecialChars() {
   await writeFile(
     path.join(API_DIR, "user-profile.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -199,7 +199,7 @@ export const GET = query()
   await writeFile(
     path.join(API_DIR, "api_v2.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
 export const GET = query()
   .endpoint(async () => {
@@ -215,9 +215,9 @@ async function setupTestProjectWithNonEndpointExports() {
   await writeFile(
     path.join(API_DIR, "mixed.ts"),
     `import { query } from "noxt/api";
-import * as v from "valibot";
+import * as s from "superstruct";
 
-// This is a valid endpoint
+ // This is a valid endpoint
 export const GET = query()
   .endpoint(async () => {
     return { valid: true };

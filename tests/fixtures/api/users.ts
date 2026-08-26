@@ -1,15 +1,15 @@
-import * as v from "valibot";
+import * as s from "superstruct";
 import { query, mutation } from "noxt/api";
 
-const UserSchema = v.object({
-  id: v.string(),
-  name: v.string(),
-  email: v.string(),
+const UserSchema = s.object({
+  id: s.string(),
+  name: s.string(),
+  email: s.string(),
 });
 
-const CreateUserInputSchema = v.object({
-  name: v.string(),
-  email: v.string(),
+const CreateUserInputSchema = s.object({
+  name: s.string(),
+  email: s.string(),
 });
 
 const users = new Map<string, { id: string; name: string; email: string }>();
@@ -18,7 +18,7 @@ users.set("1", { id: "1", name: "John Doe", email: "john@example.com" });
 users.set("2", { id: "2", name: "Jane Smith", email: "jane@example.com" });
 
 export const GET = query()
-  .input(v.object({ id: v.string() }))
+  .input(s.object({ id: s.string() }))
   .output(UserSchema)
   .endpoint(async ({ input, response }) => {
     const user = users.get(input.id);
@@ -40,7 +40,7 @@ export const POST = mutation()
   });
 
 export const PUT = mutation()
-  .input(v.object({ id: v.string(), name: v.string(), email: v.string() }))
+  .input(s.object({ id: s.string(), name: s.string(), email: s.string() }))
   .output(UserSchema)
   .endpoint(async ({ input, response }) => {
     if (!users.has(input.id)) {
@@ -53,8 +53,8 @@ export const PUT = mutation()
   });
 
 export const DELETE = mutation()
-  .input(v.object({ id: v.string() }))
-  .output(v.object({ success: v.boolean() }))
+  .input(s.object({ id: s.string() }))
+  .output(s.object({ success: s.boolean() }))
   .endpoint(async ({ input, response }) => {
     const deleted = users.delete(input.id);
     if (!deleted) {

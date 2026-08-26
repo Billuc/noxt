@@ -42,7 +42,7 @@
     "micromark": "^4.0.2",
     "preact": "^10.29.2",
     "preact-render-to-string": "^6.7.0",
-    "valibot": "^1.4.2",
+    "superstruct": "2.0.2",
     "yaml": "^2.9.0"
   }
 }

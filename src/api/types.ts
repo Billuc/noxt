@@ -13,29 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import * as v from "valibot";
+import * as s from "superstruct";
 import type { Path } from "../core/fs";
 
 export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
-type SearchParamValueSchema =
-  | v.NumberSchema<any>
-  | v.BigintSchema<any>
-  | v.BooleanSchema<any>
-  | v.StringSchema<any>;
+export type SearchParamSchema = s.Struct<any, any>;
 
-export type SearchParamSchema = v.ObjectSchema<
-  {
-    [k: string]:
-      | SearchParamValueSchema
-      | v.ArraySchema<SearchParamValueSchema, any>
-      | v.OptionalSchema<SearchParamValueSchema, any>;
-  },
-  any
->;
-
-export type SomeSchema = v.GenericSchema<unknown>;
+export type SomeSchema = s.Struct<any, any>;
 
 export type APIHandler<TInput, TOutput> = (data: {
   input: TInput;
@@ -70,7 +56,7 @@ export interface IQueryEndpointBuilder<
   get _output(): TOutput;
 
   endpoint(
-    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
+    fn: APIHandler<s.Infer<TInput>, s.Infer<TOutput>>,
   ): APIEndpoint<TInput, TOutput>;
 }
 
@@ -90,7 +76,7 @@ export interface IMutationEndpointBuilder<
   get _output(): TOutput;
 
   endpoint(
-    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
+    fn: APIHandler<s.Infer<TInput>, s.Infer<TOutput>>,
   ): APIEndpoint<TInput, TOutput>;
 }
 
@@ -100,8 +86,8 @@ export type ApiDefinitions = Record<
     Record<
       HttpMethod,
       {
-        input: v.GenericSchema;
-        output: v.GenericSchema;
+        input: s.Struct<any, any>;
+        output: s.Struct<any, any>;
       }
     >
   >
@@ -123,7 +109,7 @@ export type InferDefinitions<TDefinitions extends ApiDefinitions> = {
 
 export type ApiEndpointDefinitions = Record<
   string,
-  Partial<Record<HttpMethod, APIEndpoint<v.GenericSchema, v.GenericSchema>>>
+  Partial<Record<HttpMethod, APIEndpoint<s.Struct<any, any>, s.Struct<any, any>>>>
 >;
 
 export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> = {

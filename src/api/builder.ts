@@ -22,8 +22,8 @@ import {
   type SomeSchema,
 } from "./types";
 import { toBody } from "./utils";
-import { body, searchParams } from "./valibot";
-import * as v from "valibot";
+import { body, searchParams } from "./superstruct";
+import * as s from "superstruct";
 
 class QueryEndpointBuilder<
   TInput extends SearchParamSchema,
@@ -54,12 +54,12 @@ class QueryEndpointBuilder<
   }
 
   endpoint(
-    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
+    fn: APIHandler<s.Infer<TInput>, s.Infer<TOutput>>,
   ): APIEndpoint<TInput, TOutput> {
     return new APIEndpoint(this.__input, this.__output, async (request) => {
       try {
         const params = new URL(request.url).searchParams;
-        const inputData = v.parse(searchParams(this.__input), params);
+        const inputData = s.create(params, searchParams(this.__input));
 
         try {
           const response: ResponseInit = {};
@@ -83,10 +83,10 @@ class QueryEndpointBuilder<
 }
 
 export function query(): IQueryEndpointBuilder<
-  v.ObjectSchema<{}, undefined>,
-  v.NullSchema<undefined>
+  s.Struct<any, any>,
+  s.Struct<any, any>
 > {
-  return new QueryEndpointBuilder(v.object({}), v.null());
+  return new QueryEndpointBuilder(s.object({}), s.literal(null) as unknown as s.Struct<null, null>);
 }
 
 class MutationEndpointBuilder<
@@ -118,12 +118,12 @@ class MutationEndpointBuilder<
   }
 
   endpoint(
-    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
+    fn: APIHandler<s.Infer<TInput>, s.Infer<TOutput>>,
   ): APIEndpoint<TInput, TOutput> {
     return new APIEndpoint(this.__input, this.__output, async (request) => {
       try {
         const data = await request.text();
-        const inputData = v.parse(body(this.__input), data);
+        const inputData = s.create(data, body(this.__input));
 
         try {
           const response: ResponseInit = {};
@@ -141,8 +141,11 @@ class MutationEndpointBuilder<
 }
 
 export function mutation(): IMutationEndpointBuilder<
-  v.NullSchema<undefined>,
-  v.NullSchema<undefined>
+  s.Struct<null, null>,
+  s.Struct<null, null>
 > {
-  return new MutationEndpointBuilder(v.null(), v.null());
+  return new MutationEndpointBuilder(
+    s.literal(null) as unknown as s.Struct<null, null>,
+    s.literal(null) as unknown as s.Struct<null, null>,
+  );
 }
