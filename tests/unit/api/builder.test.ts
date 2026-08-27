@@ -1,19 +1,35 @@
 import { describe, it, expect } from "bun:test";
 import { query, mutation } from "../../../src/api/builder";
-import * as v from "valibot";
+import * as s from "superstruct";
 
-function assertSchemaMatch<TExpected extends v.GenericSchema>(
-  received: v.GenericSchema,
-  expected: TExpected,
+function assertStructMatch(
+  received: s.Struct<any, any>,
+  expected: s.Struct<any, any>,
 ) {
-  const receivedEntries = Object.entries(received)
-    .filter(([k, _]) => !k.startsWith("~"))
-    .sort();
-  const expectedEntries = Object.entries(expected)
-    .filter(([k, _]) => !k.startsWith("~"))
-    .sort();
-
-  expect(receivedEntries).toEqual(expectedEntries);
+  // Compare type and schema structure loosely
+  expect(received.type).toEqual(expected.type);
+  // For literal null, check schema value
+  if (expected.type === "literal") {
+    expect((received as any).schema).toEqual((expected as any).schema);
+    return;
+  }
+  // For object/type, compare keys
+  const recvSchema = (received as any).schema;
+  const expSchema = (expected as any).schema;
+  if (recvSchema && expSchema && typeof recvSchema === "object" && typeof expSchema === "object") {
+    // object schema is map, array schema is struct
+    if (Array.isArray(recvSchema) || Array.isArray(expSchema)) {
+      // not needed
+    } else if (recvSchema !== null && !("type" in recvSchema)) {
+      // object map
+      expect(Object.keys(recvSchema).sort()).toEqual(Object.keys(expSchema).sort());
+      return;
+    }
+  }
+  // For array, compare item type
+  if (received.type === "array" && expected.type === "array") {
+    expect((received as any).schema.type).toEqual((expected as any).schema.type);
+  }
 }
 
 describe("QueryEndpointBuilder", () => {
@@ -21,49 +37,49 @@ describe("QueryEndpointBuilder", () => {
     it("should create a builder with default empty input and null output", () => {
       const builder = query();
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._input, v.object({}));
-      assertSchemaMatch(builder._output, v.null());
+      assertStructMatch(builder._input, s.object({}));
+      assertStructMatch(builder._output, s.literal(null) as any);
     });
   });
 
   describe("input()", () => {
     it("should set input schema", () => {
-      const schema = v.object({ name: v.string() });
+      const schema = s.object({ name: s.string() });
       const builder = query().input(schema);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._input, schema);
+      expect(builder._input).toBe(schema);
     });
 
     it("should replace previous input calls", () => {
-      const schema1 = v.object({ name: v.string() });
-      const schema2 = v.object({ age: v.number() });
+      const schema1 = s.object({ name: s.string() });
+      const schema2 = s.object({ age: s.number() });
       const builder = query().input(schema1).input(schema2);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._input, schema2);
+      expect(builder._input).toBe(schema2);
     });
   });
 
   describe("output()", () => {
     it("should set output schema", () => {
-      const schema = v.object({ result: v.string() });
+      const schema = s.object({ result: s.string() });
       const builder = query().output(schema);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._output, schema);
+      expect(builder._output).toBe(schema);
     });
 
     it("should replace previous output calls", () => {
-      const schema1 = v.object({ result: v.string() });
-      const schema2 = v.object({ success: v.boolean() });
+      const schema1 = s.object({ result: s.string() });
+      const schema2 = s.object({ success: s.boolean() });
       const builder = query().output(schema1).output(schema2);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._output, schema2);
+      expect(builder._output).toBe(schema2);
     });
   });
 
   describe("endpoint()", () => {
     it("should create an APIEndpoint with query method", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ greeting: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ greeting: s.string() });
 
       const handler = query()
         .input(inputSchema)
@@ -73,14 +89,14 @@ describe("QueryEndpointBuilder", () => {
         });
 
       expect(handler).toBeDefined();
-      assertSchemaMatch(handler.input, inputSchema);
-      assertSchemaMatch(handler.output, outputSchema);
+      expect(handler.input).toBe(inputSchema);
+      expect(handler.output).toBe(outputSchema);
       expect(handler.handler).toBeDefined();
     });
 
     it("should handle valid request with search params", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ greeting: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ greeting: s.string() });
 
       const handler = query()
         .input(inputSchema)
@@ -98,8 +114,8 @@ describe("QueryEndpointBuilder", () => {
     });
 
     it("should return 400 for invalid search params", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ greeting: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ greeting: s.string() });
 
       const handler = query()
         .input(inputSchema)
@@ -116,8 +132,8 @@ describe("QueryEndpointBuilder", () => {
     });
 
     it("should return 500 when handler throws an error", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ greeting: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ greeting: s.string() });
 
       const handler = query()
         .input(inputSchema)
@@ -134,8 +150,8 @@ describe("QueryEndpointBuilder", () => {
     });
 
     it("should handle optional search params", async () => {
-      const inputSchema = v.object({ name: v.optional(v.string()) });
-      const outputSchema = v.object({ greeting: v.string() });
+      const inputSchema = s.object({ name: s.optional(s.string()) });
+      const outputSchema = s.object({ greeting: s.string() });
 
       const handler = query()
         .input(inputSchema)
@@ -159,49 +175,49 @@ describe("MutationEndpointBuilder", () => {
     it("should create a builder with default null input and null output", () => {
       const builder = mutation();
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._input, v.null());
-      assertSchemaMatch(builder._output, v.null());
+      assertStructMatch(builder._input, s.literal(null) as any);
+      assertStructMatch(builder._output, s.literal(null) as any);
     });
   });
 
   describe("input()", () => {
     it("should set input schema", () => {
-      const schema = v.object({ name: v.string() });
+      const schema = s.object({ name: s.string() });
       const builder = mutation().input(schema);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._input, schema);
+      expect(builder._input).toBe(schema);
     });
 
     it("should replace previous input calls", () => {
-      const schema1 = v.object({ name: v.string() });
-      const schema2 = v.object({ age: v.number() });
+      const schema1 = s.object({ name: s.string() });
+      const schema2 = s.object({ age: s.number() });
       const builder = mutation().input(schema1).input(schema2);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._input, schema2);
+      expect(builder._input).toBe(schema2);
     });
   });
 
   describe("output()", () => {
     it("should set output schema", () => {
-      const schema = v.object({ result: v.string() });
+      const schema = s.object({ result: s.string() });
       const builder = mutation().output(schema);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._output, schema);
+      expect(builder._output).toBe(schema);
     });
 
     it("should replace previous output calls", () => {
-      const schema1 = v.object({ result: v.string() });
-      const schema2 = v.object({ success: v.boolean() });
+      const schema1 = s.object({ result: s.string() });
+      const schema2 = s.object({ success: s.boolean() });
       const builder = mutation().output(schema1).output(schema2);
       expect(builder).toBeDefined();
-      assertSchemaMatch(builder._output, schema2);
+      expect(builder._output).toBe(schema2);
     });
   });
 
   describe("endpoint()", () => {
     it("should create an APIEndpoint with mutation method", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ result: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ result: s.string() });
 
       const handler = mutation()
         .input(inputSchema)
@@ -211,14 +227,14 @@ describe("MutationEndpointBuilder", () => {
         });
 
       expect(handler).toBeDefined();
-      assertSchemaMatch(handler.input, inputSchema);
-      assertSchemaMatch(handler.output, outputSchema);
+      expect(handler.input).toBe(inputSchema);
+      expect(handler.output).toBe(outputSchema);
       expect(handler.handler).toBeDefined();
     });
 
     it("should handle valid request with JSON body", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ result: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ result: s.string() });
 
       const handler = mutation()
         .input(inputSchema)
@@ -239,8 +255,8 @@ describe("MutationEndpointBuilder", () => {
     });
 
     it("should return 400 for invalid JSON body", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ result: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ result: s.string() });
 
       const handler = mutation()
         .input(inputSchema)
@@ -260,8 +276,8 @@ describe("MutationEndpointBuilder", () => {
     });
 
     it("should return 400 for invalid JSON", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ result: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ result: s.string() });
 
       const handler = mutation()
         .input(inputSchema)
@@ -281,8 +297,8 @@ describe("MutationEndpointBuilder", () => {
     });
 
     it("should return 500 when handler throws an error", async () => {
-      const inputSchema = v.object({ name: v.string() });
-      const outputSchema = v.object({ result: v.string() });
+      const inputSchema = s.object({ name: s.string() });
+      const outputSchema = s.object({ result: s.string() });
 
       const handler = mutation()
         .input(inputSchema)
@@ -302,8 +318,8 @@ describe("MutationEndpointBuilder", () => {
     });
 
     it("should handle number input", async () => {
-      const inputSchema = v.object({ age: v.number() });
-      const outputSchema = v.object({ result: v.number() });
+      const inputSchema = s.object({ age: s.number() });
+      const outputSchema = s.object({ result: s.number() });
 
       const handler = mutation()
         .input(inputSchema)
@@ -324,8 +340,8 @@ describe("MutationEndpointBuilder", () => {
     });
 
     it("should handle boolean input", async () => {
-      const inputSchema = v.object({ active: v.boolean() });
-      const outputSchema = v.object({ status: v.string() });
+      const inputSchema = s.object({ active: s.boolean() });
+      const outputSchema = s.object({ status: s.string() });
 
       const handler = mutation()
         .input(inputSchema)

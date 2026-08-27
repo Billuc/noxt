@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import * as v from "valibot";
+import * as s from "superstruct";
 import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
 import { useMemo } from "preact/hooks";
 import type {
@@ -39,12 +39,12 @@ type CallerInput<
   TDefinitions extends ApiDefinitions,
   TRoute extends Route<TDefinitions>,
   TMethod extends Method<TDefinitions, TRoute>,
-> = v.InferOutput<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
+> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
 type CallerOutput<
   TDefinitions extends ApiDefinitions,
   TRoute extends Route<TDefinitions>,
   TMethod extends Method<TDefinitions, TRoute>,
-> = v.InferInput<NonNullable<TDefinitions[TRoute][TMethod]>["output"]>;
+> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["output"]>;
 type EndpointCaller<
   TDefinitions extends ApiDefinitions,
   TRoute extends Route<TDefinitions>,
@@ -96,7 +96,7 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
       const response = await fetcher(request);
       const data = await response.json();
 
-      return data as v.InferInput<
+      return data as s.Infer<
         NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
       >;
     };

@@ -18,48 +18,47 @@ import {
   type APIHandler,
   type IMutationEndpointBuilder,
   type IQueryEndpointBuilder,
+  type Schema,
+  type SearchParams,
   type SearchParamSchema,
-  type SomeSchema,
 } from "./types";
 import { toBody } from "./utils";
-import { body, searchParams } from "./valibot";
-import * as v from "valibot";
+import { body, searchParams } from "./superstruct";
+import * as s from "superstruct";
 
 class QueryEndpointBuilder<
-  TInput extends SearchParamSchema,
-  TOutput extends SomeSchema,
+  TInput extends SearchParams,
+  TOutput,
 > implements IQueryEndpointBuilder<TInput, TOutput> {
   constructor(
-    private __input: TInput,
-    private __output: TOutput,
+    private __input: SearchParamSchema<TInput>,
+    private __output: Schema<TOutput>,
   ) {}
 
-  input<TInput2 extends SearchParamSchema>(
-    Input: TInput2,
+  input<TInput2 extends SearchParams>(
+    Input: SearchParamSchema<TInput2>,
   ): IQueryEndpointBuilder<TInput2, TOutput> {
     return new QueryEndpointBuilder(Input, this.__output);
   }
 
-  output<TOutput2 extends SomeSchema>(
-    Output: TOutput2,
+  output<TOutput2>(
+    Output: Schema<TOutput2>,
   ): IQueryEndpointBuilder<TInput, TOutput2> {
     return new QueryEndpointBuilder(this.__input, Output);
   }
 
-  get _input(): TInput {
+  get _input(): Schema<TInput> {
     return this.__input;
   }
-  get _output(): TOutput {
+  get _output(): Schema<TOutput> {
     return this.__output;
   }
 
-  endpoint(
-    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
-  ): APIEndpoint<TInput, TOutput> {
+  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput> {
     return new APIEndpoint(this.__input, this.__output, async (request) => {
       try {
         const params = new URL(request.url).searchParams;
-        const inputData = v.parse(searchParams(this.__input), params);
+        const inputData = s.create(params, searchParams(this.__input));
 
         try {
           const response: ResponseInit = {};
@@ -82,48 +81,43 @@ class QueryEndpointBuilder<
   }
 }
 
-export function query(): IQueryEndpointBuilder<
-  v.ObjectSchema<{}, undefined>,
-  v.NullSchema<undefined>
-> {
-  return new QueryEndpointBuilder(v.object({}), v.null());
+export function query(): IQueryEndpointBuilder<{}, null> {
+  return new QueryEndpointBuilder(s.object({}), s.literal(null));
 }
 
 class MutationEndpointBuilder<
-  TInput extends SomeSchema,
-  TOutput extends SomeSchema,
+  TInput,
+  TOutput,
 > implements IMutationEndpointBuilder<TInput, TOutput> {
   constructor(
-    private __input: TInput,
-    private __output: TOutput,
+    private __input: Schema<TInput>,
+    private __output: Schema<TOutput>,
   ) {}
 
-  input<TInput2 extends SomeSchema>(
-    Input: TInput2,
+  input<TInput2>(
+    Input: Schema<TInput2>,
   ): IMutationEndpointBuilder<TInput2, TOutput> {
     return new MutationEndpointBuilder(Input, this.__output);
   }
 
-  output<TOutput2 extends SomeSchema>(
-    Output: TOutput2,
+  output<TOutput2>(
+    Output: Schema<TOutput2>,
   ): IMutationEndpointBuilder<TInput, TOutput2> {
     return new MutationEndpointBuilder(this.__input, Output);
   }
 
-  get _input(): TInput {
+  get _input(): Schema<TInput> {
     return this.__input;
   }
-  get _output(): TOutput {
+  get _output(): Schema<TOutput> {
     return this.__output;
   }
 
-  endpoint(
-    fn: APIHandler<v.InferOutput<TInput>, v.InferInput<TOutput>>,
-  ): APIEndpoint<TInput, TOutput> {
+  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput> {
     return new APIEndpoint(this.__input, this.__output, async (request) => {
       try {
         const data = await request.text();
-        const inputData = v.parse(body(this.__input), data);
+        const inputData = s.create(data, body(this.__input));
 
         try {
           const response: ResponseInit = {};
@@ -140,9 +134,6 @@ class MutationEndpointBuilder<
   }
 }
 
-export function mutation(): IMutationEndpointBuilder<
-  v.NullSchema<undefined>,
-  v.NullSchema<undefined>
-> {
-  return new MutationEndpointBuilder(v.null(), v.null());
+export function mutation(): IMutationEndpointBuilder<null, null> {
+  return new MutationEndpointBuilder(s.literal(null), s.literal(null));
 }

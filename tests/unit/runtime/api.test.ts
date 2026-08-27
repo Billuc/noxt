@@ -15,7 +15,7 @@
  **/
 
 import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
-import * as v from "valibot";
+import * as s from "superstruct";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
 import { ApiRouter, useApi, getApiHandlers } from "../../../src/runtime/api";
@@ -42,20 +42,20 @@ beforeAll(() => {
 const TestApi = {
   "/users": {
     GET: {
-      input: v.object({ id: v.string() }),
-      output: v.object({ id: v.string(), name: v.string() }),
+      input: s.object({ id: s.string() }),
+      output: s.object({ id: s.string(), name: s.string() }),
     },
     POST: {
-      input: v.object({ name: v.string(), email: v.string() }),
-      output: v.object({ id: v.string(), name: v.string(), email: v.string() }),
+      input: s.object({ name: s.string(), email: s.string() }),
+      output: s.object({ id: s.string(), name: s.string(), email: s.string() }),
     },
     PUT: {
-      input: v.object({ id: v.string(), name: v.string() }),
-      output: v.object({ id: v.string(), name: v.string() }),
+      input: s.object({ id: s.string(), name: s.string() }),
+      output: s.object({ id: s.string(), name: s.string() }),
     },
     DELETE: {
-      input: v.object({ id: v.string() }),
-      output: v.object({ success: v.boolean() }),
+      input: s.object({ id: s.string() }),
+      output: s.object({ success: s.boolean() }),
     },
   },
 } as const;
@@ -547,7 +547,7 @@ describe("getApiHandlers", () => {
     const mockHandler = (_request: Request) => Promise.resolve(new Response());
     const apiMap = {
       "/api/users": {
-        GET: new APIEndpoint(v.object({}), v.object({}), mockHandler),
+        GET: new APIEndpoint(s.object({}), s.object({}), mockHandler),
       },
     };
 
@@ -565,11 +565,11 @@ describe("getApiHandlers", () => {
     const postHandler = (_request: Request) => Promise.resolve(new Response());
     const apiMap = {
       "/api/users": {
-        GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
-        POST: new APIEndpoint(v.object({}), v.object({}), postHandler),
+        GET: new APIEndpoint(s.object({}), s.object({}), getHandler),
+        POST: new APIEndpoint(s.object({}), s.object({}), postHandler),
       },
       "/api/posts": {
-        GET: new APIEndpoint(v.object({}), v.object({}), getHandler),
+        GET: new APIEndpoint(s.object({}), s.object({}), getHandler),
       },
     };
 
@@ -607,8 +607,8 @@ describe("getApiHandlers", () => {
     const handler2 = (_request: Request) => Promise.resolve(new Response());
     const apiMap = {
       "/api/test": {
-        GET: new APIEndpoint(v.object({}), v.object({}), handler1),
-        POST: new APIEndpoint(v.object({}), v.object({}), handler2),
+        GET: new APIEndpoint(s.object({}), s.object({}), handler1),
+        POST: new APIEndpoint(s.object({}), s.object({}), handler2),
       },
     };
 
