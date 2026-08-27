@@ -39,7 +39,7 @@ export type APIHandler<TInput, TOutput> = (data: {
   response: ResponseInit;
 }) => Promise<TOutput> | TOutput;
 
-export class APIEndpoint<TInput extends {}, TOutput extends {}> {
+export class APIEndpoint<TInput, TOutput> {
   constructor(
     public input: Schema<TInput>,
     public output: Schema<TOutput>,
@@ -47,15 +47,12 @@ export class APIEndpoint<TInput extends {}, TOutput extends {}> {
   ) {}
 }
 
-export interface IQueryEndpointBuilder<
-  TInput extends SearchParams,
-  TOutput extends {},
-> {
+export interface IQueryEndpointBuilder<TInput extends SearchParams, TOutput> {
   input<TInput2 extends SearchParams>(
     Input: SearchParamSchema<TInput2>,
   ): IQueryEndpointBuilder<TInput2, TOutput>;
 
-  output<TOutput2 extends {}>(
+  output<TOutput2>(
     Output: Schema<TOutput2>,
   ): IQueryEndpointBuilder<TInput, TOutput2>;
 
@@ -65,15 +62,12 @@ export interface IQueryEndpointBuilder<
   endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
 }
 
-export interface IMutationEndpointBuilder<
-  TInput extends SearchParams,
-  TOutput extends {},
-> {
-  input<TInput2 extends SearchParams>(
-    Input: SearchParamSchema<TInput2>,
+export interface IMutationEndpointBuilder<TInput, TOutput> {
+  input<TInput2>(
+    Input: Schema<TInput2>,
   ): IMutationEndpointBuilder<TInput2, TOutput>;
 
-  output<TOutput2 extends {}>(
+  output<TOutput2>(
     Output: Schema<TOutput2>,
   ): IMutationEndpointBuilder<TInput, TOutput2>;
 
