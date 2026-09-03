@@ -1,6 +1,5 @@
 import { h, type ComponentChildren } from "preact";
-import { useContext } from "preact/hooks";
-import { UtilsContext } from "noxt";
+import { useUtilsContext } from "../runtime/utils";
 
 interface DocsLayoutProps {
   title?: string;
@@ -8,13 +7,14 @@ interface DocsLayoutProps {
 }
 
 export default function DocsLayout({ title, children }: DocsLayoutProps) {
-  const { page, asset } = useContext(UtilsContext);
+  const { page, asset } = useUtilsContext();
 
   return (
     <html>
       <head>
         <title>{title ?? "Docs"}</title>
         <link rel="icon" href={asset("/assets/logo.svg")} />
+        <link rel="stylesheet" href={asset("/assets/style.css")} />
       </head>
       <body>
         <nav>

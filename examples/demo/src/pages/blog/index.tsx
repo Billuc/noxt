@@ -1,16 +1,17 @@
 import { h } from "preact";
-import { useContext } from "preact/hooks";
-import { Island, UtilsContext } from "noxt";
+import { Island } from "noxt";
 import SearchPosts from "../../islands/SearchPosts";
+import { useUtilsContext } from "../../runtime/utils";
 
 export default function Blog() {
-  const { page, asset } = useContext(UtilsContext);
+  const { page, asset } = useUtilsContext();
 
   return (
     <html>
       <head>
         <title>Blog — Noxt demo</title>
         <link rel="icon" href={asset("/assets/logo.svg")} />
+        <link rel="stylesheet" href={asset("/assets/style.css")} />
       </head>
       <body>
         <header>

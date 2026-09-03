@@ -20,6 +20,7 @@ export default function Home() {
       <head>
         <title>Noxt demo hub</title>
         <link rel="icon" href={asset("/assets/logo.svg")} />
+        <link rel="stylesheet" href={asset("/assets/style.css")} />
       </head>
       <body>
         <header>
