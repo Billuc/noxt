@@ -34,41 +34,13 @@
  *     `export type RouteId = "a" | "b" | never`) → `.cache/utils.ts`, and returns
  *     `page: PageFunction` via `preparePageFunction` which validates `pageNames.includes(pageId)`
  *     else throws `Unknown page with URL` and returns `buildUrlWithQuery(base+pageId, query)`.
- *   - `Path` (src/core/fs.ts) wraps absolute paths with `relativeToCwd()`,
- *     `relativeTo(base)`, `resolve`/`create`; constants `CACHE_DIR=.cache`,
- *     `ISLANDS_CACHE_DIR=.cache/_islands`, `ROUTES_CACHE_FILE=.cache/routes.json`,
- *     `UTILS_CACHE_FILE=.cache/utils.ts`, `API_CACHE_FILE=.cache/api.ts`,
- *     `ASSETS_CACHE_FILE=.cache/assets.ts`, `PAGES_DIR=src/pages`, etc.;
- *     `getFilesMatchingGlob(pattern, root)` uses `fs.glob` with `cwd: root`.
- *   - `getRouteName` / `toPublicPath` / `routeToHtmlPath` / `sanitizePrerendered`
- *     (src/core/utils.ts): `getRouteName` strips extension, handles `index` →
- *     `/`, `toPublicPath` trims slashes and prefixes `base`, `sanitizePrerendered`
- *     prepends `<!DOCTYPE html>` if starts with `<html>` else unescapes entities.
- *   - `buildUrlWithQuery` / `createClientPageFunction` / `createClientAssetFunction`
- *     (src/core/url.ts): appends `URLSearchParams` from `QueryParams`.
- *   - `PageContext` / `UtilsContext` (src/core/context.ts): `PageContextData`
- *     holds `base` + `islandMap` from `IslandEntry[]`, `UtilsContextData` holds
- *     `page`/`asset` functions with default throws `No ... function has been provided`,
- *     `providePageContext(data, child)` nests both providers.
- *   - `renderToHtmlString` (src/core/render.ts) enables `options.errorBoundaries`
- *     and calls `renderToStringAsync`.
  *   - `isDev()` (src/core/env.ts) checks `process.env.NOXT_MODE === "dev"`.
  *
  * What should be tested:
  *   - `BuildPipeline` chaining `with` merges contexts and `do` does not, `build()`
  *     executes lazily and supports async steps.
- *   - `getRouteName` correctly maps `index.ts`→`/`, `about.tsx`→`/about`,
- *     `blog/post.md`→`/blog/post`, handling Windows separators.
- *   - `toPublicPath` normalizes leading slash and base prefix; `buildUrlWithQuery`
- *     appends query correctly; `sanitizePrerendered` adds doctype or unescapes.
- *   - `Path` `relativeToCwd` / `relativeTo` produce correct relative strings;
- *     `getFilesMatchingGlob` respects pattern and skips directories.
  *   - `generateRouteUtils` writes `.cache/utils.ts` with `RouteId` union and returns
  *     a validating `page()` that throws on unknown ids and respects `base`.
  *   - `generateRouteMap` writes `.cache/routes.json` with keys via `toPublicPath`
  *     and values via `relativeToCwd`, covering pages/assets/islands and base.
- *   - `PageContext`/`UtilsContext` default functions throw actionable errors;
- *     `providePageContext` supplies `base`/`islandMap`/`page`/`asset` to descendants.
- *   - `renderToHtmlString` renders with `errorBoundaries` enabled and restores previous.
  */
-

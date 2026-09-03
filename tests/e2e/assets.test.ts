@@ -29,10 +29,7 @@
  *   it validates the id against discovered urls, throws `Unknown asset with ID`
  *   if absent, and returns `(base ?? "") + id`. `generateRouteMap`
  *   (src/core/build.ts) then adds each asset as `toPublicPath(asset.url, base)`
- *   → `asset.file.relativeToCwd()` in `.cache/routes.json`. `generateStaticPages`
- *   (src/static/build.ts) copies each asset to `dist/assets/...` preserving the
- *   relative path under `src/assets` and adds `toPublicPath(distPath, base)` to
- *   the manifest.
+ *   → `asset.file.relativeToCwd()` in `.cache/routes.json`.
  *
  * What should be tested:
  *   - Discovering assets from `src/assets/` includes nested files and yields
@@ -43,11 +40,8 @@
  *     correctly prefixes `base` when provided (e.g. `base="/base" + "/assets/x"`).
  *   - `.cache/routes.json` contains an entry for each asset where the key is
  *     `toPublicPath(url, base)` and the value points to the source file.
- *   - `generateStaticPages` copies assets to `dist/assets/...` preserving
- *     subdirectories and the manifest maps `toPublicPath(url, base)` → output path.
  *   - Serving: `GET /assets/<file>` via the `routes.json` + `Bun.file()` table
  *     returns 200 with correct bytes; unknown asset ids are 404 (route absent).
  *   - Client-side `createClientAssetFunction(base)` (src/core/url.ts) produces
  *     the same `base + id` behaviour as the build-time `prepareAssetFunction`.
  */
-

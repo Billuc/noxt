@@ -22,7 +22,7 @@
  *   `discoverAPIs` (src/api/build.ts) via glob `** /*.{ts,js}` under `src/api`.
  *   Each file is dynamically imported; `getRouteName(file.relativeTo("src"))`
  *   (src/core/utils.ts) derives the route (e.g. `src/api/users.ts` → `/api/users`,
- *   `src/api/index.ts` → `/`). For each `HTTP_METHODS` entry (`GET, POST, PUT,
+ *   `src/api/index.ts` → `/api`). For each `HTTP_METHODS` entry (`GET, POST, PUT,
  *   DELETE, PATCH`) the export is checked: `method in exports && exports[method]
  *   instanceof APIEndpoint` then pushed as `APIEndpointEntry { method, route, input,
  *   output, file }`. `generateAPIFile` (src/api/build.ts) writes `.cache/api.ts`
@@ -49,7 +49,7 @@
  *     are `APIEndpoint` instances for known `HTTP_METHODS`; non-endpoint exports
  *     are ignored; missing `src/api` logs `No api directory found !` and returns [].
  *   - Route derivation via `getRouteName` correctly maps `src/api/users.ts` → `/api/users`
- *     and nested `src/api/admin/stats.ts` → `/admin/stats`.
+ *     and nested `src/api/admin/stats.ts` → `/api/admin/stats`.
  *   - `generateAPIFile` emits `.cache/api.ts` with correct imports, `apiRoutesData`
  *     const assertion, `getApiHandlers(..., base)` call with JSON-stringified base,
  *     and exported `ApiRoutes` type.
@@ -68,4 +68,3 @@
  *     and delegates to `useAsync`; `getApiHandlers` prefixes routes with `base`
  *     for `Bun.serve` compatibility.
  */
-
