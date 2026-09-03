@@ -1,0 +1,21 @@
+{
+  "name": "noxt-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun run build.ts",
+    "serve": "bun run serve.ts",
+    "dev": "bun run build.ts && bun run serve.ts",
+    "start": "bun run serve.ts",
+    "postinstall": "bun scripts/link-noxt.ts"
+  },
+  "dependencies": {
+    "preact": "catalog:",
+    "@preact/signals": "catalog:",
+    "superstruct": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "typescript": "^5.9.3"
+  }
+}

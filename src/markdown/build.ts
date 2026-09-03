@@ -36,10 +36,7 @@ export async function discoverMarkdownPages(): Promise<{
 }> {
   let pageFiles: Path[];
   try {
-    pageFiles = await getFilesMatchingGlob(
-      "**/*.md",
-      path.resolve(PAGES_DIR),
-    );
+    pageFiles = await getFilesMatchingGlob("**/*.md", path.resolve(PAGES_DIR));
   } catch {
     console.log("No pages directory found !");
     return { markdownFiles: [] };
@@ -81,7 +78,13 @@ export async function prerenderMarkdownPages({
         file: prerenderedFile,
       });
     } catch (err) {
-      console.error(String(err) + " Skipping");
+      let errorMessage = `Skipping page ${url} because of error\n`;
+      if (err instanceof Error) {
+        errorMessage += err.stack ?? err.message;
+      } else {
+        errorMessage += String(err);
+      }
+      console.error(errorMessage);
       continue;
     }
   }
