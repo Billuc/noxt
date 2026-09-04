@@ -16,11 +16,10 @@ import routeMap from "./.cache/routes.json" with { type: "json" };
 const base = Bun.env.NOXT_BASE ?? "";
 const port = Number(Bun.env.PORT ?? 3000);
 
-const routes = Object.fromEntries(
-  Object.entries(routeMap).map((e) => {
-    return [e[0], new Response(Bun.file(e[1]))];
-  }),
-);
+const routes: Record<string, Response> = {};
+for (const [url, file] of Object.entries(routeMap)) {
+  routes[url] = new Response(Bun.file(file));
+}
 
 const server = Bun.serve({
   port,

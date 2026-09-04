@@ -55,7 +55,6 @@ async function startWatch() {
   await rebuildAndRestart();
   const watcher = fs.watch("src", {
     recursive: true,
-    ignore: [".cache", "dist"],
   });
   const onEvent = debounceEvent(onFileChange, 200);
 
