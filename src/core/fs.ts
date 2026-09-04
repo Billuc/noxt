@@ -64,7 +64,7 @@ export async function removeFolder(path: string) {
 export const CACHE_DIR = ".cache";
 export const ISLANDS_CACHE_DIR = path.join(CACHE_DIR, "_islands");
 export const ROUTES_CACHE_FILE = path.join(CACHE_DIR, "routes.json");
-export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
+export const PAGES_CACHE_FILE = path.join(CACHE_DIR, "pages.ts");
 export const API_CACHE_FILE = path.join(CACHE_DIR, "api.ts");
 export const ASSETS_CACHE_FILE = path.join(CACHE_DIR, "assets.ts");
 

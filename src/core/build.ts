@@ -18,8 +18,9 @@ import {
   CACHE_DIR,
   writeFile,
   ROUTES_CACHE_FILE,
-  UTILS_CACHE_FILE,
+  PAGES_CACHE_FILE,
   PAGES_DIR,
+  DIST_DIR,
 } from "./fs";
 import { generateLinkUtilsCode } from "./code_generation";
 import { getRouteName, toPublicPath } from "./utils";
@@ -33,11 +34,13 @@ export async function generateRouteMap({
   pages,
   islands,
   assets,
+  serviceWorkerFile,
   base,
 }: {
   pages?: RouteData[];
   islands?: IslandEntry[];
   assets?: AssetEntry[];
+  serviceWorkerFile?: Path;
   base?: string;
 }): Promise<{ routeMapFile: Path }> {
   const manifest: Record<string, string> = {};
@@ -55,6 +58,11 @@ export async function generateRouteMap({
       manifest[toPublicPath(file.relativeTo(CACHE_DIR), base ?? "")] =
         file.relativeToCwd();
     }
+  }
+
+  if (serviceWorkerFile) {
+    manifest[toPublicPath(serviceWorkerFile.relativeTo(DIST_DIR), base ?? "")] =
+      serviceWorkerFile.relativeToCwd();
   }
 
   const routesFile = path.resolve(ROUTES_CACHE_FILE);
@@ -77,9 +85,9 @@ export async function generateRouteUtils({
   );
   const linkCode = generateLinkUtilsCode(routeNames);
 
-  const utilsFile = path.resolve(UTILS_CACHE_FILE);
+  const utilsFile = path.resolve(PAGES_CACHE_FILE);
   await writeFile(utilsFile, linkCode);
-  console.log("Generated utils at .cache/utils.ts");
+  console.log("Generated utils at .cache/pages.ts");
 
   const page = preparePageFunction(routeNames, base);
   return { page };

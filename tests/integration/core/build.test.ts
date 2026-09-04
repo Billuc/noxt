@@ -132,6 +132,17 @@ describe("core/build", () => {
       );
     });
 
+    it("should map service worker file relative to the dist directory", async () => {
+      const serviceWorkerFile: Path = Path.resolve("dist/sw.js");
+
+      const { routeMapFile } = await generateRouteMap({ serviceWorkerFile });
+      const manifest = JSON.parse(
+        await readFile(routeMapFile.absolute, "utf-8"),
+      );
+
+      expect(manifest["/sw.js"]).toBe("dist\\sw.js".replaceAll("\\", path.sep));
+    });
+
     it("should apply the base prefix to every public path", async () => {
       const pages: RouteData[] = [
         { url: "/about", file: Path.create(path.join(PAGES_DIR, "about.tsx")) },
@@ -157,7 +168,7 @@ describe("core/build", () => {
       expect(manifest["/docs/MyIsland.hash-1.js"]).toBeDefined();
     });
 
-    it("should combine pages, assets and islands in a single manifest", async () => {
+    it("should combine pages, assets, islands and SW file in a single manifest", async () => {
       const pages: RouteData[] = [
         { url: "/", file: Path.create(path.join(PAGES_DIR, "index.tsx")) },
       ];
@@ -174,11 +185,13 @@ describe("core/build", () => {
           files: [Path.create(path.join(CACHE_TEST_DIR, "MyIsland.hash-1.js"))],
         },
       ];
+      const serviceWorkerFile: Path = Path.resolve("dist/sw.js");
 
       const { routeMapFile } = await generateRouteMap({
         pages,
         assets,
         islands,
+        serviceWorkerFile,
       });
       const manifest = JSON.parse(
         await readFile(routeMapFile.absolute, "utf-8"),
@@ -188,13 +201,14 @@ describe("core/build", () => {
         "/",
         "/MyIsland.hash-1.js",
         "/assets/logo.png",
+        "/sw.js",
       ]);
     });
   });
 
   describe("generateRouteUtils", () => {
     it("should write the generated utils file with the RouteId union", async () => {
-      const utilsFile = path.resolve(".cache", "utils.ts");
+      const utilsFile = path.resolve(".cache", "pages.ts");
 
       await generateRouteUtils({
         pageFiles: [
@@ -209,7 +223,7 @@ describe("core/build", () => {
     });
 
     it("should write the generated utils file with the RouteId equal to never when there are no pages", async () => {
-      const utilsFile = path.resolve(".cache", "utils.ts");
+      const utilsFile = path.resolve(".cache", "pages.ts");
 
       await generateRouteUtils({
         pageFiles: [],
