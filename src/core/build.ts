@@ -69,7 +69,7 @@ export async function generateRouteMap({
   await writeFile(routesFile, JSON.stringify(manifest));
   console.log("Generated route map at .cache/routes.json");
 
-  const routeMapFile = Path.create(routesFile);
+  const routeMapFile = Path.fromAbsolute(routesFile);
   return { routeMapFile };
 }
 

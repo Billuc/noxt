@@ -24,7 +24,7 @@ export async function generateServiceWorker({
   version?: string;
 }): Promise<{ serviceWorkerFile: Path }> {
   const code = generateServiceWorkerCode(manifest, version);
-  const swPath = Path.resolve(distPath("sw.js"));
+  const swPath = Path.fromRelative(distPath("sw.js"));
   await writeFile(swPath.absolute, code);
   console.log(`Generated service worker at ${swPath.absolute}`);
   return { serviceWorkerFile: swPath };

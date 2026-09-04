@@ -113,5 +113,5 @@ async function prerenderPreact(
   );
   await writeFile(prerenderPath, prerenderedPage);
 
-  return Path.create(prerenderPath);
+  return Path.fromAbsolute(prerenderPath);
 }

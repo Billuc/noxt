@@ -19,11 +19,11 @@ import fs from "node:fs/promises";
 export class Path {
   constructor(public absolute: string) {}
 
-  static create(absolute: string): Path {
+  static fromAbsolute(absolute: string): Path {
     return new Path(absolute);
   }
 
-  static resolve(relative: string): Path {
+  static fromRelative(relative: string): Path {
     return new Path(path.resolve(relative));
   }
 
@@ -99,7 +99,7 @@ export async function getFilesMatchingGlob(
     const absolute = path.resolve(root, file);
     const stats = await fs.stat(absolute);
     if (stats.isDirectory()) continue;
-    results.push(Path.create(absolute));
+    results.push(Path.fromAbsolute(absolute));
   }
 
   return results;

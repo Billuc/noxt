@@ -61,7 +61,7 @@ export async function prerenderIslands({
       component: Island,
       hash,
       sourceFile: file,
-      renderScriptFile: Path.create(scriptPath),
+      renderScriptFile: Path.fromAbsolute(scriptPath),
     });
     console.log(`Prerendered island [${Island.displayName ?? Island.name}]`);
   }
@@ -112,7 +112,7 @@ async function bundleIslands(
       const entry =
         entriesMap[standardizePath(path.resolve(process.cwd(), input))];
       if (!entry) continue;
-      entry.files.push(Path.resolve(output));
+      entry.files.push(Path.fromRelative(output));
     }
   }
 

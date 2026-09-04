@@ -28,7 +28,7 @@ function createEntry(
     route,
     input: null as any,
     output: null as any,
-    file: Path.resolve(filePath),
+    file: Path.fromRelative(filePath),
   };
 }
 
