@@ -37,7 +37,7 @@ describe("PageContextData", () => {
     const B = fakeIsland("B");
     const entries: IslandEntry[] = [
       { component: A, hash: "hash-a", files: [] },
-      { component: B, hash: "hash-b", files: [Path.create("file.js")] },
+      { component: B, hash: "hash-b", files: [Path.fromAbsolute("file.js")] },
     ];
 
     const data = PageContextData.from({ islands: entries });

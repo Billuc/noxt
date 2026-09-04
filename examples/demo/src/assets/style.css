@@ -1,0 +1,6 @@
+body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+nav a { margin-right: 0.5rem; }
+section { border-top: 1px solid #ddd; margin-top: 1.5rem; padding-top: 1rem; }
+button { padding: 0.25rem 0.75rem; }
+input { padding: 0.25rem; margin: 0.15rem 0; }
+img { max-width: 100%; }

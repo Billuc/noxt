@@ -106,9 +106,7 @@ export type InferDefinitions<TDefinitions extends ApiDefinitions> = {
 
 export type ApiEndpointDefinitions = Record<
   string,
-  Partial<
-    Record<HttpMethod, APIEndpoint<s.Struct<any, any>, s.Struct<any, any>>>
-  >
+  Partial<Record<HttpMethod, APIEndpoint<any, any>>>
 >;
 
 export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> = {

@@ -74,7 +74,13 @@ export async function prerenderPreactPages({
         file: prerenderedFile,
       });
     } catch (err) {
-      console.error(String(err) + " Skipping");
+      let errorMessage = `Skipping page ${url} because of error\n`;
+      if (err instanceof Error) {
+        errorMessage += err.stack ?? err.message;
+      } else {
+        errorMessage += String(err);
+      }
+      console.error(errorMessage);
       continue;
     }
   }
@@ -107,5 +113,5 @@ async function prerenderPreact(
   );
   await writeFile(prerenderPath, prerenderedPage);
 
-  return Path.create(prerenderPath);
+  return Path.fromAbsolute(prerenderPath);
 }

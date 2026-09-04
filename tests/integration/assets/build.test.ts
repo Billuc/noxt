@@ -14,7 +14,7 @@ const originalCwd = process.cwd();
 
 /** Builds a minimal controlled asset entry for generateAssetUtilsFile. */
 function createAssetEntry(url: string, filePath: string): AssetEntry {
-  return { url, file: Path.create(filePath) };
+  return { url, file: Path.fromAbsolute(filePath) };
 }
 
 async function setupTestProject() {

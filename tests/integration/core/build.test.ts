@@ -70,8 +70,14 @@ describe("core/build", () => {
 
     it("should map pages to their source files", async () => {
       const pages: RouteData[] = [
-        { url: "/", file: Path.create(path.join(PAGES_DIR, "index.tsx")) },
-        { url: "/about", file: Path.create(path.join(PAGES_DIR, "about.tsx")) },
+        {
+          url: "/",
+          file: Path.fromAbsolute(path.join(PAGES_DIR, "index.tsx")),
+        },
+        {
+          url: "/about",
+          file: Path.fromAbsolute(path.join(PAGES_DIR, "about.tsx")),
+        },
       ];
 
       const { routeMapFile } = await generateRouteMap({ pages });
@@ -95,7 +101,7 @@ describe("core/build", () => {
       const assets: AssetEntry[] = [
         {
           url: "/assets/logo.png",
-          file: Path.create(path.join(assetsDir, "logo.png")),
+          file: Path.fromAbsolute(path.join(assetsDir, "logo.png")),
         },
       ];
 
@@ -115,7 +121,7 @@ describe("core/build", () => {
           component: fakeIsland("MyIsland"),
           hash: "hash-1",
           files: [
-            Path.create(
+            Path.fromAbsolute(
               path.join(CACHE_TEST_DIR, "_islands", "MyIsland.hash-1.js"),
             ),
           ],
@@ -132,15 +138,31 @@ describe("core/build", () => {
       );
     });
 
+    it("should map service worker file relative to the dist directory", async () => {
+      const serviceWorkerFile: Path = Path.fromRelative("dist/sw.js");
+
+      const { routeMapFile } = await generateRouteMap({ serviceWorkerFile });
+      const manifest = JSON.parse(
+        await readFile(routeMapFile.absolute, "utf-8"),
+      );
+
+      expect(manifest["/sw.js"]).toBe("dist\\sw.js".replaceAll("\\", path.sep));
+    });
+
     it("should apply the base prefix to every public path", async () => {
       const pages: RouteData[] = [
-        { url: "/about", file: Path.create(path.join(PAGES_DIR, "about.tsx")) },
+        {
+          url: "/about",
+          file: Path.fromAbsolute(path.join(PAGES_DIR, "about.tsx")),
+        },
       ];
       const islands: IslandEntry[] = [
         {
           component: fakeIsland("MyIsland"),
           hash: "hash-1",
-          files: [Path.create(path.join(CACHE_TEST_DIR, "MyIsland.hash-1.js"))],
+          files: [
+            Path.fromAbsolute(path.join(CACHE_TEST_DIR, "MyIsland.hash-1.js")),
+          ],
         },
       ];
 
@@ -157,28 +179,35 @@ describe("core/build", () => {
       expect(manifest["/docs/MyIsland.hash-1.js"]).toBeDefined();
     });
 
-    it("should combine pages, assets and islands in a single manifest", async () => {
+    it("should combine pages, assets, islands and SW file in a single manifest", async () => {
       const pages: RouteData[] = [
-        { url: "/", file: Path.create(path.join(PAGES_DIR, "index.tsx")) },
+        {
+          url: "/",
+          file: Path.fromAbsolute(path.join(PAGES_DIR, "index.tsx")),
+        },
       ];
       const assets: AssetEntry[] = [
         {
           url: "/assets/logo.png",
-          file: Path.create(path.join(TEST_DIR, "logo.png")),
+          file: Path.fromAbsolute(path.join(TEST_DIR, "logo.png")),
         },
       ];
       const islands: IslandEntry[] = [
         {
           component: fakeIsland("MyIsland"),
           hash: "hash-1",
-          files: [Path.create(path.join(CACHE_TEST_DIR, "MyIsland.hash-1.js"))],
+          files: [
+            Path.fromAbsolute(path.join(CACHE_TEST_DIR, "MyIsland.hash-1.js")),
+          ],
         },
       ];
+      const serviceWorkerFile: Path = Path.fromRelative("dist/sw.js");
 
       const { routeMapFile } = await generateRouteMap({
         pages,
         assets,
         islands,
+        serviceWorkerFile,
       });
       const manifest = JSON.parse(
         await readFile(routeMapFile.absolute, "utf-8"),
@@ -188,18 +217,19 @@ describe("core/build", () => {
         "/",
         "/MyIsland.hash-1.js",
         "/assets/logo.png",
+        "/sw.js",
       ]);
     });
   });
 
   describe("generateRouteUtils", () => {
     it("should write the generated utils file with the RouteId union", async () => {
-      const utilsFile = path.resolve(".cache", "utils.ts");
+      const utilsFile = path.resolve(".cache", "pages.ts");
 
       await generateRouteUtils({
         pageFiles: [
-          Path.create(path.join(PAGES_DIR, "index.tsx")),
-          Path.create(path.join(PAGES_DIR, "about.tsx")),
+          Path.fromAbsolute(path.join(PAGES_DIR, "index.tsx")),
+          Path.fromAbsolute(path.join(PAGES_DIR, "about.tsx")),
         ],
       });
 
@@ -209,7 +239,7 @@ describe("core/build", () => {
     });
 
     it("should write the generated utils file with the RouteId equal to never when there are no pages", async () => {
-      const utilsFile = path.resolve(".cache", "utils.ts");
+      const utilsFile = path.resolve(".cache", "pages.ts");
 
       await generateRouteUtils({
         pageFiles: [],
@@ -223,8 +253,8 @@ describe("core/build", () => {
     it("should return a page function resolving known pages", async () => {
       const { page } = await generateRouteUtils({
         pageFiles: [
-          Path.create(path.join(PAGES_DIR, "index.tsx")),
-          Path.create(path.join(PAGES_DIR, "about.tsx")),
+          Path.fromAbsolute(path.join(PAGES_DIR, "index.tsx")),
+          Path.fromAbsolute(path.join(PAGES_DIR, "about.tsx")),
         ],
       });
 
@@ -234,7 +264,7 @@ describe("core/build", () => {
 
     it("should throw when called with an unknown page id", async () => {
       const { page } = await generateRouteUtils({
-        pageFiles: [Path.create(path.join(PAGES_DIR, "index.tsx"))],
+        pageFiles: [Path.fromAbsolute(path.join(PAGES_DIR, "index.tsx"))],
       });
 
       expect(() => page("/unknown")).toThrow(
@@ -244,7 +274,7 @@ describe("core/build", () => {
 
     it("should append query parameters to the generated url", async () => {
       const { page } = await generateRouteUtils({
-        pageFiles: [Path.create(path.join(PAGES_DIR, "about.tsx"))],
+        pageFiles: [Path.fromAbsolute(path.join(PAGES_DIR, "about.tsx"))],
       });
 
       expect(page("/about", { q: "hello world", page: 2 })).toBe(
@@ -255,7 +285,7 @@ describe("core/build", () => {
 
     it("should prefix pages with the base and append query params after it", async () => {
       const { page } = await generateRouteUtils({
-        pageFiles: [Path.create(path.join(PAGES_DIR, "about.tsx"))],
+        pageFiles: [Path.fromAbsolute(path.join(PAGES_DIR, "about.tsx"))],
         base: "/docs",
       });
 

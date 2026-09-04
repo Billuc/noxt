@@ -19,11 +19,11 @@ import fs from "node:fs/promises";
 export class Path {
   constructor(public absolute: string) {}
 
-  static create(absolute: string): Path {
+  static fromAbsolute(absolute: string): Path {
     return new Path(absolute);
   }
 
-  static resolve(relative: string): Path {
+  static fromRelative(relative: string): Path {
     return new Path(path.resolve(relative));
   }
 
@@ -64,7 +64,7 @@ export async function removeFolder(path: string) {
 export const CACHE_DIR = ".cache";
 export const ISLANDS_CACHE_DIR = path.join(CACHE_DIR, "_islands");
 export const ROUTES_CACHE_FILE = path.join(CACHE_DIR, "routes.json");
-export const UTILS_CACHE_FILE = path.join(CACHE_DIR, "utils.ts");
+export const PAGES_CACHE_FILE = path.join(CACHE_DIR, "pages.ts");
 export const API_CACHE_FILE = path.join(CACHE_DIR, "api.ts");
 export const ASSETS_CACHE_FILE = path.join(CACHE_DIR, "assets.ts");
 
@@ -99,7 +99,7 @@ export async function getFilesMatchingGlob(
     const absolute = path.resolve(root, file);
     const stats = await fs.stat(absolute);
     if (stats.isDirectory()) continue;
-    results.push(Path.create(absolute));
+    results.push(Path.fromAbsolute(absolute));
   }
 
   return results;

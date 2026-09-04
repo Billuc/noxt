@@ -18,11 +18,13 @@ import { generateServiceWorkerCode } from "./code_generation";
 
 export async function generateServiceWorker({
   manifest,
+  version,
 }: {
   manifest: Record<string, string>;
+  version?: string;
 }): Promise<{ serviceWorkerFile: Path }> {
-  const code = generateServiceWorkerCode(manifest);
-  const swPath = Path.resolve(distPath("sw.js"));
+  const code = generateServiceWorkerCode(manifest, version);
+  const swPath = Path.fromRelative(distPath("sw.js"));
   await writeFile(swPath.absolute, code);
   console.log(`Generated service worker at ${swPath.absolute}`);
   return { serviceWorkerFile: swPath };

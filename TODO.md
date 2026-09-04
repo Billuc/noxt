@@ -11,5 +11,6 @@ Ideas of things that could be implemented:
 - Better error messages and recommendations
 - context for runtime endpoints ?
 - SSR (ssr module / ssr folder -- similar to api but returns a component)
+- Bring back splitting in islands
 - Incremental building ? No regeneration if hash match
 - ~~Error handling~~ / middlewares
