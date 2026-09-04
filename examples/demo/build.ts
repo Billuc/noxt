@@ -49,7 +49,7 @@ const context = await BuildPipeline.newPipeline()
     pages: [...preactPages, ...markdownPages],
   }))
   .with(generateStaticPages)
-  .do(generateServiceWorker)
+  .with(generateServiceWorker)
   .with(generateRouteMap)
   .build();
 

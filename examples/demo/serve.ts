@@ -22,22 +22,13 @@ const routes = Object.fromEntries(
   }),
 );
 
-// Service worker (written to dist/, not part of routes.json).
-// const sw = Bun.file("dist/sw.js");
-// if (await sw.exists()) {
-//   const swResponse = new Response(sw, {
-//     headers: { "Content-Type": "application/javascript" },
-//   });
-//   routes["/sw.js"] = swResponse;
-//   if (base) routes[`${base}/sw.js`] = swResponse;
-// }
-
-Bun.serve({
+const server = Bun.serve({
   port,
   routes: {
     ...handlers,
     ...routes,
   },
+  development: true,
 });
 
 console.log(
