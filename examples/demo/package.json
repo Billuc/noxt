@@ -5,7 +5,7 @@
   "scripts": {
     "build": "bun run build.ts",
     "serve": "bun run serve.ts",
-    "dev": "bun run build.ts && bun run serve.ts",
+    "dev": "bun run --feature=DEVEL serve.ts",
     "start": "bun run serve.ts",
     "postinstall": "bun scripts/link-noxt.ts"
   },

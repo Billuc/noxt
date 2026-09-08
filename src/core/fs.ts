@@ -27,6 +27,10 @@ export class Path {
     return new Path(path.resolve(relative));
   }
 
+  static fromCwd(relativeFromCwd: string): Path {
+    return new Path(path.resolve(process.cwd(), relativeFromCwd));
+  }
+
   relativeToCwd(): string {
     return path.relative(process.cwd(), this.absolute);
   }

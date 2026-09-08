@@ -22,7 +22,8 @@ import {
   writeFile,
 } from "../core/fs";
 import { generateApiUtilsCode } from "./code_generation";
-import { type APIEndpointEntry, APIEndpoint, HTTP_METHODS } from "./types";
+import { type APIEndpointEntry, APIEndpoint } from "./types";
+import { HTTP_METHODS } from "../core/types";
 import path from "node:path";
 
 export async function discoverAPIs(): Promise<{

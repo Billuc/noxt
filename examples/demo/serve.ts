@@ -10,26 +10,27 @@
  * responses for prerendered pages, island bundles, assets and the service
  * worker. `fetch` is only a fallback for dist/ pretty URLs and 404s.
  */
-import { handlers } from "./.cache/api.ts";
-import routeMap from "./.cache/routes.json" with { type: "json" };
+import { feature } from "bun:bundle";
+import { NoxtDevServer, NoxtProdServer, type RouteHandlers } from "noxt";
 
 const base = Bun.env.NOXT_BASE ?? "";
 const port = Number(Bun.env.PORT ?? 3000);
 
-const routes: Record<string, Response> = {};
-for (const [url, file] of Object.entries(routeMap)) {
-  routes[url] = new Response(Bun.file(file));
+const createServer = async ({ routes }: { routes: RouteHandlers<any> }) => {
+  let server = Bun.serve({
+    port,
+    routes,
+  });
+  console.log(
+    `Demo serving at http://localhost:${port}${base} (${Object.keys(routes).length} routes)`,
+  );
+  return server;
+};
+
+if (feature("DEVEL")) {
+  const server = new NoxtDevServer(["bun", "./build.ts"], createServer);
+  server.start();
+} else {
+  const server = new NoxtProdServer(createServer);
+  server.start();
 }
-
-const server = Bun.serve({
-  port,
-  routes: {
-    ...handlers,
-    ...routes,
-  },
-  development: true,
-});
-
-console.log(
-  `Demo serving at http://localhost:${port}${base} (${Object.keys(routes).length} routes)`,
-);

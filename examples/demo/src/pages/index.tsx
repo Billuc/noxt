@@ -8,7 +8,7 @@ import Clock from "../islands/Clock";
 import SearchPosts from "../islands/SearchPosts";
 import Guestbook from "../islands/Guestbook";
 import type { AssetId } from "../../.cache/assets";
-import type { RouteId } from "../../.cache/utils";
+import type { RouteId } from "../../.cache/pages";
 
 export default function Home() {
   const { page: basePage, asset: baseAsset } = useContext(UtilsContext);

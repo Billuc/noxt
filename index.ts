@@ -14,8 +14,15 @@
  *  limitations under the License.
  **/
 import { generateRouteMap, generateRouteUtils } from "./src/core/build";
-import { BuildPipeline, type PageFunction } from "./src/core/types";
+import {
+  BuildPipeline,
+  type PageFunction,
+  type RouteDefinition,
+  type RouteHandlers,
+  type ServerImplementation,
+} from "./src/core/types";
 import { UtilsContext } from "./src/core/context";
+import { NoxtDevServer, NoxtProdServer } from "./src/core/server";
 
 import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
 import type {
@@ -69,6 +76,8 @@ export {
   generateServiceWorker,
   generateStaticPages,
   BuildPipeline,
+  NoxtDevServer,
+  NoxtProdServer,
 };
 export type {
   IQueryEndpointBuilder,
@@ -81,4 +90,7 @@ export type {
   MarkdownPage,
   PageFunction,
   PreactPage,
+  RouteDefinition,
+  RouteHandlers,
+  ServerImplementation,
 };

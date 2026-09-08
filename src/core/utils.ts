@@ -76,3 +76,20 @@ function unescape(content: string): string {
     .replaceAll("&lt;", "<")
     .replaceAll("&quot;", '"');
 }
+
+export function debounce<T>(
+  callback: (ev: T) => Promise<any> | any,
+  ms: number = 100,
+): (ev: T) => void {
+  let callTask: NodeJS.Timeout | undefined = undefined;
+
+  return (ev: T) => {
+    if (callTask) {
+      clearTimeout(callTask);
+    }
+    callTask = setTimeout(() => {
+      callback(ev);
+      callTask = undefined;
+    }, ms);
+  };
+}
