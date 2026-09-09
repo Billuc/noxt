@@ -13,7 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { APIEndpointEntry, HttpMethod } from "./types";
+import type { APIEndpointEntry } from "./types";
+import type { HttpMethod } from "../core/types";
 
 type ApiByFileMap = Map<
   string,

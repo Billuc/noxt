@@ -1,7 +1,7 @@
 import { useContext } from "preact/hooks";
 import { UtilsContext } from "noxt/runtime";
 import type { AssetId } from "../../.cache/assets";
-import type { RouteId } from "../../.cache/utils";
+import type { RouteId } from "../../.cache/pages";
 
 export function useUtilsContext() {
   const { page: basePage, asset: baseAsset } = useContext(UtilsContext);

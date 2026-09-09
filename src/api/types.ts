@@ -15,9 +15,7 @@
  **/
 import * as s from "superstruct";
 import type { Path } from "../core/fs";
-
-export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
-export type HttpMethod = (typeof HTTP_METHODS)[number];
+import type { HttpMethod, RouteDefinition, RouteHandlers } from "../core/types";
 
 type SearchParamValue = number | boolean | string;
 
@@ -77,19 +75,12 @@ export interface IMutationEndpointBuilder<TInput, TOutput> {
   endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
 }
 
-export type ApiDefinitions = Record<
-  string,
-  Partial<
-    Record<
-      HttpMethod,
-      {
-        input: s.Struct<any, any>;
-        output: s.Struct<any, any>;
-      }
-    >
-  >
->;
+export type ApiDefinitions = RouteDefinition<{
+  input: s.Struct<any, any>;
+  output: s.Struct<any, any>;
+}>;
 
+// Used in generated code
 export type InferDefinitions<TDefinitions extends ApiDefinitions> = {
   [K in keyof TDefinitions]: {
     [M in keyof TDefinitions[K]]: TDefinitions[K][M] extends {
@@ -104,18 +95,10 @@ export type InferDefinitions<TDefinitions extends ApiDefinitions> = {
   };
 };
 
-export type ApiEndpointDefinitions = Record<
-  string,
-  Partial<Record<HttpMethod, APIEndpoint<any, any>>>
->;
+export type ApiEndpointDefinitions = RouteDefinition<APIEndpoint<any, any>>;
 
-export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> = {
-  [route in keyof TDefinitions]: {
-    [method in keyof TDefinitions[route]]: (
-      request: Request,
-    ) => Promise<Response>;
-  };
-};
+export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> =
+  RouteHandlers<TDefinitions>;
 
 export interface APIEndpointEntry<
   TInput extends SomeSchema,

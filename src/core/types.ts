@@ -64,3 +64,29 @@ export type PageFunction = <PageId extends string>(
   pageId: PageId,
   query?: QueryParams,
 ) => string;
+
+export type RouteHandler = (request: Request) => Promise<Response> | Response;
+export const HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"] as const;
+export type HttpMethod = (typeof HTTP_METHODS)[number];
+
+export interface RouteDefinition<T> {
+  [r: string]: {
+    [m in HttpMethod]?: T;
+  };
+}
+
+export type RouteHandlers<TRoutes extends RouteDefinition<any>> = {
+  [route in keyof TRoutes]: {
+    [method in keyof TRoutes[route]]: RouteHandler;
+  };
+};
+
+export interface ServerImplementation {
+  reload: (options: {
+    routes: RouteHandlers<any>;
+  }) => Promise<ServerImplementation> | ServerImplementation;
+}
+
+export interface NoxtServer {
+  start: () => Promise<void>;
+}

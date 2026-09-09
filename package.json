@@ -38,21 +38,22 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "happy-dom": "^20.9.0",
+    "happy-dom": "^20.14.0",
     "@testing-library/preact": "^3.2.4",
     "htm": "^3.1.1"
   },
   "peerDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
-    "@preact/signals": "catalog:",
-    "devalue": "^5.8.1",
-    "esbuild": "^0.28.1",
+    "@preact/signals": "^2.11.2",
+    "devalue": "^5.9.2",
+    "esbuild": "^0.28.2",
     "micromark": "^4.0.2",
-    "preact": "catalog:",
+    "mrmime": "^2.0.1",
+    "preact": "^10.29.8",
     "preact-render-to-string": "^6.7.0",
-    "superstruct": "catalog:",
+    "superstruct": "^2.0.2",
     "yaml": "^2.9.0"
   }
 }
