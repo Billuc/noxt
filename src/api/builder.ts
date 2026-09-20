@@ -19,7 +19,7 @@ import {
   type IMutationEndpointBuilder,
   type IQueryEndpointBuilder,
 } from "./types";
-import { body, searchParams } from "./superstruct";
+import { body, searchParams } from "../core/superstruct";
 import * as s from "superstruct";
 import type {
   Schema,

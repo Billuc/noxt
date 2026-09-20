@@ -22,12 +22,15 @@ type SearchParamValue = number | boolean | string;
 export type SearchParams = {
   [k: string]: SearchParamValue | SearchParamValue[] | undefined;
 };
-export type Structify<T> = {
+type Structify<T> = {
   [k in keyof T]: s.Struct<T[k]>;
 };
 
-export type Schema<T> = s.Struct<T, Structify<T>>;
-export type SearchParamSchema<T extends SearchParams> = Schema<T>;
+export type Schema<T> = s.Struct<T>;
+export type SearchParamSchema<T extends SearchParams> = s.Struct<
+  T,
+  Structify<T>
+>;
 
 export type SomeSchema = s.Struct<any, any>;
 
