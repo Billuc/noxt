@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { options } from "preact";
+import { options, type VNode } from "preact";
 import { renderToStringAsync } from "preact-render-to-string";
 
 declare module "preact" {
@@ -31,7 +31,9 @@ declare module "preact" {
  * they rely on browser-only features) are caught by their error boundary and
  * fall back to client-only hydration instead of failing the whole page.
  */
-export async function renderToHtmlString(vnode: any): Promise<string> {
+export async function renderToHtmlString<P = {}>(
+  vnode: VNode<P>,
+): Promise<string> {
   const previousErrorBoundaries = options.errorBoundaries;
   options.errorBoundaries = true;
   try {

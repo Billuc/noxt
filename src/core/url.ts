@@ -15,6 +15,7 @@
  **/
 import type { PageFunction, QueryParams } from "./types";
 import type { AssetFunction } from "../assets/types";
+import * as devalue from "devalue";
 
 /** Appends the given query params to a URL path as a query string. */
 export function buildUrlWithQuery(url: string, query?: QueryParams): string {
@@ -37,4 +38,37 @@ export function createClientPageFunction(base: string): PageFunction {
 /** Creates a client-side asset function that prefixes assets with the base. */
 export function createClientAssetFunction(base: string): AssetFunction {
   return (assetId: string) => base + assetId;
+}
+
+export function toSearchParam(input: { [k: string]: unknown }): {
+  [k: string]: string[];
+} {
+  const result: { [k: string]: string[] } = {};
+  for (const k in input) {
+    result[k] = toSearchParamValue(input[k]);
+  }
+  return result;
+}
+
+function toSearchParamValue(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap(toSearchParamValue);
+  }
+
+  switch (typeof value) {
+    case "bigint":
+      return [value.toString()];
+    case "boolean":
+      return [value ? "true" : "false"];
+    case "number":
+      return [value.toString()];
+    case "string":
+      return [value];
+    default:
+      return [];
+  }
+}
+
+export function toBody(body: unknown): string | undefined {
+  return devalue.stringify(body);
 }

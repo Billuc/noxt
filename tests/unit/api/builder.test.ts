@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { query, mutation } from "../../../src/api/builder";
 import * as s from "superstruct";
+import * as devalue from "devalue";
 
 function assertStructMatch(
   received: s.Struct<any, any>,
@@ -16,19 +17,28 @@ function assertStructMatch(
   // For object/type, compare keys
   const recvSchema = (received as any).schema;
   const expSchema = (expected as any).schema;
-  if (recvSchema && expSchema && typeof recvSchema === "object" && typeof expSchema === "object") {
+  if (
+    recvSchema &&
+    expSchema &&
+    typeof recvSchema === "object" &&
+    typeof expSchema === "object"
+  ) {
     // object schema is map, array schema is struct
     if (Array.isArray(recvSchema) || Array.isArray(expSchema)) {
       // not needed
     } else if (recvSchema !== null && !("type" in recvSchema)) {
       // object map
-      expect(Object.keys(recvSchema).sort()).toEqual(Object.keys(expSchema).sort());
+      expect(Object.keys(recvSchema).sort()).toEqual(
+        Object.keys(expSchema).sort(),
+      );
       return;
     }
   }
   // For array, compare item type
   if (received.type === "array" && expected.type === "array") {
-    expect((received as any).schema.type).toEqual((expected as any).schema.type);
+    expect((received as any).schema.type).toEqual(
+      (expected as any).schema.type,
+    );
   }
 }
 
@@ -164,8 +174,8 @@ describe("QueryEndpointBuilder", () => {
       const response = await handler.handler(request);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body).toEqual({ greeting: "Hello, World!" });
+      const body = await response.text();
+      expect(devalue.parse(body)).toEqual({ greeting: "Hello, World!" });
     });
   });
 });
@@ -245,13 +255,13 @@ describe("MutationEndpointBuilder", () => {
 
       const request = new Request("http://localhost:3000/api/test", {
         method: "POST",
-        body: JSON.stringify({ name: "John" }),
+        body: devalue.stringify({ name: "John" }),
       });
       const response = await handler.handler(request);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body).toEqual({ result: "Created John" });
+      const body = await response.text();
+      expect(devalue.parse(body)).toEqual({ result: "Created John" });
     });
 
     it("should return 400 for invalid JSON body", async () => {
@@ -330,13 +340,13 @@ describe("MutationEndpointBuilder", () => {
 
       const request = new Request("http://localhost:3000/api/test", {
         method: "POST",
-        body: JSON.stringify({ age: 25 }),
+        body: devalue.stringify({ age: 25 }),
       });
       const response = await handler.handler(request);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body).toEqual({ result: 50 });
+      const body = await response.text();
+      expect(devalue.parse(body)).toEqual({ result: 50 });
     });
 
     it("should handle boolean input", async () => {
@@ -357,8 +367,8 @@ describe("MutationEndpointBuilder", () => {
       const response = await handler.handler(request);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body).toEqual({ status: "active" });
+      const body = await response.text();
+      expect(devalue.parse(body)).toEqual({ status: "active" });
     });
   });
 });

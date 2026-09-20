@@ -13,8 +13,40 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
+import * as devalue from "devalue";
 import * as s from "superstruct";
-import type { SearchParams, SearchParamSchema, SomeSchema } from "../core/superstruct";
+import type { RouteDefinition } from "./types";
+
+type SearchParamValue = number | boolean | string;
+
+export type SearchParams = {
+  [k: string]: SearchParamValue | SearchParamValue[] | undefined;
+};
+export type Structify<T> = {
+  [k in keyof T]: s.Struct<T[k]>;
+};
+
+export type Schema<T> = s.Struct<T, Structify<T>>;
+export type SearchParamSchema<T extends SearchParams> = Schema<T>;
+
+export type SomeSchema = s.Struct<any, any>;
+
+// Used in generated code
+type EndpointDefinitions = RouteDefinition<{
+  input?: SomeSchema;
+  output?: SomeSchema;
+}>;
+
+type KeepOnly<Type, Keys> = { [k in Extract<keyof Type, Keys>]: Type[k] };
+
+export type InferDefinitions<TDefinitions extends EndpointDefinitions> = {
+  [K in keyof TDefinitions]: {
+    [M in keyof TDefinitions[K]]: KeepOnly<
+      TDefinitions[K][M],
+      "input" | "output"
+    >;
+  };
+};
 
 const numberValue = s.coerce(s.number(), s.string(), (value) =>
   parseFloat(value),
@@ -79,5 +111,5 @@ export function searchParams<TSchema extends SearchParams>(
 export function body<TSchema extends SomeSchema>(
   Schema: TSchema,
 ): s.Struct<s.Infer<TSchema>, unknown> {
-  return s.coerce(Schema, s.string(), (value) => JSON.parse(value));
+  return s.coerce(Schema, s.string(), (value) => devalue.parse(value));
 }

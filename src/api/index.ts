@@ -18,17 +18,9 @@ import { discoverAPIs, generateAPIFile } from "./build";
 import type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,
-  SearchParamSchema,
   ApiDefinitions,
-  InferDefinitions,
 } from "./types";
 import { APIEndpoint } from "./types";
 
 export { query, mutation, discoverAPIs, generateAPIFile, APIEndpoint };
-export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  SearchParamSchema,
-  ApiDefinitions,
-  InferDefinitions,
-};
+export type { IQueryEndpointBuilder, IMutationEndpointBuilder, ApiDefinitions };

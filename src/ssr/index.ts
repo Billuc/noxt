@@ -13,18 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-export {
-  type UseDataFetchReturn as UseFetchReturn,
-  type HttpMethod,
-  requestFrom,
-  useAsync,
-  useFetchJson,
-} from "./fetch";
-export { ApiRouter, useApi, getApiHandlers } from "./api";
-export { UtilsContext } from "../core/context";
-export type { PageFunction } from "../core/types";
-export type { AssetFunction } from "../assets/types";
-export { getSSRHandlers } from "./ssr";
+import { query, mutation } from "./builder";
+import { discoverSSRRoutes, generateSSRFile } from "./build";
+import type {
+  IQueryRouteBuilder,
+  IMutationRouteBuilder,
+  SSRDefinitions,
+} from "./types";
+import { SSRRoute } from "./types";
 
-export { sharedSignal } from "./signal";
-export type { Signal } from "@preact/signals";
+export { query, mutation, discoverSSRRoutes, generateSSRFile, SSRRoute };
+export type { IQueryRouteBuilder, IMutationRouteBuilder, SSRDefinitions };

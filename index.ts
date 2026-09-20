@@ -29,7 +29,6 @@ import type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,
   APIEndpoint,
-  SearchParamSchema,
 } from "./src/api";
 import {
   discoverAssets,
@@ -37,6 +36,10 @@ import {
   type AssetEntry,
   type AssetFunction,
 } from "./src/assets";
+import type {
+  SearchParamSchema,
+  InferDefinitions,
+} from "./src/core/superstruct";
 import {
   Island,
   discoverIslands,
@@ -84,6 +87,7 @@ export type {
   IMutationEndpointBuilder,
   APIEndpoint,
   SearchParamSchema,
+  InferDefinitions,
   AssetEntry,
   AssetFunction,
   IslandEntry,

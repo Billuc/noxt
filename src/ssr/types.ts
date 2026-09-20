@@ -16,6 +16,7 @@
 import * as s from "superstruct";
 import type { Path } from "../core/fs";
 import type { HttpMethod, RouteDefinition, RouteHandlers } from "../core/types";
+import type { ComponentChildren } from "preact";
 import type {
   Schema,
   SearchParams,
@@ -23,67 +24,49 @@ import type {
   SomeSchema,
 } from "../core/superstruct";
 
-export type APIHandler<TInput, TOutput> = (data: {
+export type SSRHandler<TInput> = (data: {
   input: TInput;
   request: Request;
   response: ResponseInit;
-}) => Promise<TOutput> | TOutput;
+}) => Promise<ComponentChildren> | ComponentChildren;
 
-export class APIEndpoint<TInput, TOutput> {
+export class SSRRoute<TInput> {
   constructor(
     public input: Schema<TInput>,
-    public output: Schema<TOutput>,
     public handler: (request: Request) => Promise<Response>,
   ) {}
 }
 
-export interface IQueryEndpointBuilder<TInput extends SearchParams, TOutput> {
+export interface IQueryRouteBuilder<TInput extends SearchParams> {
   input<TInput2 extends SearchParams>(
     Input: SearchParamSchema<TInput2>,
-  ): IQueryEndpointBuilder<TInput2, TOutput>;
-
-  output<TOutput2>(
-    Output: Schema<TOutput2>,
-  ): IQueryEndpointBuilder<TInput, TOutput2>;
+  ): IQueryRouteBuilder<TInput2>;
 
   get _input(): Schema<TInput>;
-  get _output(): Schema<TOutput>;
 
-  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
+  route(fn: SSRHandler<TInput>): SSRRoute<TInput>;
 }
 
-export interface IMutationEndpointBuilder<TInput, TOutput> {
-  input<TInput2>(
-    Input: Schema<TInput2>,
-  ): IMutationEndpointBuilder<TInput2, TOutput>;
-
-  output<TOutput2>(
-    Output: Schema<TOutput2>,
-  ): IMutationEndpointBuilder<TInput, TOutput2>;
+export interface IMutationRouteBuilder<TInput> {
+  input<TInput2>(Input: Schema<TInput2>): IMutationRouteBuilder<TInput2>;
 
   get _input(): Schema<TInput>;
-  get _output(): Schema<TOutput>;
 
-  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
+  route(fn: SSRHandler<TInput>): SSRRoute<TInput>;
 }
 
-export type ApiDefinitions = RouteDefinition<{
+export type SSRDefinitions = RouteDefinition<{
   input: s.Struct<any, any>;
-  output: s.Struct<any, any>;
 }>;
 
-export type ApiEndpointDefinitions = RouteDefinition<APIEndpoint<any, any>>;
+export type SSRRouteDefinitions = RouteDefinition<SSRRoute<any>>;
 
-export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> =
+export type SSRRoutes<TDefinitions extends SSRRouteDefinitions> =
   RouteHandlers<TDefinitions>;
 
-export interface APIEndpointEntry<
-  TInput extends SomeSchema,
-  TOutput extends SomeSchema,
-> {
+export interface SSRRouteEntry<TInput extends SomeSchema> {
   method: HttpMethod;
   route: string;
   input: TInput;
-  output: TOutput;
   file: Path;
 }
