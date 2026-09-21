@@ -20,4 +20,4 @@ export interface AssetEntry {
   file: Path;
 }
 
-export type AssetFunction = <AssetId extends string>(id: AssetId) => string;
+export type AssetFunction<AssetId extends string> = (id: AssetId) => string;

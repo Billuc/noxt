@@ -1,19 +1,15 @@
 import { h } from "preact";
-import { useContext } from "preact/hooks";
-import { Island, UtilsContext } from "noxt";
+import { Island } from "noxt";
 import Counter from "../islands/Counter";
 import LikeButton from "../islands/LikeButton";
 import ThemeToggle from "../islands/ThemeToggle";
 import Clock from "../islands/Clock";
 import SearchPosts from "../islands/SearchPosts";
 import Guestbook from "../islands/Guestbook";
-import type { AssetId } from "../../.cache/assets";
-import type { RouteId } from "../../.cache/pages";
+import { useUtilsContext } from "../runtime/utils";
 
 export default function Home() {
-  const { page: basePage, asset: baseAsset } = useContext(UtilsContext);
-  const asset = baseAsset<AssetId>;
-  const page = basePage<RouteId>;
+  const { page, asset } = useUtilsContext();
 
   return (
     <html>

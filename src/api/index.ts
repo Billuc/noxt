@@ -19,8 +19,14 @@ import type {
   IQueryEndpointBuilder,
   IMutationEndpointBuilder,
   ApiDefinitions,
+  ApiFunction,
 } from "./types";
 import { APIEndpoint } from "./types";
 
 export { query, mutation, discoverAPIs, generateAPIFile, APIEndpoint };
-export type { IQueryEndpointBuilder, IMutationEndpointBuilder, ApiDefinitions };
+export type {
+  IQueryEndpointBuilder,
+  IMutationEndpointBuilder,
+  ApiDefinitions,
+  ApiFunction,
+};

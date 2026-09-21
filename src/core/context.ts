@@ -13,10 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import { createContext, h, type ComponentChild, type FunctionComponent } from "preact";
+import {
+  createContext,
+  h,
+  type ComponentChild,
+  type FunctionComponent,
+} from "preact";
 import type { IslandEntry } from "../islands";
 import type { PageFunction, QueryParams } from "./types";
-import type { AssetFunction } from "../assets/types";
+import type { AssetFunction } from "../assets";
+import type { ApiDefinitions, ApiFunction } from "../api";
+import { makeApiFn } from "../runtime";
 
 /**
  * Build-time data used to prerender islands: the base URL and the
@@ -28,12 +35,17 @@ export interface PageContextInterface {
 }
 
 /** Utility functions exposed to pages and islands. */
-export interface UtilsContextInterface {
-  page?: PageFunction;
-  asset?: AssetFunction;
+export interface UtilsContextInterface<
+  TPage extends string,
+  TAsset extends string,
+> {
+  base?: string;
+  page?: PageFunction<TPage>;
+  asset?: AssetFunction<TAsset>;
 }
 
-export interface FullPageContext extends PageContextInterface, UtilsContextInterface {}
+export interface FullPageContext<TPage extends string, TAsset extends string>
+  extends PageContextInterface, UtilsContextInterface<TPage, TAsset> {}
 
 function defaultPageFunction(_pageId: string, _query?: QueryParams): string {
   throw new Error(
@@ -63,14 +75,22 @@ export class PageContextData {
   }
 }
 
-export class UtilsContextData {
+export class UtilsContextData<
+  TApi extends ApiDefinitions,
+  TPage extends string,
+  TAsset extends string,
+> {
   constructor(
-    public page: PageFunction = defaultPageFunction,
-    public asset: AssetFunction = defaultAssetFunction,
+    public api: ApiFunction<TApi> = makeApiFn(""),
+    public page: PageFunction<TPage> = defaultPageFunction,
+    public asset: AssetFunction<TAsset> = defaultAssetFunction,
   ) {}
 
-  static from(data: UtilsContextInterface): UtilsContextData {
+  static from<TPage extends string, TAsset extends string>(
+    data: UtilsContextInterface<TPage, TAsset>,
+  ): UtilsContextData<any, TPage, TAsset> {
     return new UtilsContextData(
+      makeApiFn(data.base),
       data.page ?? defaultPageFunction,
       data.asset ?? defaultAssetFunction,
     );
@@ -81,13 +101,13 @@ export const PageContext = createContext<PageContextData>(
   new PageContextData(),
 );
 
-export const UtilsContext = createContext<UtilsContextData>(
+export const UtilsContext = createContext<UtilsContextData<any, any, any>>(
   new UtilsContextData(),
 );
 
 /** Wraps a component with both the page (build-time) and utils contexts. */
-export function providePageContext(
-  data: FullPageContext,
+export function providePageContext<TPage extends string, TAsset extends string>(
+  data: FullPageContext<TPage, TAsset>,
   child: ComponentChild,
 ) {
   return h(

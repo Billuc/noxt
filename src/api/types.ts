@@ -22,6 +22,7 @@ import type {
   SearchParamSchema,
   SomeSchema,
 } from "../core/superstruct";
+import type { FetchRequestInit } from "../runtime/fetch";
 
 export type APIHandler<TInput, TOutput> = (data: {
   input: TInput;
@@ -87,3 +88,45 @@ export interface APIEndpointEntry<
   output: TOutput;
   file: Path;
 }
+
+type KeyOf<T> =
+  T extends Record<infer K, any>
+    ? K
+    : T extends Partial<Record<any, any>>
+      ? keyof T
+      : string | number | symbol;
+
+export type Route<TDefinitions extends ApiDefinitions> = KeyOf<TDefinitions>;
+export type Method<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+> = KeyOf<TDefinitions[TRoute]>;
+
+export type CallerInput<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
+type CallerOutput<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["output"]>;
+export type EndpointCaller<
+  TDefinitions extends ApiDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = (
+  input: CallerInput<TDefinitions, TRoute, TMethod>,
+  options?: FetchRequestInit | undefined,
+  signal?: AbortSignal,
+) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
+
+export type ApiFunction<TDefinitions extends ApiDefinitions> = <
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+>(
+  route: TRoute,
+  method: TMethod,
+  fetcher?: (request: Request) => Promise<Response>,
+) => EndpointCaller<TDefinitions, TRoute, TMethod>;

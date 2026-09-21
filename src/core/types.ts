@@ -60,7 +60,7 @@ export class BuildPipeline<TContext extends {}> {
 }
 
 export type QueryParams = Record<string, string | number | boolean>;
-export type PageFunction = <PageId extends string>(
+export type PageFunction<PageId extends string> = (
   pageId: PageId,
   query?: QueryParams,
 ) => string;

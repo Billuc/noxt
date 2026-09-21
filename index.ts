@@ -21,7 +21,7 @@ import {
   type RouteHandlers,
   type ServerImplementation,
 } from "./src/core/types";
-import { UtilsContext } from "./src/core/context";
+import { UtilsContext, UtilsContextData } from "./src/core/context";
 import { NoxtDevServer, NoxtProdServer } from "./src/core/server";
 
 import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
@@ -70,6 +70,7 @@ export {
   prerenderIslands,
   Island,
   UtilsContext,
+  UtilsContextData,
   discoverMarkdownPages,
   prerenderMarkdownPages,
   discoverPreactPages,

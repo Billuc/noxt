@@ -1,9 +1,7 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
-import { ApiRouter, useFetchJson } from "noxt/runtime";
-
-const router = new ApiRouter<any>("");
-const createEntry = router.api("/api/guestbook", "POST");
+import { useFetchJson } from "noxt/runtime";
+import { useUtilsContext } from "../runtime/utils";
 
 interface GuestbookEntry {
   id: number;
@@ -15,10 +13,12 @@ interface GuestbookEntry {
 // GET list via useFetchJson (raw fetch path), POST via the typed API caller.
 // Empty name/message submits trigger the endpoint's 400 path.
 export default function Guestbook(_: {}) {
-  const { data, loading, error, refresh } = useFetchJson<{ entries: GuestbookEntry[] }>(
-    "/api/guestbook",
-    { objectBody: { limit: 20 } },
-  );
+  const { api } = useUtilsContext();
+  const createEntry = api("/api/guestbook", "POST");
+
+  const { data, loading, error, refresh } = useFetchJson<{
+    entries: GuestbookEntry[];
+  }>("/api/guestbook", { objectBody: { limit: 20 } });
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);

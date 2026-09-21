@@ -20,54 +20,26 @@ import type {
   ApiEndpointDefinitions,
   ApiDefinitions,
   ApiEndpoints,
+  Route,
+  Method,
+  EndpointCaller,
+  CallerInput,
+  ApiFunction,
 } from "../api/types";
 
-type KeyOf<T> =
-  T extends Record<infer K, any>
-    ? K
-    : T extends Partial<Record<any, any>>
-      ? keyof T
-      : string | number | symbol;
-
-type Route<TDefinitions extends ApiDefinitions> = KeyOf<TDefinitions>;
-type Method<
-  TDefinitions extends ApiDefinitions,
-  TRoute extends Route<TDefinitions>,
-> = KeyOf<TDefinitions[TRoute]>;
-
-type CallerInput<
-  TDefinitions extends ApiDefinitions,
-  TRoute extends Route<TDefinitions>,
-  TMethod extends Method<TDefinitions, TRoute>,
-> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
-type CallerOutput<
-  TDefinitions extends ApiDefinitions,
-  TRoute extends Route<TDefinitions>,
-  TMethod extends Method<TDefinitions, TRoute>,
-> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["output"]>;
-type EndpointCaller<
-  TDefinitions extends ApiDefinitions,
-  TRoute extends Route<TDefinitions>,
-  TMethod extends Method<TDefinitions, TRoute>,
-> = (
-  input: CallerInput<TDefinitions, TRoute, TMethod>,
-  options?: FetchRequestInit | undefined,
-  signal?: AbortSignal,
-) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
-
-export class ApiRouter<TDefinitions extends ApiDefinitions> {
-  constructor(private base?: string) {}
-
-  api<
+export function makeApiFn<TDefinitions extends ApiDefinitions>(
+  base?: string,
+): ApiFunction<TDefinitions> {
+  return <
     TRoute extends Route<TDefinitions>,
     TMethod extends Method<TDefinitions, TRoute>,
   >(
     route: TRoute,
     method: TMethod,
     fetcher: (request: Request) => Promise<Response> = fetch,
-  ): EndpointCaller<TDefinitions, TRoute, TMethod> {
+  ) => {
     return async (input, options, signal) => {
-      const url = (this.base ?? "") + route;
+      const url = (base ?? "") + route;
 
       const newOptions: FetchRequestInit = { method, objectBody: input };
 
@@ -100,6 +72,23 @@ export class ApiRouter<TDefinitions extends ApiDefinitions> {
         NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
       >;
     };
+  };
+}
+
+// TODO: remove
+export class ApiRouter<TDefinitions extends ApiDefinitions> {
+  constructor(private base?: string) {}
+
+  api<
+    TRoute extends Route<TDefinitions>,
+    TMethod extends Method<TDefinitions, TRoute>,
+  >(
+    route: TRoute,
+    method: TMethod,
+    fetcher: (request: Request) => Promise<Response> = fetch,
+  ): EndpointCaller<TDefinitions, TRoute, TMethod> {
+    const apiFn = makeApiFn<TDefinitions>(this.base);
+    return apiFn(route, method, fetcher);
   }
 }
 
