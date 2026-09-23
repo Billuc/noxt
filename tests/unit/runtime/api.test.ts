@@ -690,6 +690,29 @@ describe("getApiHandlers", () => {
     });
   });
 
+  it("should prefix routes with base", () => {
+    const mockHandler = (_request: Request) => Promise.resolve(new Response());
+    const apiMap = {
+      "/api/users": {
+        GET: new APIEndpoint(s.object({}), s.object({}), mockHandler),
+      },
+      "/api/posts": {
+        POST: new APIEndpoint(s.object({}), s.object({}), mockHandler),
+      },
+    };
+
+    const result = getApiHandlers(apiMap, "/base");
+
+    expect(result).toEqual({
+      "/base/api/users": {
+        GET: mockHandler,
+      },
+      "/base/api/posts": {
+        POST: mockHandler,
+      },
+    });
+  });
+
   it("should handle multiple routes and methods", () => {
     const getHandler = (_request: Request) => Promise.resolve(new Response());
     const postHandler = (_request: Request) => Promise.resolve(new Response());

@@ -109,10 +109,13 @@ export function useApi<
   );
 }
 
-export function getApiHandlers<TDefinitions extends ApiEndpointDefinitions>(
+export function getApiHandlers<
+  TDefinitions extends ApiEndpointDefinitions,
+  TBase extends string = "",
+>(
   apiMap: TDefinitions,
-  base: string = "",
-): ApiEndpoints<TDefinitions> {
+  base?: TBase,
+): ApiEndpoints<TDefinitions, TBase> {
   const routes: any = {};
 
   for (const [route, routeData] of Object.entries(apiMap)) {
@@ -120,7 +123,7 @@ export function getApiHandlers<TDefinitions extends ApiEndpointDefinitions>(
     for (const [method, endpoint] of Object.entries(routeData)) {
       handlers[method as keyof typeof handlers] = endpoint.handler;
     }
-    routes[base + route] = handlers;
+    routes[(base ?? "") + route] = handlers;
   }
 
   return routes;

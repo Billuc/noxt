@@ -75,8 +75,12 @@ export type ApiDefinitions = RouteDefinition<{
 
 export type ApiEndpointDefinitions = RouteDefinition<APIEndpoint<any, any>>;
 
-export type ApiEndpoints<TDefinitions extends ApiEndpointDefinitions> =
-  RouteHandlers<TDefinitions>;
+export type ApiEndpoints<
+  TDefinitions extends ApiEndpointDefinitions,
+  TBase extends string = "",
+> = RouteHandlers<{
+  [k in keyof TDefinitions as `${TBase}${string & k}`]: TDefinitions[k];
+}>;
 
 export interface APIEndpointEntry<
   TInput extends SomeSchema,
