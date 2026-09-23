@@ -434,7 +434,7 @@ import type { InferDefinitions } from "noxt";
 
 
 const apiRoutesData = {
-
+  
 } as const;
 const handlers = getApiHandlers(apiRoutesData, "");
 

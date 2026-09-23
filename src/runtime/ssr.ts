@@ -15,10 +15,10 @@
  **/
 import type { SSRRouteDefinitions, SSRRoutes } from "../ssr/types";
 
-export function getSSRHandlers<TDefinitions extends SSRRouteDefinitions>(
-  ssrMap: TDefinitions,
-  base: string = "",
-): SSRRoutes<TDefinitions> {
+export function getSSRHandlers<
+  TDefinitions extends SSRRouteDefinitions,
+  TBase extends string = "",
+>(ssrMap: TDefinitions, base?: TBase): SSRRoutes<TDefinitions, TBase> {
   const routes: any = {};
 
   for (const [route, routeData] of Object.entries(ssrMap)) {
@@ -26,7 +26,7 @@ export function getSSRHandlers<TDefinitions extends SSRRouteDefinitions>(
     for (const [method, endpoint] of Object.entries(routeData)) {
       handlers[method as keyof typeof handlers] = endpoint.handler;
     }
-    routes[base + route] = handlers;
+    routes[(base ?? "") + route] = handlers;
   }
 
   return routes;

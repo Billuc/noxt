@@ -93,10 +93,10 @@ import type { InferDefinitions } from "noxt";
 ${generateImportsCode(ssrMap).join("\n")}
 
 const ssrRoutesData = ${generateRouterTypeCode(ssrMap)} as const;
-const handlers = getSSRHandlers(apiRoutesData, ${JSON.stringify(base ?? "")});
+const handlers = getSSRHandlers(ssrRoutesData, ${JSON.stringify(base ?? "")});
 
 type SSRRoutes = InferDefinitions<typeof ssrRoutesData>;
 
-export { type ApiRoutes, handlers };
+export { type SSRRoutes, handlers };
 `;
 }

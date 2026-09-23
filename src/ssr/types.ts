@@ -61,8 +61,12 @@ export type SSRDefinitions = RouteDefinition<{
 
 export type SSRRouteDefinitions = RouteDefinition<SSRRoute<any>>;
 
-export type SSRRoutes<TDefinitions extends SSRRouteDefinitions> =
-  RouteHandlers<TDefinitions>;
+export type SSRRoutes<
+  TDefinitions extends SSRRouteDefinitions,
+  TBase extends string = "",
+> = RouteHandlers<{
+  [k in keyof TDefinitions as `${TBase}${string & k}`]: TDefinitions[k];
+}>;
 
 export interface SSRRouteEntry<TInput extends SomeSchema> {
   method: HttpMethod;

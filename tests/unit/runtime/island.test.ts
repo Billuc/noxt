@@ -25,10 +25,14 @@ Object.assign(globalThis, {
   HTMLElement: window.HTMLElement,
   customElements: window.customElements,
 });
+Object.defineProperty(globalThis.window, "location", {
+  value: new URL("http://localhost:3000"),
+  writable: true,
+});
 
 import { renderIsland } from "../../../src/runtime/island";
 import { UtilsContext } from "../../../src/core/context";
-import { describe, it, expect, afterEach } from "bun:test";
+import { describe, it, expect, afterEach, mock } from "bun:test";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
 
@@ -140,6 +144,30 @@ describe("renderIsland", () => {
     renderIsland(TestComponent, hash, "/base");
 
     expect(el.textContent).toBe("/base/about?q=1 /base/img.png");
+  });
+
+  it("should expose api prefixed with the base", async () => {
+    let seenUrl = "";
+    const fetcher = mock((request: Request) => {
+      seenUrl = request.url;
+      return Promise.resolve(
+        new Response(JSON.stringify({ id: "1", name: "x" })),
+      );
+    });
+    const TestComponent = () => {
+      const { api } = useContext(UtilsContext);
+      void api("/api/users", "GET", fetcher)({ id: "1" });
+      return h("div", {}, "done");
+    };
+    const hash = "api-base";
+
+    const el = document.createElement("div");
+    el.setAttribute("data-island", hash);
+    document.body.appendChild(el);
+
+    renderIsland(TestComponent, hash, "/base");
+    await Bun.sleep(20);
+    expect(seenUrl).toContain("/base/api/users?id=1");
   });
 
   it("should default the base to an empty string when not provided", () => {

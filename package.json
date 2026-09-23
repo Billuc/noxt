@@ -17,8 +17,8 @@
       "examples/*"
     ],
     "catalog": {
-      "@preact/signals": "^2.10.0",
-      "preact": "^10.29.2",
+      "@preact/signals": "^2.11.2",
+      "preact": "^10.29.8",
       "superstruct": "^2.0.2"
     }
   },
@@ -38,22 +38,22 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "happy-dom": "^20.14.0",
+    "happy-dom": "^20.14.5",
     "@testing-library/preact": "^3.2.4",
     "htm": "^3.1.1"
   },
   "peerDependencies": {
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@preact/signals": "^2.11.2",
-    "devalue": "^5.9.2",
+    "devalue": "^5.9.4",
     "esbuild": "^0.28.2",
     "micromark": "^4.0.2",
     "mrmime": "^2.0.1",
     "preact": "^10.29.8",
     "preact-render-to-string": "^6.7.0",
     "superstruct": "^2.0.2",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.1"
   }
 }

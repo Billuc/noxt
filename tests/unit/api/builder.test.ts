@@ -119,8 +119,8 @@ describe("QueryEndpointBuilder", () => {
       const response = await handler.handler(request);
 
       expect(response.status).toBe(200);
-      const body = await response.json();
-      expect(body).toEqual({ greeting: "Hello, John!" });
+      const body = await response.text();
+      expect(devalue.parse(body)).toEqual({ greeting: "Hello, John!" });
     });
 
     it("should return 400 for invalid search params", async () => {
@@ -242,7 +242,7 @@ describe("MutationEndpointBuilder", () => {
       expect(handler.handler).toBeDefined();
     });
 
-    it("should handle valid request with JSON body", async () => {
+    it("should handle valid request with valid body", async () => {
       const inputSchema = s.object({ name: s.string() });
       const outputSchema = s.object({ result: s.string() });
 
@@ -264,7 +264,7 @@ describe("MutationEndpointBuilder", () => {
       expect(devalue.parse(body)).toEqual({ result: "Created John" });
     });
 
-    it("should return 400 for invalid JSON body", async () => {
+    it("should return 400 for invalid body", async () => {
       const inputSchema = s.object({ name: s.string() });
       const outputSchema = s.object({ result: s.string() });
 
@@ -277,7 +277,7 @@ describe("MutationEndpointBuilder", () => {
 
       const request = new Request("http://localhost:3000/api/test", {
         method: "POST",
-        body: JSON.stringify({}),
+        body: devalue.stringify({}),
       });
       const response = await handler.handler(request);
 
@@ -285,7 +285,7 @@ describe("MutationEndpointBuilder", () => {
       expect(await response.text()).toBe("Bad argument");
     });
 
-    it("should return 400 for invalid JSON", async () => {
+    it("should return 400 for invalid body format", async () => {
       const inputSchema = s.object({ name: s.string() });
       const outputSchema = s.object({ result: s.string() });
 
@@ -298,7 +298,7 @@ describe("MutationEndpointBuilder", () => {
 
       const request = new Request("http://localhost:3000/api/test", {
         method: "POST",
-        body: "not valid json",
+        body: "not valid format",
       });
       const response = await handler.handler(request);
 
@@ -319,7 +319,7 @@ describe("MutationEndpointBuilder", () => {
 
       const request = new Request("http://localhost:3000/api/test", {
         method: "POST",
-        body: JSON.stringify({ name: "John" }),
+        body: devalue.stringify({ name: "John" }),
       });
       const response = await handler.handler(request);
 
@@ -362,7 +362,7 @@ describe("MutationEndpointBuilder", () => {
 
       const request = new Request("http://localhost:3000/api/test", {
         method: "POST",
-        body: JSON.stringify({ active: true }),
+        body: devalue.stringify({ active: true }),
       });
       const response = await handler.handler(request);
 

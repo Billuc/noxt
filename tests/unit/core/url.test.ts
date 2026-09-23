@@ -2,10 +2,13 @@
  * Unit tests for src/core/url.ts
  */
 import { describe, it, expect } from "bun:test";
+import * as devalue from "devalue";
 import {
   buildUrlWithQuery,
   createClientAssetFunction,
   createClientPageFunction,
+  toSearchParam,
+  toBody,
 } from "../../../src/core/url";
 
 describe("buildUrlWithQuery", () => {
@@ -61,5 +64,53 @@ describe("createClientAssetFunction", () => {
   it("should work without a base prefix", () => {
     const asset = createClientAssetFunction("");
     expect(asset("/img.png")).toBe("/img.png");
+  });
+});
+
+describe("toSearchParam", () => {
+  it("should encode string/number/boolean values", () => {
+    expect(toSearchParam({ name: "John", age: 25, active: true })).toEqual({
+      name: ["John"],
+      age: ["25"],
+      active: ["true"],
+    });
+  });
+
+  it("should flatten arrays including nested arrays", () => {
+    expect(toSearchParam({ tags: ["a", "b"], scores: [1, 2] })).toEqual({
+      tags: ["a", "b"],
+      scores: ["1", "2"],
+    });
+    expect(toSearchParam({ nested: [[1, 2], [3]] })).toEqual({
+      nested: ["1", "2", "3"],
+    });
+  });
+
+  it("should map null/undefined/objects to empty arrays", () => {
+    expect(toSearchParam({ a: null, b: undefined, c: { x: 1 } })).toEqual({
+      a: [],
+      b: [],
+      c: [],
+    });
+  });
+});
+
+describe("toBody", () => {
+  it("should serialize via devalue (not JSON)", () => {
+    const value = { name: "John", age: 25 };
+    expect(toBody(value)).toBe(devalue.stringify(value));
+    expect(devalue.parse(toBody(value)!)).toEqual(value);
+  });
+
+  it("should support Date values", () => {
+    const at = new Date("2023-01-01T00:00:00.000Z");
+    const raw = toBody({ at })!;
+    expect(devalue.parse(raw)).toEqual({ at });
+  });
+
+  it("should round-trip undefined via devalue encoding", () => {
+    const raw = toBody(undefined)!;
+    expect(typeof raw).toBe("string");
+    expect(devalue.parse(raw)).toBeUndefined();
   });
 });
