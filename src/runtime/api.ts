@@ -75,23 +75,6 @@ export function makeApiFn<TDefinitions extends ApiDefinitions>(
   };
 }
 
-// TODO: remove
-export class ApiRouter<TDefinitions extends ApiDefinitions> {
-  constructor(private base?: string) {}
-
-  api<
-    TRoute extends Route<TDefinitions>,
-    TMethod extends Method<TDefinitions, TRoute>,
-  >(
-    route: TRoute,
-    method: TMethod,
-    fetcher: (request: Request) => Promise<Response> = fetch,
-  ): EndpointCaller<TDefinitions, TRoute, TMethod> {
-    const apiFn = makeApiFn<TDefinitions>(this.base);
-    return apiFn(route, method, fetcher);
-  }
-}
-
 export function useApi<
   TDefinitions extends ApiDefinitions,
   TRoute extends Route<TDefinitions>,

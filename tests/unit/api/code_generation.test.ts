@@ -124,7 +124,7 @@ export { type ApiRoutes, handlers };
   });
 
   describe("export statements", () => {
-    it("should include router and ApiRouter exports", () => {
+    it("should include ApiRoutes and handlers exports", () => {
       const entries = [createEntry("GET", "/api/test", "./src/api/test.ts")];
 
       const code = generateApiUtilsCode(entries);

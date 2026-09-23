@@ -29,7 +29,7 @@
  *     and `useEffect` triggering `refresh` on input change. `fetchJson` calls
  *     `requestFrom` + `fetch` and throws `FetchError` if `!ok` else `response.json()`.
  *     `useFetchJson(url, options)` memoizes by `JSON.stringify([url, options])`.
- *   - `src/runtime/api.ts`: `ApiRouter<TDefs>(base)` typed client; `api(route, method, fetcher=fetch)`
+ *   - `src/runtime/api.ts`: `makeApiFn<TDefs>(base)` typed client; `(route, method, fetcher=fetch)`
  *     returns `EndpointCaller` capturing `route/method/base`, merging headers/options
  *     (warns if options.method mismatched), building `FetchRequestInit { method, objectBody: input }`,
  *     calling `requestFrom` + `fetcher` and `response.json()`. `useApi` wraps an
@@ -54,7 +54,7 @@
  *     `AbortError`, and `refresh()` re-invokes `asyncFn` with latest inputRef.
  *   - `fetchJson` throws on `!ok`, returns parsed JSON otherwise; `useFetchJson`
  *     memoizes correctly.
- *   - `ApiRouter` GET vs mutation body handling, base prefix, header merging, method
+ *   - `makeApiFn` GET vs mutation body handling, base prefix, header merging, method
  *     mismatch warning, fetcher injection.
  *   - `useApi` hooks correctly delegate to `useAsync` with memoized input.
  *   - `getApiHandlers` prefixes routes with base and extracts `.handler`.

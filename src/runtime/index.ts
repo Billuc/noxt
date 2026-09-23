@@ -20,7 +20,7 @@ export {
   useAsync,
   useFetchJson,
 } from "./fetch";
-export { ApiRouter, useApi, getApiHandlers, makeApiFn } from "./api";
+export { useApi, getApiHandlers, makeApiFn } from "./api";
 export { UtilsContext } from "../core/context";
 export type { PageFunction } from "../core/types";
 export type { AssetFunction } from "../assets/types";
