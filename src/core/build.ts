@@ -79,7 +79,7 @@ export async function generateRouteUtils({
 }: {
   pageFiles: Path[];
   base?: string;
-}): Promise<{ page: PageFunction }> {
+}): Promise<{ page: PageFunction<any> }> {
   const routeNames = pageFiles.map((file) =>
     getRouteName(file.relativeTo(PAGES_DIR)),
   );
@@ -93,7 +93,10 @@ export async function generateRouteUtils({
   return { page };
 }
 
-function preparePageFunction(pageNames: string[], base?: string): PageFunction {
+function preparePageFunction(
+  pageNames: string[],
+  base?: string,
+): PageFunction<any> {
   function page<PageId extends string>(
     pageId: PageId,
     query?: QueryParams,

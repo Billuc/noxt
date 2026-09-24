@@ -36,8 +36,8 @@ export async function renderMarkdownToHtml(
   markdownData: MarkdownData,
   base?: string,
   islandEntries?: IslandEntry[],
-  asset?: AssetFunction,
-  page?: PageFunction,
+  asset?: AssetFunction<any>,
+  page?: PageFunction<any>,
 ): Promise<string> {
   const Layout = await getLayout(markdownData.frontmatter);
   const markdownHTML = micromark(markdownData.content);

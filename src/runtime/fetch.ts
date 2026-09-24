@@ -20,6 +20,7 @@ import {
   useEffect,
   useMemo,
 } from "preact/hooks";
+import { toBody, toSearchParam } from "../core/url";
 
 /** Supported HTTP methods for fetch requests. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -49,6 +50,27 @@ export type FetchRequestInit<TBody extends {} | [] = any> = {
   referrerPolicy?: ReferrerPolicy;
 } & { objectBody?: TBody };
 
+export function copyFetchRequestInit(init: FetchRequestInit): FetchRequestInit {
+  const result: FetchRequestInit = {};
+
+  const headers = init.headers;
+  result.headers =
+    headers instanceof Array ? [...headers] : { ...(headers ?? {}) };
+
+  result.cache = init.cache;
+  result.credentials = init.credentials;
+  result.integrity = init.integrity;
+  result.keepalive = init.keepalive;
+  result.method = init.method;
+  result.mode = init.mode;
+  result.objectBody = init.objectBody;
+  result.redirect = init.redirect;
+  result.referrer = init.referrer;
+  result.referrerPolicy = init.referrerPolicy;
+
+  return result;
+}
+
 export class FetchError extends Error {
   constructor(public response: Response) {
     super(`Error ${response.status}: ${response.statusText}`);
@@ -76,15 +98,12 @@ export function requestFrom(
 
   if (!!objectBody) {
     if (method === "GET") {
-      for (const [k, v] of Object.entries(objectBody)) {
-        const values = v instanceof Array ? v : [v];
-        for (const value of values) {
-          finalUrl.searchParams.append(k, String(value));
-        }
+      for (const [k, v] of toSearchParam(objectBody).entries()) {
+        finalUrl.searchParams.append(k, v);
       }
     } else {
-      finalBody = JSON.stringify(objectBody);
-      finalHeaders.set("Content-Type", "application/json");
+      finalBody = toBody(objectBody);
+      finalHeaders.set("Content-Type", "application/x-devalue");
     }
   }
 

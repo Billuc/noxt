@@ -19,8 +19,14 @@ import type {
   IQueryRouteBuilder,
   IMutationRouteBuilder,
   SSRDefinitions,
+  SSRFunction,
 } from "./types";
 import { SSRRoute } from "./types";
 
 export { query, mutation, discoverSSRRoutes, generateSSRFile, SSRRoute };
-export type { IQueryRouteBuilder, IMutationRouteBuilder, SSRDefinitions };
+export type {
+  IQueryRouteBuilder,
+  IMutationRouteBuilder,
+  SSRDefinitions,
+  SSRFunction,
+};

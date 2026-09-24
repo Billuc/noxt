@@ -13,7 +13,82 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { SSRRouteDefinitions, SSRRoutes } from "../ssr/types";
+import { buildUrlWithQuery } from "../core/url";
+import type {
+  CallerInput,
+  Method,
+  Route,
+  SSRDefinitions,
+  SSRFunction,
+  SSRRouteDefinitions,
+  SSRRoutes,
+  SSRUrlFunction,
+} from "../ssr/types";
+import { copyFetchRequestInit, FetchError, requestFrom } from "./fetch";
+
+export function makeSSRFn<TDefinitions extends SSRDefinitions>(
+  base?: string,
+): SSRFunction<TDefinitions> {
+  return <
+    TRoute extends Route<TDefinitions>,
+    TMethod extends Method<TDefinitions, TRoute>,
+  >(
+    route: TRoute,
+    method: TMethod,
+    fetcher: (request: Request) => Promise<Response> = fetch,
+  ) => {
+    return async (input, options, signal) => {
+      const url = (base ?? "") + route;
+
+      if (!!options?.method && options.method !== method) {
+        console.warn(
+          `Method ${options.method} passed in options for endpoint "${method} ${route}" ! Ignoring...`,
+        );
+      }
+
+      const newOptions = copyFetchRequestInit(options ?? {});
+      newOptions.method = method;
+      newOptions.objectBody = input;
+
+      if (!newOptions.headers) {
+        newOptions.headers = {};
+      }
+      if (newOptions.headers instanceof Array) {
+        newOptions.headers.push(["Accept", "text/html"]);
+      } else {
+        newOptions.headers["Accept"] = "text/html";
+      }
+
+      const request = requestFrom(url, newOptions, signal);
+      const response = await fetcher(request);
+
+      if (!response.ok) {
+        throw new FetchError(response);
+      }
+
+      const htmlData = await response.text();
+      return htmlData;
+    };
+  };
+}
+
+export function makeSSRUrlFn<TDefinitions extends SSRDefinitions>(
+  base?: string,
+): SSRUrlFunction<TDefinitions> {
+  return <
+    TRoute extends Route<TDefinitions>,
+    TMethod extends Method<TDefinitions, TRoute>,
+  >(
+    route: TRoute,
+    method: TMethod,
+    input: CallerInput<TDefinitions, TRoute, TMethod>,
+  ) => {
+    const url = (base ?? "") + route;
+    const query = method === "GET" ? input : undefined;
+
+    return buildUrlWithQuery(url, query);
+  };
+}
 
 export function getSSRHandlers<
   TDefinitions extends SSRRouteDefinitions,

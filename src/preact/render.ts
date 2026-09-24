@@ -31,8 +31,8 @@ export async function renderPreactToHtml(
   component: preact.ComponentType,
   base?: string,
   islandEntries?: IslandEntry[],
-  asset?: AssetFunction,
-  page?: PageFunction,
+  asset?: AssetFunction<any>,
+  page?: PageFunction<any>,
 ): Promise<string> {
   const fullPage = providePageContext(
     { base, islands: islandEntries, asset, page },

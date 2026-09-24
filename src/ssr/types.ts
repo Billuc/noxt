@@ -23,6 +23,7 @@ import type {
   SearchParamSchema,
   SomeSchema,
 } from "../core/superstruct";
+import type { FetchRequestInit } from "../runtime/fetch";
 
 export type SSRHandler<TInput> = (data: {
   input: TInput;
@@ -74,3 +75,49 @@ export interface SSRRouteEntry<TInput extends SomeSchema> {
   input: TInput;
   file: Path;
 }
+
+type KeyOf<T> =
+  T extends Record<infer K, any>
+    ? K
+    : T extends Partial<Record<any, any>>
+      ? keyof T
+      : string | number | symbol;
+
+export type Route<TDefinitions extends SSRDefinitions> = KeyOf<TDefinitions>;
+export type Method<
+  TDefinitions extends SSRDefinitions,
+  TRoute extends Route<TDefinitions>,
+> = KeyOf<TDefinitions[TRoute]>;
+
+export type CallerInput<
+  TDefinitions extends SSRDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
+export type EndpointCaller<
+  TDefinitions extends SSRDefinitions,
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+> = (
+  input: CallerInput<TDefinitions, TRoute, TMethod>,
+  options?: FetchRequestInit | undefined,
+  signal?: AbortSignal,
+) => Promise<string>;
+
+export type SSRFunction<TDefinitions extends SSRDefinitions> = <
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+>(
+  route: TRoute,
+  method: TMethod,
+  fetcher?: (request: Request) => Promise<Response>,
+) => EndpointCaller<TDefinitions, TRoute, TMethod>;
+
+export type SSRUrlFunction<TDefinitions extends SSRDefinitions> = <
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+>(
+  route: TRoute,
+  method: TMethod,
+  input: CallerInput<TDefinitions, TRoute, TMethod>,
+) => string;

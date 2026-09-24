@@ -14,7 +14,14 @@
  *  limitations under the License.
  **/
 import * as s from "superstruct";
-import { requestFrom, useAsync, type FetchRequestInit } from "./fetch";
+import * as devalue from "devalue";
+import {
+  copyFetchRequestInit,
+  FetchError,
+  requestFrom,
+  useAsync,
+  type FetchRequestInit,
+} from "./fetch";
 import { useMemo } from "preact/hooks";
 import type {
   ApiEndpointDefinitions,
@@ -41,34 +48,34 @@ export function makeApiFn<TDefinitions extends ApiDefinitions>(
     return async (input, options, signal) => {
       const url = (base ?? "") + route;
 
-      const newOptions: FetchRequestInit = { method, objectBody: input };
+      if (!!options?.method && options.method !== method) {
+        console.warn(
+          `Method ${options.method} passed in options for endpoint "${method} ${route}" ! Ignoring...`,
+        );
+      }
 
-      if (options) {
-        const headers = options.headers;
-        newOptions.headers =
-          headers instanceof Headers ? headers.toJSON() : headers;
+      const newOptions = copyFetchRequestInit(options ?? {});
+      newOptions.method = method;
+      newOptions.objectBody = input;
 
-        if (!!options.method && options.method !== method) {
-          console.warn(
-            `Method ${options.method} passed in options for endpoint "${method} ${route}" ! Ignoring...`,
-          );
-        }
-
-        newOptions.cache = options.cache;
-        newOptions.credentials = options.credentials;
-        newOptions.integrity = options.integrity;
-        newOptions.keepalive = options.keepalive;
-        newOptions.mode = options.mode;
-        newOptions.redirect = options.redirect;
-        newOptions.referrer = options.referrer;
-        newOptions.referrerPolicy = options.referrerPolicy;
+      if (!newOptions.headers) {
+        newOptions.headers = {};
+      }
+      if (newOptions.headers instanceof Array) {
+        newOptions.headers.push(["Accept", "application/x-devalue"]);
+      } else {
+        newOptions.headers["Accept"] = "application/x-devalue";
       }
 
       const request = requestFrom(url, newOptions, signal);
       const response = await fetcher(request);
-      const data = await response.json();
 
-      return data as s.Infer<
+      if (!response.ok) {
+        throw new FetchError(response);
+      }
+
+      const data = await response.text();
+      return devalue.parse(data) as s.Infer<
         NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
       >;
     };
@@ -95,10 +102,7 @@ export function useApi<
 export function getApiHandlers<
   TDefinitions extends ApiEndpointDefinitions,
   TBase extends string = "",
->(
-  apiMap: TDefinitions,
-  base?: TBase,
-): ApiEndpoints<TDefinitions, TBase> {
+>(apiMap: TDefinitions, base?: TBase): ApiEndpoints<TDefinitions, TBase> {
   const routes: any = {};
 
   for (const [route, routeData] of Object.entries(apiMap)) {

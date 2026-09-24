@@ -24,6 +24,9 @@ import type { PageFunction, QueryParams } from "./types";
 import type { AssetFunction } from "../assets";
 import type { ApiDefinitions, ApiFunction } from "../api";
 import { makeApiFn } from "../runtime";
+import type { SSRDefinitions, SSRFunction } from "../ssr";
+import { makeSSRFn, makeSSRUrlFn } from "../runtime/ssr";
+import type { SSRUrlFunction } from "../ssr/types";
 
 /**
  * Build-time data used to prerender islands: the base URL and the
@@ -77,22 +80,27 @@ export class PageContextData {
 
 export class UtilsContextData<
   TApi extends ApiDefinitions,
+  TSsr extends SSRDefinitions,
   TPage extends string,
   TAsset extends string,
 > {
   constructor(
     public api: ApiFunction<TApi> = makeApiFn(""),
+    public ssr: SSRFunction<TSsr> = makeSSRFn(""),
     public page: PageFunction<TPage> = defaultPageFunction,
     public asset: AssetFunction<TAsset> = defaultAssetFunction,
+    public ssrUrl: SSRUrlFunction<TSsr> = makeSSRUrlFn(""),
   ) {}
 
   static from<TPage extends string, TAsset extends string>(
     data: UtilsContextInterface<TPage, TAsset>,
-  ): UtilsContextData<any, TPage, TAsset> {
+  ): UtilsContextData<any, any, TPage, TAsset> {
     return new UtilsContextData(
       makeApiFn(data.base),
+      makeSSRFn(data.base),
       data.page ?? defaultPageFunction,
       data.asset ?? defaultAssetFunction,
+      makeSSRUrlFn(data.base),
     );
   }
 }
@@ -101,7 +109,7 @@ export const PageContext = createContext<PageContextData>(
   new PageContextData(),
 );
 
-export const UtilsContext = createContext<UtilsContextData<any, any, any>>(
+export const UtilsContext = createContext<UtilsContextData<any, any, any, any>>(
   new UtilsContextData(),
 );
 
