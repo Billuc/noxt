@@ -1,4 +1,4 @@
-import { query } from "noxt";
+import { query } from "noxt/api";
 import * as s from "superstruct";
 
 const Post = s.object({
@@ -10,7 +10,12 @@ const Post = s.object({
 
 const ALL_POSTS = [
   { id: 1, title: "Hello Noxt", tags: ["noxt", "intro"], published: true },
-  { id: 2, title: "Islands architecture", tags: ["noxt", "islands"], published: true },
+  {
+    id: 2,
+    title: "Islands architecture",
+    tags: ["noxt", "islands"],
+    published: true,
+  },
   { id: 3, title: "Draft: PWA deep dive", tags: ["pwa"], published: false },
 ];
 
@@ -29,14 +34,17 @@ export const GET = query()
   .output(s.object({ posts: s.array(Post) }))
   .endpoint(({ input }) => {
     let posts = ALL_POSTS.filter(
-      (post) => input.published === undefined || post.published === input.published,
+      (post) =>
+        input.published === undefined || post.published === input.published,
     );
     if (input.q) {
       const q = input.q.toLowerCase();
       posts = posts.filter((post) => post.title.toLowerCase().includes(q));
     }
     if (input.tags && input.tags.length > 0) {
-      posts = posts.filter((post) => input.tags!.some((tag) => post.tags.includes(tag)));
+      posts = posts.filter((post) =>
+        input.tags!.some((tag) => post.tags.includes(tag)),
+      );
     }
     if (input.limit !== undefined) posts = posts.slice(0, input.limit);
     return { posts };

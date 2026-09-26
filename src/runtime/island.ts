@@ -21,6 +21,8 @@ import {
   createClientAssetFunction,
   createClientPageFunction,
 } from "../core/url";
+import { makeApiFn } from "./api";
+import { makeSSRFn, makeSSRUrlFn } from "./ssr";
 
 /** Hydrates all island elements matching the given hash with the given component. */
 export function renderIsland(
@@ -32,8 +34,11 @@ export function renderIsland(
     `[data-island="${hash}"]`,
   );
   const utilsContextData = new UtilsContextData(
+    makeApiFn(base),
+    makeSSRFn(base),
     createClientPageFunction(base),
     createClientAssetFunction(base),
+    makeSSRUrlFn(base),
   );
 
   elements.forEach((element) => {

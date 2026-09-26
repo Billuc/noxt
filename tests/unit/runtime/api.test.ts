@@ -16,9 +16,10 @@
 
 import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
 import * as s from "superstruct";
+import * as devalue from "devalue";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
-import { ApiRouter, useApi, getApiHandlers } from "../../../src/runtime/api";
+import { makeApiFn, useApi, getApiHandlers } from "../../../src/runtime/api";
 import type { FetchRequestInit } from "../../../src/runtime/fetch";
 import { APIEndpoint } from "../../../src/api";
 
@@ -62,225 +63,176 @@ const TestApi = {
 
 type TestApi = typeof TestApi;
 
-describe("ApiRouter", () => {
-  afterEach(() => {
-    document.body.innerHTML = "";
+describe("makeApiFn", () => {
+  it("should return a function for the endpoint", () => {
+    const api = makeApiFn<TestApi>("");
+    expect(typeof api("/users", "GET")).toBe("function");
   });
 
-  describe("constructor", () => {
-    it("should create instance without base URL", () => {
-      const router = new ApiRouter<TestApi>();
-      expect(router).toBeInstanceOf(ApiRouter);
+  it("should prepend base URL to endpoint URL", async () => {
+    const customFetcher = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      );
     });
 
-    it("should create instance with base URL", () => {
-      const router = new ApiRouter<TestApi>("https://api.example.com");
-      expect(router).toBeInstanceOf(ApiRouter);
-    });
+    const api = makeApiFn<TestApi>("https://api.example.com");
+    await api("/users", "GET", customFetcher)({ id: "123" });
+
+    expect(customFetcher.mock.lastCall?.[0].url).toBe(
+      "https://api.example.com/users?id=123",
+    );
   });
 
-  describe("api() method", () => {
-    it("should return a function for the endpoint", () => {
-      const router = new ApiRouter<TestApi>();
-      const endpointCaller = router.api("/users", "GET");
-      expect(typeof endpointCaller).toBe("function");
+  it("should be consistent across instances for GET query params", async () => {
+    const fetcherA = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      );
+    });
+    const fetcherB = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      );
     });
 
-    it("should parse endpoint string to extract method and URL", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test" }), {
-            status: 200,
+    const apiA = makeApiFn<TestApi>("");
+    const apiB = makeApiFn<TestApi>("");
+    await apiA("/users", "GET", fetcherA)({ id: "1" });
+    await apiB("/users", "GET", fetcherB)({ id: "1" });
+
+    expect(fetcherA.mock.lastCall?.[0].url).toBe(
+      fetcherB.mock.lastCall?.[0].url,
+    );
+    expect(fetcherA.mock.lastCall?.[0].method).toBe(
+      fetcherB.mock.lastCall?.[0].method,
+    );
+  });
+
+  it("should send POST input as JSON body with method", async () => {
+    const customFetcher = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(
+          devalue.stringify({
+            id: "1",
+            name: "test",
+            email: "test@example.com",
           }),
-        );
-      });
-
-      const router = new ApiRouter<TestApi>("");
-      const endpointCaller = router.api("/users", "GET", customFetcher);
-      await endpointCaller!({ id: "123" });
-
-      const requestMethod = customFetcher.mock.lastCall?.[0].method;
-      const requestUrl = customFetcher.mock.lastCall?.[0].url;
-
-      expect(requestMethod).toBe("GET");
-      expect(requestUrl).toContain("/users");
-    });
-
-    it("should prepend base URL to endpoint URL", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test" }), {
-            status: 200,
-          }),
-        );
-      });
-
-      const router = new ApiRouter<TestApi>("https://api.example.com");
-      const endpointCaller = router.api("/users", "GET", customFetcher);
-      await endpointCaller!({ id: "123" });
-
-      const requestUrl = customFetcher.mock.lastCall?.[0].url;
-      expect(requestUrl).toBe("https://api.example.com/users?id=123");
-    });
-
-    it("should use correct HTTP method from endpoint string", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test" }), {
-            status: 200,
-          }),
-        );
-      });
-
-      const router = new ApiRouter<TestApi>("");
-      const endpointCaller = router.api("/users", "POST", customFetcher);
-      await endpointCaller({ name: "test", email: "test@example.com" });
-
-      const requestMethod = customFetcher.mock.lastCall?.[0].method;
-      expect(requestMethod).toBe("POST");
-    });
-
-    it("should set Content-Type header for POST request", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              id: "1",
-              name: "test",
-              email: "test@example.com",
-            }),
-            { status: 200 },
-          ),
-        );
-      });
-
-      const router = new ApiRouter<TestApi>("");
-      const endpointCaller = router.api("/users", "POST", customFetcher);
-      await endpointCaller({ name: "test", email: "test@example.com" });
-
-      const requestHeaders = customFetcher.mock.lastCall?.[0].headers;
-      expect(requestHeaders?.get("Content-Type")).toBe("application/json");
-    });
-
-    it("should send input as query params for GET request", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test" }), {
-            status: 200,
-          }),
-        );
-      });
-
-      const router = new ApiRouter<TestApi>("");
-      const endpointCaller = router.api("/users", "GET", customFetcher);
-      await endpointCaller({ id: "123" });
-
-      const requestUrl = customFetcher.mock.lastCall?.[0].url;
-      expect(requestUrl).not.toBeUndefined();
-      const url = new URL(requestUrl!);
-      expect(url.searchParams.get("id")).toBe("123");
-    });
-
-    it("should use custom fetcher when provided", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test" }), {
-            status: 200,
-          }),
-        );
-      });
-
-      const router = new ApiRouter<TestApi>("https://api.example.com");
-      const endpointCaller = router.api("/users", "GET", customFetcher);
-
-      await endpointCaller({ id: "123" });
-
-      expect(customFetcher.mock.calls.length).toBe(1);
-    });
-
-    it("should return parsed JSON response", async () => {
-      const expectedData = { id: "1", name: "test" };
-      const customFetcher = mock((request: Request) =>
-        Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
+          { status: 200 },
         ),
       );
-
-      const router = new ApiRouter<TestApi>("");
-      const endpointCaller = router.api("/users", "GET", customFetcher);
-
-      const result = await endpointCaller({ id: "1" });
-
-      expect(result).toEqual(expectedData);
     });
 
-    it("should pass additional options to fetch request", async () => {
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test" }), {
-            status: 200,
-          }),
-        );
-      });
+    const api = makeApiFn<TestApi>("");
+    const result = await api(
+      "/users",
+      "POST",
+      customFetcher,
+    )({
+      name: "test",
+      email: "test@example.com",
+    });
 
-      const router = new ApiRouter<TestApi>("");
-      const endpointCaller = router.api("/users", "GET", customFetcher);
+    expect(customFetcher.mock.lastCall?.[0].method).toBe("POST");
+    expect(result).toEqual({
+      id: "1",
+      name: "test",
+      email: "test@example.com",
+    });
+  });
 
-      await endpointCaller(
-        { id: "123" },
-        {
-          headers: { Authorization: "Bearer token123" },
-        },
+  it("should forward extra fetch options and signal", async () => {
+    const customFetcher = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
       );
-
-      const requestHeaders = customFetcher.mock.lastCall?.[0].headers;
-      expect(requestHeaders?.get("Authorization")).toBe("Bearer token123");
     });
 
-    it("should handle different HTTP methods", async () => {
-      const endpoints = [
-        ["/users", "GET"],
-        ["/users", "POST"],
-        ["/users", "PUT"],
-        ["/users", "DELETE"],
-      ] as const;
+    const api = makeApiFn<TestApi>("");
+    const caller = api("/users", "GET", customFetcher);
+    const controller = new AbortController();
+    await caller(
+      { id: "1" },
+      { headers: { Authorization: "Bearer token123" } },
+      controller.signal,
+    );
 
-      const customFetcher = mock((request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ ok: true }), { status: 200 }),
-        );
-      });
+    expect(customFetcher.mock.lastCall?.[0].headers.get("Authorization")).toBe(
+      "Bearer token123",
+    );
+  });
 
-      const router = new ApiRouter<TestApi>("");
-
-      for (const [route, method] of endpoints) {
-        const endpointCaller = router.api(route, method, customFetcher);
-
-        // Call with minimal required input based on method
-        const input =
-          method === "GET" || method === "DELETE"
-            ? { id: "1" }
-            : { id: "1", name: "test", email: "test@example.com" };
-
-        await endpointCaller(input as any);
-        const requestMethod = customFetcher.mock.lastCall?.[0].method;
-        expect(requestMethod).toBe(method);
-      }
+  it("should default base to empty string when omitted", async () => {
+    const customFetcher = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      );
     });
 
-    // it("should return undefined for incorrect endpoints", async () => {
-    //   const customFetcher = mock((request: Request) => {
-    //     return Promise.resolve(
-    //       new Response(JSON.stringify({ ok: true }), { status: 200 }),
-    //     );
-    //   });
+    const api = makeApiFn<TestApi>();
+    await api("/users", "GET", customFetcher)({ id: "1" });
 
-    //   const router = new ApiRouter<TestApi>("", customFetcher);
+    expect(customFetcher.mock.lastCall?.[0].url).toBe(
+      "http://localhost:3000/users?id=1",
+    );
+  });
 
-    //   // @ts-ignore
-    //   const endpointCaller = router.api("/api/toto", "GET");
-    //   expect(endpointCaller).toBeUndefined();
-    // });
+  it("should send Accept: application/x-devalue and parse devalue bodies", async () => {
+    const customFetcher = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      );
+    });
+
+    const api = makeApiFn<TestApi>("");
+    const result = await api("/users", "GET", customFetcher)({ id: "1" });
+
+    expect(result).toEqual({ id: "1", name: "test" });
+    expect(customFetcher.mock.lastCall?.[0].headers.get("Accept")).toBe(
+      "application/x-devalue",
+    );
+  });
+
+  it("should throw FetchError on non-ok responses", async () => {
+    const customFetcher = mock((_request: Request) =>
+      Promise.resolve(new Response("nope", { status: 500 })),
+    );
+
+    const api = makeApiFn<TestApi>("");
+    expect(api("/users", "GET", customFetcher)({ id: "1" })).rejects.toThrow(
+      "Error 500",
+    );
+  });
+
+  it("should not mutate the caller-provided options object", async () => {
+    const customFetcher = mock((_request: Request) =>
+      Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      ),
+    );
+
+    const api = makeApiFn<TestApi>("");
+    const options = { headers: { Authorization: "Bearer token" } };
+    await api("/users", "GET", customFetcher)({ id: "1" }, options);
+
+    expect(options.headers).toEqual({ Authorization: "Bearer token" });
+    expect(customFetcher.mock.lastCall?.[0].headers.get("Authorization")).toBe(
+      "Bearer token",
+    );
   });
 });
 
@@ -294,7 +246,7 @@ describe("useApi", () => {
       Promise.resolve({ id: "1", name: "test" });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     expect(result.current).toHaveProperty("data");
@@ -311,7 +263,7 @@ describe("useApi", () => {
       Promise.resolve({ id: "1", name: "test" });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     expect(result.current.loading).toBe(true);
@@ -327,7 +279,7 @@ describe("useApi", () => {
     });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "123" }),
+      useApi(endpointCaller, { id: "123" }),
     );
 
     // Wait for the async fetch to complete
@@ -349,9 +301,9 @@ describe("useApi", () => {
       },
     );
 
-    const { result, unmount } = renderHook(() =>
+    const { unmount } = renderHook(() =>
       useApi(
-        endpointCaller as any,
+        endpointCaller,
         { id: "123" },
         { headers: { Authorization: "Bearer token" } },
       ),
@@ -375,7 +327,7 @@ describe("useApi", () => {
     const endpointCaller = () => Promise.resolve(expectedData);
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     // Wait for the async fetch to complete - needs extra time
@@ -393,7 +345,7 @@ describe("useApi", () => {
     const endpointCaller = () => Promise.reject(testError);
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     // Wait for the async fetch to complete
@@ -417,7 +369,7 @@ describe("useApi", () => {
     });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     // Wait for initial fetch
@@ -447,9 +399,7 @@ describe("useApi", () => {
       },
     );
 
-    const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
-    );
+    const { unmount } = renderHook(() => useApi(endpointCaller, { id: "1" }));
 
     // Wait a bit for the fetch to start
     await Bun.sleep(20);
@@ -465,17 +415,17 @@ describe("useApi", () => {
     expect(abortSignals[0]?.aborted).toBe(true);
   });
 
-  it("should integrate with ApiRouter", async () => {
+  it("should integrate with makeApiFn", async () => {
     const expectedData = { id: "1", name: "test user" };
 
     const customFetcher = mock((request: Request) =>
       Promise.resolve(
-        new Response(JSON.stringify(expectedData), { status: 200 }),
+        new Response(devalue.stringify(expectedData), { status: 200 }),
       ),
     );
 
-    const router = new ApiRouter<TestApi>("");
-    const getUserCaller = router.api("/users", "GET", customFetcher);
+    const api = makeApiFn<TestApi>("");
+    const getUserCaller = api("/users", "GET", customFetcher);
 
     const { result, unmount } = renderHook(() =>
       useApi(getUserCaller, { id: "1" }),
@@ -500,14 +450,14 @@ describe("useApi", () => {
       // Return different responses based on the endpoint
       if (method === "GET" && url.pathname.includes("/users")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test user" }), {
+          new Response(devalue.stringify({ id: "1", name: "test user" }), {
             status: 200,
           }),
         );
       } else if (method === "POST" && url.pathname === "/users") {
         return Promise.resolve(
           new Response(
-            JSON.stringify({
+            devalue.stringify({
               id: "1",
               name: "new user",
               email: "new@example.com",
@@ -517,19 +467,19 @@ describe("useApi", () => {
         );
       }
       return Promise.resolve(
-        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+        new Response(devalue.stringify({ ok: true }), { status: 200 }),
       );
     });
 
-    const router = new ApiRouter<TestApi>("");
+    const api = makeApiFn<TestApi>("");
 
     // Test GET endpoint
-    const getUser = router.api("/users", "GET", customFetcher);
+    const getUser = api("/users", "GET", customFetcher);
     const getResult = await getUser({ id: "1" });
     expect(getResult).toEqual({ id: "1", name: "test user" });
 
     // Test POST endpoint
-    const createUser = router.api("/users", "POST", customFetcher);
+    const createUser = api("/users", "POST", customFetcher);
     const postResult = await createUser({
       name: "new user",
       email: "new@example.com",
@@ -556,6 +506,29 @@ describe("getApiHandlers", () => {
     expect(result).toEqual({
       "/api/users": {
         GET: mockHandler,
+      },
+    });
+  });
+
+  it("should prefix routes with base", () => {
+    const mockHandler = (_request: Request) => Promise.resolve(new Response());
+    const apiMap = {
+      "/api/users": {
+        GET: new APIEndpoint(s.object({}), s.object({}), mockHandler),
+      },
+      "/api/posts": {
+        POST: new APIEndpoint(s.object({}), s.object({}), mockHandler),
+      },
+    };
+
+    const result = getApiHandlers(apiMap, "/base");
+
+    expect(result).toEqual({
+      "/base/api/users": {
+        GET: mockHandler,
+      },
+      "/base/api/posts": {
+        POST: mockHandler,
       },
     });
   });

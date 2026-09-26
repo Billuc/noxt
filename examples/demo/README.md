@@ -32,7 +32,12 @@ PORT=3001 bun run serve            # custom port (reuse the same NOXT_BASE as th
 | Client `page()`/`asset()` in islands | `ThemeToggle` on `/` |
 | `client:only` island | `Clock` on `/` |
 | `useApi` + query types (string/array/number/boolean) | `SearchPosts` on `/` and `/blog` |
-| `useFetchJson` GET + mutation POST | `Guestbook` on `/` |
+| `useApi` GET + mutation POST | `Guestbook` on `/` |
+| SSR query fragment + 400 on bad params | `SsrFragments` on `/`, try `/ssr/search?limit=abc` |
+| SSR mutation fragment (devalue POST) | `SsrFragments` on `/`, `POST /ssr/greeting` |
+| SSR handler throw → 500 | `SsrFragments` on `/`, `GET /ssr/crash` |
+| SSR `ssrUrl` fragment links | `SsrFragments` on `/`, open raw `/ssr/greeting?name=…` |
+| SSR index route shortening | `GET /ssr/panel` (`src/ssr/panel/index.ts`) |
 | Query endpoint + 400 on bad params | `GET /api/posts`, try `/api/posts?limit=abc` |
 | Mutation endpoint + 400, 201 status | `POST /api/guestbook` |
 | Handler throw → 500 | `GET /api/crash` |

@@ -39,8 +39,8 @@
  *   `JSON.parse`) for POST/PUT/PATCH/DELETE. Handlers receive `{ input, request,
  *   response }`, return value is serialized via `toBody` (`JSON.stringify`) and
  *   wrapped in `Response`; validation failures return 400 `Bad argument`, handler
- *   throws return 500 `Internal Server Error`. Runtime `ApiRouter` and `useApi`
- *   (src/runtime/api.ts) provide the typed client: `new ApiRouter<Defs>(base).api(route, method)`
+ *   throws return 500 `Internal Server Error`. Runtime `makeApiFn` and `useApi`
+ *   (src/runtime/api.ts) provide the typed client: `makeApiFn<Defs>(base)(route, method)`
  *   returns an `EndpointCaller` that builds a `Request` via `requestFrom` + `fetch`
  *   and parses JSON, and `getApiHandlers(map, base)` prefixes routes for `Bun.serve`.
  *
@@ -60,7 +60,7 @@
  *     invalid JSON or schema mismatch yields 400; handler exception yields 500.
  *   - Successful handlers return JSON body with status from `response` init and
  *     `Content-Type: application/json` via `toBody`.
- *   - Runtime `ApiRouter` client: `GET` encodes `objectBody` as `?k=v` via
+ *   - Runtime `makeApiFn` client: `GET` encodes `objectBody` as `?k=v` via
  *     `requestFrom` (arrays as repeated keys), other methods send JSON body;
  *     `base` prefix is applied to `url`; extra `FetchRequestInit` headers/options
  *     are forwarded, mismatched `method` in options warns and is ignored.

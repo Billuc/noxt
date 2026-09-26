@@ -12,6 +12,8 @@ import {
   BuildPipeline,
   discoverAPIs,
   generateAPIFile,
+  discoverSSRRoutes,
+  generateSSRFile,
   discoverAssets,
   generateAssetUtils,
   discoverIslands,
@@ -45,6 +47,8 @@ const context = await BuildPipeline.newPipeline()
   .with(prerenderMarkdownPages)
   .with(discoverAPIs)
   .do(generateAPIFile)
+  .with(discoverSSRRoutes)
+  .do(generateSSRFile)
   .with(({ preactPages, markdownPages }) => ({
     pages: [...preactPages, ...markdownPages],
   }))
@@ -58,5 +62,6 @@ console.log(
     `${context.markdownPages.length} markdown pages, ` +
     `${context.islands.length} islands, ` +
     `${context.assets.length} assets, ` +
-    `${context.endpointEntries.length} API endpoints.`,
+    `${context.endpointEntries.length} API endpoints, ` +
+    `${context.ssrRouteEntries.length} SSR routes.`,
 );

@@ -14,7 +14,7 @@
  *  limitations under the License.
  **/
 import { signal as preactSignal } from "@preact/signals";
-import type { Signal, SignalOptions } from "@preact/signals-core";
+import type { Signal } from "@preact/signals";
 
 declare global {
   interface Window {
@@ -31,15 +31,11 @@ function getStore(): Map<string, Signal> {
   return SERVER_STORE;
 }
 
-export function sharedSignal<T>(
-  key: string,
-  initialValue: T,
-  options?: SignalOptions<T>,
-): Signal<T> {
+export function sharedSignal<T>(key: string, initialValue: T): Signal<T> {
   const store = getStore();
   let sig = store.get(key);
   if (!sig) {
-    sig = preactSignal(initialValue, options);
+    sig = preactSignal(initialValue);
     store.set(key, sig);
   }
   return sig as Signal<T>;

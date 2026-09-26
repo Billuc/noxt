@@ -16,6 +16,7 @@
 import * as s from "superstruct";
 import type { Path } from "../core/fs";
 import type { HttpMethod, RouteDefinition, RouteHandlers } from "../core/types";
+import type { ComponentChildren } from "preact";
 import type {
   Schema,
   SearchParams,
@@ -24,72 +25,54 @@ import type {
 } from "../core/superstruct";
 import type { FetchRequestInit } from "../runtime/fetch";
 
-export type APIHandler<TInput, TOutput> = (data: {
+export type SSRHandler<TInput> = (data: {
   input: TInput;
   request: Request;
   response: ResponseInit;
-}) => Promise<TOutput> | TOutput;
+}) => Promise<ComponentChildren> | ComponentChildren;
 
-export class APIEndpoint<TInput, TOutput> {
+export class SSRRoute<TInput> {
   constructor(
     public input: Schema<TInput>,
-    public output: Schema<TOutput>,
     public handler: (request: Request) => Promise<Response>,
   ) {}
 }
 
-export interface IQueryEndpointBuilder<TInput extends SearchParams, TOutput> {
+export interface IQueryRouteBuilder<TInput extends SearchParams> {
   input<TInput2 extends SearchParams>(
     Input: SearchParamSchema<TInput2>,
-  ): IQueryEndpointBuilder<TInput2, TOutput>;
-
-  output<TOutput2>(
-    Output: Schema<TOutput2>,
-  ): IQueryEndpointBuilder<TInput, TOutput2>;
+  ): IQueryRouteBuilder<TInput2>;
 
   get _input(): Schema<TInput>;
-  get _output(): Schema<TOutput>;
 
-  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
+  route(fn: SSRHandler<TInput>): SSRRoute<TInput>;
 }
 
-export interface IMutationEndpointBuilder<TInput, TOutput> {
-  input<TInput2>(
-    Input: Schema<TInput2>,
-  ): IMutationEndpointBuilder<TInput2, TOutput>;
-
-  output<TOutput2>(
-    Output: Schema<TOutput2>,
-  ): IMutationEndpointBuilder<TInput, TOutput2>;
+export interface IMutationRouteBuilder<TInput> {
+  input<TInput2>(Input: Schema<TInput2>): IMutationRouteBuilder<TInput2>;
 
   get _input(): Schema<TInput>;
-  get _output(): Schema<TOutput>;
 
-  endpoint(fn: APIHandler<TInput, TOutput>): APIEndpoint<TInput, TOutput>;
+  route(fn: SSRHandler<TInput>): SSRRoute<TInput>;
 }
 
-export type ApiDefinitions = RouteDefinition<{
+export type SSRDefinitions = RouteDefinition<{
   input: s.Struct<any, any>;
-  output: s.Struct<any, any>;
 }>;
 
-export type ApiEndpointDefinitions = RouteDefinition<APIEndpoint<any, any>>;
+export type SSRRouteDefinitions = RouteDefinition<SSRRoute<any>>;
 
-export type ApiEndpoints<
-  TDefinitions extends ApiEndpointDefinitions,
+export type SSRRoutes<
+  TDefinitions extends SSRRouteDefinitions,
   TBase extends string = "",
 > = RouteHandlers<{
   [k in keyof TDefinitions as `${TBase}${string & k}`]: TDefinitions[k];
 }>;
 
-export interface APIEndpointEntry<
-  TInput extends SomeSchema,
-  TOutput extends SomeSchema,
-> {
+export interface SSRRouteEntry<TInput extends SomeSchema> {
   method: HttpMethod;
   route: string;
   input: TInput;
-  output: TOutput;
   file: Path;
 }
 
@@ -100,33 +83,28 @@ type KeyOf<T> =
       ? keyof T
       : string | number | symbol;
 
-export type Route<TDefinitions extends ApiDefinitions> = KeyOf<TDefinitions>;
+export type Route<TDefinitions extends SSRDefinitions> = KeyOf<TDefinitions>;
 export type Method<
-  TDefinitions extends ApiDefinitions,
+  TDefinitions extends SSRDefinitions,
   TRoute extends Route<TDefinitions>,
 > = KeyOf<TDefinitions[TRoute]>;
 
 export type CallerInput<
-  TDefinitions extends ApiDefinitions,
+  TDefinitions extends SSRDefinitions,
   TRoute extends Route<TDefinitions>,
   TMethod extends Method<TDefinitions, TRoute>,
 > = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["input"]>;
-type CallerOutput<
-  TDefinitions extends ApiDefinitions,
-  TRoute extends Route<TDefinitions>,
-  TMethod extends Method<TDefinitions, TRoute>,
-> = s.Infer<NonNullable<TDefinitions[TRoute][TMethod]>["output"]>;
 export type EndpointCaller<
-  TDefinitions extends ApiDefinitions,
+  TDefinitions extends SSRDefinitions,
   TRoute extends Route<TDefinitions>,
   TMethod extends Method<TDefinitions, TRoute>,
 > = (
   input: CallerInput<TDefinitions, TRoute, TMethod>,
   options?: FetchRequestInit | undefined,
   signal?: AbortSignal,
-) => Promise<CallerOutput<TDefinitions, TRoute, TMethod>>;
+) => Promise<string>;
 
-export type ApiFunction<TDefinitions extends ApiDefinitions> = <
+export type SSRFunction<TDefinitions extends SSRDefinitions> = <
   TRoute extends Route<TDefinitions>,
   TMethod extends Method<TDefinitions, TRoute>,
 >(
@@ -134,3 +112,12 @@ export type ApiFunction<TDefinitions extends ApiDefinitions> = <
   method: TMethod,
   fetcher?: (request: Request) => Promise<Response>,
 ) => EndpointCaller<TDefinitions, TRoute, TMethod>;
+
+export type SSRUrlFunction<TDefinitions extends SSRDefinitions> = <
+  TRoute extends Route<TDefinitions>,
+  TMethod extends Method<TDefinitions, TRoute>,
+>(
+  route: TRoute,
+  method: TMethod,
+  input: CallerInput<TDefinitions, TRoute, TMethod>,
+) => string;

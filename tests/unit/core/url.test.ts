@@ -2,10 +2,13 @@
  * Unit tests for src/core/url.ts
  */
 import { describe, it, expect } from "bun:test";
+import * as devalue from "devalue";
 import {
   buildUrlWithQuery,
   createClientAssetFunction,
   createClientPageFunction,
+  toSearchParam,
+  toBody,
 } from "../../../src/core/url";
 
 describe("buildUrlWithQuery", () => {
@@ -61,5 +64,56 @@ describe("createClientAssetFunction", () => {
   it("should work without a base prefix", () => {
     const asset = createClientAssetFunction("");
     expect(asset("/img.png")).toBe("/img.png");
+  });
+});
+
+describe("toSearchParam", () => {
+  it("should encode string/number/boolean values", () => {
+    const params = toSearchParam({ name: "John", age: 25, active: true });
+    expect(params).toBeInstanceOf(URLSearchParams);
+    expect(params.get("name")).toBe("John");
+    expect(params.get("age")).toBe("25");
+    expect(params.get("active")).toBe("true");
+  });
+
+  it("should flatten arrays", () => {
+    expect(
+      toSearchParam({ tags: ["a", "b"], scores: [1, 2] }).getAll("tags"),
+    ).toEqual(["a", "b"]);
+    expect(
+      toSearchParam({ tags: ["a", "b"], scores: [1, 2] }).getAll("scores"),
+    ).toEqual(["1", "2"]);
+  });
+
+  it("should map undefined to empty arrays", () => {
+    const params = toSearchParam({ a: undefined });
+    expect(params.get("a")).toBeNull();
+    expect(params.toString()).toBe("");
+  });
+
+  it("should omit unsupported values but keep supported ones", () => {
+    const params = toSearchParam({ q: "x", skip: undefined });
+    expect(params.get("q")).toBe("x");
+    expect(params.get("skip")).toBeNull();
+  });
+});
+
+describe("toBody", () => {
+  it("should serialize via devalue (not JSON)", () => {
+    const value = { name: "John", age: 25 };
+    expect(toBody(value)).toBe(devalue.stringify(value));
+    expect(devalue.parse(toBody(value)!)).toEqual(value);
+  });
+
+  it("should support Date values", () => {
+    const at = new Date("2023-01-01T00:00:00.000Z");
+    const raw = toBody({ at })!;
+    expect(devalue.parse(raw)).toEqual({ at });
+  });
+
+  it("should round-trip undefined via devalue encoding", () => {
+    const raw = toBody(undefined)!;
+    expect(typeof raw).toBe("string");
+    expect(devalue.parse(raw)).toBeUndefined();
   });
 });

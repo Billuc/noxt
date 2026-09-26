@@ -18,13 +18,15 @@ import {
   type APIHandler,
   type IMutationEndpointBuilder,
   type IQueryEndpointBuilder,
-  type Schema,
-  type SearchParams,
-  type SearchParamSchema,
 } from "./types";
-import { toBody } from "./utils";
-import { body, searchParams } from "./superstruct";
+import { body, searchParams } from "../core/superstruct";
 import * as s from "superstruct";
+import type {
+  Schema,
+  SearchParams,
+  SearchParamSchema,
+} from "../core/superstruct";
+import { toBody } from "../core/url";
 
 class QueryEndpointBuilder<
   TInput extends SearchParams,

@@ -1,10 +1,11 @@
 /**
  * Unit tests for src/core/context.ts
  */
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
 import type { FunctionComponent } from "preact";
+import * as s from "superstruct";
 import {
   PageContext,
   PageContextData,
@@ -14,12 +15,46 @@ import {
 import { renderToHtmlString } from "../../../src/core/render";
 import { Path } from "../../../src/core/fs";
 import type { IslandEntry } from "../../../src/islands";
+import { makeApiFn } from "../../../src/runtime/api";
+import { makeSSRFn, makeSSRUrlFn } from "../../../src/runtime/ssr";
+import type { PageFunction } from "../../../src/core/types";
+import type { AssetFunction } from "../../../src/assets/types";
+import * as devalue from "devalue";
 
 function fakeIsland(name: string): FunctionComponent<any> {
   const fn = () => null;
   Object.defineProperty(fn, "name", { value: name });
   return fn;
 }
+
+const testApiDefs = {
+  "/api/test": {
+    GET: {
+      input: s.object({ q: s.string() }),
+      output: s.object({ ok: s.boolean() }),
+    },
+  },
+  "/r": {
+    GET: {
+      input: s.object({ a: s.string() }),
+      output: s.object({}),
+    },
+  },
+} as const;
+type TestApi = typeof testApiDefs;
+
+const testSsrDefs = {
+  "/frag": {
+    GET: { input: s.object({ q: s.string() }) },
+  },
+} as const;
+type TestSsr = typeof testSsrDefs;
+
+type TestPage = "/about" | "/contact";
+type TestAsset = "/img.png" | "/style.css";
+
+const testPage: PageFunction<TestPage> = (pageId) => `/p${pageId}`;
+const testAsset: AssetFunction<TestAsset> = (assetId) => `/a${assetId}`;
 
 describe("PageContextData", () => {
   it("should default base to an empty string", () => {
@@ -78,6 +113,70 @@ describe("UtilsContextData", () => {
       "No asset function has been provided",
     );
     expect(() => data.asset("/img.png")).toThrow("generateAssetUtils");
+  });
+});
+
+describe("UtilsContextData api", () => {
+  it("should expose an api function by default", () => {
+    const data = UtilsContextData.from({});
+    expect(typeof data.api).toBe("function");
+  });
+
+  it("should expose ssr and ssrUrl functions by default", () => {
+    const data = UtilsContextData.from({});
+    expect(typeof data.ssr).toBe("function");
+    expect(typeof data.ssrUrl).toBe("function");
+  });
+
+  it("should prefix api calls with the given base", async () => {
+    const data = new UtilsContextData<TestApi, TestSsr, TestPage, TestAsset>(
+      makeApiFn<TestApi>("http://localhost:3000/base"),
+      makeSSRFn<TestSsr>("http://localhost:3000/base"),
+      testPage,
+      testAsset,
+      makeSSRUrlFn<TestSsr>("http://localhost:3000/base"),
+    );
+    const fetcher = mock((_request: Request) =>
+      Promise.resolve(new Response(devalue.stringify({ ok: true }))),
+    );
+
+    const result = await data.api("/api/test", "GET", fetcher)({ q: "x" });
+
+    expect(result).toEqual({ ok: true });
+    expect(fetcher.mock.lastCall?.[0].url).toContain("/base/api/test?q=x");
+  });
+
+  it("should build the api function from the base in from()", async () => {
+    const data = UtilsContextData.from<TestPage, TestAsset>({
+      base: "http://localhost:3000/docs",
+      page: testPage,
+      asset: testAsset,
+    });
+    const fetcher = mock((_request: Request) =>
+      Promise.resolve(new Response(devalue.stringify({}))),
+    );
+
+    await data.api("/r", "GET", fetcher)({ a: "b" });
+
+    expect(fetcher.mock.lastCall?.[0].url).toContain("/docs/r?a=b");
+  });
+
+  it("should build ssr and ssrUrl from the base in from()", async () => {
+    const data = UtilsContextData.from<TestPage, TestAsset>({
+      base: "http://localhost:3000/docs",
+      page: testPage,
+      asset: testAsset,
+    });
+    const fetcher = mock((_request: Request) =>
+      Promise.resolve(new Response("<div>hi</div>")),
+    );
+
+    const html = await data.ssr("/frag", "GET", fetcher)({ q: "x" });
+    expect(html).toBe("<div>hi</div>");
+    expect(fetcher.mock.lastCall?.[0].url).toContain("/docs/frag?q=x");
+    expect(data.ssrUrl("/frag", "GET", { q: "x" })).toBe(
+      "http://localhost:3000/docs/frag?q=x",
+    );
   });
 });
 

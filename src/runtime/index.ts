@@ -18,12 +18,13 @@ export {
   type HttpMethod,
   requestFrom,
   useAsync,
-  useFetchJson,
+  FetchError,
 } from "./fetch";
-export { ApiRouter, useApi, getApiHandlers } from "./api";
+export { useApi, getApiHandlers, makeApiFn } from "./api";
 export { UtilsContext } from "../core/context";
 export type { PageFunction } from "../core/types";
 export type { AssetFunction } from "../assets/types";
+export { getSSRHandlers, makeSSRFn, makeSSRUrlFn } from "./ssr";
 
 export { sharedSignal } from "./signal";
-export type { Signal } from "@preact/signals-core";
+export type { Signal } from "@preact/signals";

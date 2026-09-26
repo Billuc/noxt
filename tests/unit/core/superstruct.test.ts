@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { searchParams, body } from "../../../src/api/superstruct";
+import { searchParams, body } from "../../../src/core/superstruct";
 import * as s from "superstruct";
+import * as devalue from "devalue";
 
 describe("searchParams", () => {
   describe("basic functionality", () => {
@@ -206,43 +207,43 @@ describe("searchParams", () => {
 
 describe("body", () => {
   describe("basic functionality", () => {
-    it("should parse JSON string to object", () => {
+    it("should parse devalue string to object", () => {
       const schema = s.type({ name: s.string(), age: s.number() });
-      const jsonString = JSON.stringify({ name: "John", age: 25 });
+      const payload = devalue.stringify({ name: "John", age: 25 });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ name: "John", age: 25 });
     });
 
     it("should parse string field", () => {
       const schema = s.type({ name: s.string() });
-      const jsonString = JSON.stringify({ name: "John" });
+      const payload = devalue.stringify({ name: "John" });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ name: "John" });
     });
 
     it("should parse number field", () => {
       const schema = s.type({ age: s.number() });
-      const jsonString = JSON.stringify({ age: 25 });
+      const payload = devalue.stringify({ age: 25 });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ age: 25 });
     });
 
     it("should parse boolean field", () => {
       const schema = s.type({ active: s.boolean() });
-      const jsonString = JSON.stringify({ active: true });
+      const payload = devalue.stringify({ active: true });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ active: true });
     });
 
     it("should parse null field", () => {
       const schema = s.type({ name: s.nullable(s.string()) });
-      const jsonString = JSON.stringify({ name: null });
+      const payload = devalue.stringify({ name: null });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ name: null });
     });
   });
@@ -255,9 +256,9 @@ describe("body", () => {
           age: s.number(),
         }),
       });
-      const jsonString = JSON.stringify({ user: { name: "John", age: 25 } });
+      const payload = devalue.stringify({ user: { name: "John", age: 25 } });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ user: { name: "John", age: 25 } });
     });
 
@@ -269,11 +270,11 @@ describe("body", () => {
           }),
         }),
       });
-      const jsonString = JSON.stringify({
+      const payload = devalue.stringify({
         user: { profile: { name: "John" } },
       });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ user: { profile: { name: "John" } } });
     });
   });
@@ -281,33 +282,33 @@ describe("body", () => {
   describe("arrays", () => {
     it("should parse array of strings", () => {
       const schema = s.array(s.string());
-      const jsonString = JSON.stringify(["a", "b", "c"]);
+      const payload = devalue.stringify(["a", "b", "c"]);
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual(["a", "b", "c"]);
     });
 
     it("should parse array of numbers", () => {
       const schema = s.array(s.number());
-      const jsonString = JSON.stringify([1, 2, 3]);
+      const payload = devalue.stringify([1, 2, 3]);
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual([1, 2, 3]);
     });
 
     it("should parse array of objects", () => {
       const schema = s.array(s.type({ name: s.string() }));
-      const jsonString = JSON.stringify([{ name: "John" }, { name: "Jane" }]);
+      const payload = devalue.stringify([{ name: "John" }, { name: "Jane" }]);
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual([{ name: "John" }, { name: "Jane" }]);
     });
 
     it("should parse empty array", () => {
       const schema = s.array(s.string());
-      const jsonString = JSON.stringify([]);
+      const payload = devalue.stringify([]);
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual([]);
     });
   });
@@ -315,98 +316,114 @@ describe("body", () => {
   describe("optional fields", () => {
     it("should parse with optional field present", () => {
       const schema = s.type({ name: s.optional(s.string()) });
-      const jsonString = JSON.stringify({ name: "John" });
+      const payload = devalue.stringify({ name: "John" });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ name: "John" });
     });
 
     it("should parse with optional field absent", () => {
       const schema = s.type({ name: s.optional(s.string()) });
-      const jsonString = JSON.stringify({});
+      const payload = devalue.stringify({});
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({});
     });
   });
 
   describe("error handling", () => {
-    it("should throw for invalid JSON", () => {
+    it("should throw for invalid payload", () => {
       const schema = s.type({ name: s.string() });
-      const invalidJson = "not valid json";
+      const invalidPayload = "not valid !!!";
 
-      expect(() => s.create(invalidJson, body(schema))).toThrow();
+      expect(() => s.create(invalidPayload, body(schema))).toThrow();
+    });
+
+    it("should throw for plain JSON payloads (devalue format required)", () => {
+      const schema = s.type({ name: s.string() });
+      const jsonPayload = JSON.stringify({ name: "John" });
+
+      expect(() => s.create(jsonPayload, body(schema))).toThrow();
     });
 
     it("should throw for missing required field", () => {
       const schema = s.type({ name: s.string() });
-      const jsonString = JSON.stringify({});
+      const payload = devalue.stringify({});
 
-      expect(() => s.create(jsonString, body(schema))).toThrow();
+      expect(() => s.create(payload, body(schema))).toThrow();
     });
 
     it("should throw for invalid type", () => {
       const schema = s.type({ age: s.number() });
-      const jsonString = JSON.stringify({ age: "not a number" });
+      const payload = devalue.stringify({ age: "not a number" });
 
-      expect(() => s.create(jsonString, body(schema))).toThrow();
+      expect(() => s.create(payload, body(schema))).toThrow();
     });
 
     it("should throw for extra fields if schema is strict", () => {
       const schema = s.object({ name: s.string() });
-      const jsonString = JSON.stringify({ name: "John", extra: "value" });
+      const payload = devalue.stringify({ name: "John", extra: "value" });
 
-      expect(() => s.create(jsonString, body(schema))).toThrow();
+      expect(() => s.create(payload, body(schema))).toThrow();
     });
   });
 
   describe("edge cases", () => {
     it("should handle empty object", () => {
       const schema = s.type({});
-      const jsonString = JSON.stringify({});
+      const payload = devalue.stringify({});
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({});
     });
 
     it("should handle empty string", () => {
       const schema = s.type({ name: s.string() });
-      const jsonString = JSON.stringify({ name: "" });
+      const payload = devalue.stringify({ name: "" });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ name: "" });
     });
 
     it("should handle special characters in strings", () => {
       const schema = s.type({ text: s.string() });
-      const jsonString = JSON.stringify({ text: "Hello \n World \t!" });
+      const payload = devalue.stringify({ text: "Hello \n World \t!" });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ text: "Hello \n World \t!" });
     });
 
     it("should handle unicode characters", () => {
       const schema = s.type({ text: s.string() });
-      const jsonString = JSON.stringify({ text: "Hello 世界!" });
+      const payload = devalue.stringify({ text: "Hello 世界!" });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ text: "Hello 世界!" });
     });
 
     it("should handle very large numbers", () => {
       const schema = s.type({ value: s.number() });
-      const jsonString = JSON.stringify({ value: 1.7976931348623157e308 });
+      const payload = devalue.stringify({ value: 1.7976931348623157e308 });
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ value: 1.7976931348623157e308 });
     });
 
-    it("should handle whitespace in JSON", () => {
+    it("should handle whitespace around the payload", () => {
       const schema = s.type({ name: s.string() });
-      const jsonString = '  {  "name"  :  "John"  }  ';
+      const payload = `  ${devalue.stringify({ name: "John" })}  `;
 
-      const result = s.create(jsonString, body(schema));
+      const result = s.create(payload, body(schema));
       expect(result).toEqual({ name: "John" });
+    });
+
+    it("should handle devalue-only values (Date) unlike JSON", () => {
+      const schema = s.type({ at: s.date() });
+      const at = new Date("2023-01-01T00:00:00.000Z");
+      const payload = devalue.stringify({ at });
+
+      const result = s.create(payload, body(schema));
+      expect(result).toEqual({ at });
     });
   });
 });

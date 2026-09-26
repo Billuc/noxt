@@ -1,19 +1,16 @@
 import { h } from "preact";
-import { useContext } from "preact/hooks";
-import { Island, UtilsContext } from "noxt";
+import { Island } from "noxt";
 import Counter from "../islands/Counter";
 import LikeButton from "../islands/LikeButton";
 import ThemeToggle from "../islands/ThemeToggle";
 import Clock from "../islands/Clock";
 import SearchPosts from "../islands/SearchPosts";
 import Guestbook from "../islands/Guestbook";
-import type { AssetId } from "../../.cache/assets";
-import type { RouteId } from "../../.cache/pages";
+import SsrFragments from "../islands/SsrFragments";
+import { useUtilsContext } from "../runtime/utils";
 
 export default function Home() {
-  const { page: basePage, asset: baseAsset } = useContext(UtilsContext);
-  const asset = baseAsset<AssetId>;
-  const page = basePage<RouteId>;
+  const { page, asset } = useUtilsContext();
 
   return (
     <html>
@@ -78,8 +75,13 @@ export default function Home() {
           </section>
 
           <section>
-            <h2>Guestbook (useFetchJson GET + mutation POST)</h2>
+            <h2>Guestbook (query GET + mutation POST)</h2>
             <Island component={Guestbook} props={{}} />
+          </section>
+
+          <section>
+            <h2>SSR fragments (ssr + ssrUrl)</h2>
+            <Island component={SsrFragments} props={{}} />
           </section>
         </main>
         <script

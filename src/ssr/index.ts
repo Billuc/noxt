@@ -13,11 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import type { Path } from "../core/fs";
+import { query, mutation } from "./builder";
+import { discoverSSRRoutes, generateSSRFile } from "./build";
+import type {
+  IQueryRouteBuilder,
+  IMutationRouteBuilder,
+  SSRDefinitions,
+  SSRFunction,
+  SSRUrlFunction,
+} from "./types";
+import { SSRRoute } from "./types";
 
-export interface AssetEntry {
-  url: string;
-  file: Path;
-}
-
-export type AssetFunction<AssetId extends string> = (id: AssetId) => string;
+export { query, mutation, discoverSSRRoutes, generateSSRFile, SSRRoute };
+export type {
+  IQueryRouteBuilder,
+  IMutationRouteBuilder,
+  SSRDefinitions,
+  SSRFunction,
+  SSRUrlFunction,
+};

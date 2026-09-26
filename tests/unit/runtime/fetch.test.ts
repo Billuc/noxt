@@ -14,14 +14,14 @@
  *  limitations under the License.
  **/
 
-import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
+import { describe, it, expect, beforeAll, afterEach } from "bun:test";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
+import * as devalue from "devalue";
 import {
+  copyFetchRequestInit,
   requestFrom,
   useAsync,
-  fetchJson,
-  useFetchJson,
 } from "../../../src/runtime/fetch";
 
 const happyWindow = new GlobalWindow();
@@ -151,55 +151,57 @@ describe("requestFrom", () => {
   });
 
   describe("objectBody handling for non-GET requests", () => {
-    it("should set Content-Type header to application/json for POST", () => {
+    it("should set Content-Type header to application/x-devalue for POST", () => {
       const request = requestFrom("/users", {
         method: "POST",
         objectBody: { name: "test" },
       });
-      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request.headers.get("Content-Type")).toBe(
+        "application/x-devalue",
+      );
     });
 
-    it("should stringify objectBody to JSON for POST", async () => {
+    it("should stringify objectBody with devalue for POST", async () => {
       const request = requestFrom("/users", {
         method: "POST",
         objectBody: { name: "test", email: "test@example.com" },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ name: "test", email: "test@example.com" });
     });
 
-    it("should stringify objectBody to JSON for PUT", async () => {
+    it("should stringify objectBody with devalue for PUT", async () => {
       const request = requestFrom("/users/1", {
         method: "PUT",
         objectBody: { name: "updated" },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ name: "updated" });
     });
 
-    it("should stringify objectBody to JSON for DELETE", async () => {
+    it("should stringify objectBody with devalue for DELETE", async () => {
       const request = requestFrom("/users/1", {
         method: "DELETE",
         objectBody: { force: true },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ force: true });
     });
 
-    it("should stringify objectBody to JSON for PATCH", async () => {
+    it("should stringify objectBody with devalue for PATCH", async () => {
       const request = requestFrom("/users/1", {
         method: "PATCH",
         objectBody: { name: "patched" },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ name: "patched" });
     });
   });
@@ -225,7 +227,9 @@ describe("requestFrom", () => {
       });
 
       expect(request.headers.get("Authorization")).toBe("Bearer token");
-      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request.headers.get("Content-Type")).toBe(
+        "application/x-devalue",
+      );
     });
   });
 
@@ -259,7 +263,7 @@ describe("requestFrom", () => {
       });
 
       const bodyText = await request.text();
-      expect(bodyText).toBe("{}");
+      expect(devalue.parse(bodyText)).toEqual({});
     });
 
     it("should handle URL with existing query parameters", () => {
@@ -588,531 +592,39 @@ describe("useAsync", () => {
   });
 });
 
-// ============================================
-// fetchJson tests
-// ============================================
-
-describe("fetchJson", () => {
-  describe("Successful requests", () => {
-    it("should fetch and parse JSON response", async () => {
-      const expectedData = { id: "1", name: "test" };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-      const result = await fetchJson<typeof expectedData>(
-        "/api/users",
-        { method: "GET" },
-        signal,
-      );
-
-      expect(result).toEqual(expectedData);
-      expect(mockFetch.mock.calls.length).toBe(1);
-
-      const request = mockFetch.mock.lastCall?.[0];
-      expect(request).toBeInstanceOf(Request);
-      expect(request?.url).toBe("http://localhost:3000/api/users");
-    });
-
-    it("should pass options to requestFrom", async () => {
-      const expectedData = { ok: true };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-      await fetchJson(
-        "/api/users",
-        {
-          method: "POST",
-          headers: { Authorization: "Bearer token" },
-          objectBody: { name: "test" },
-        },
-        signal,
-      );
-
-      const request = mockFetch.mock.lastCall?.[0];
-      expect(request?.method).toBe("POST");
-      expect(request?.headers.get("Authorization")).toBe("Bearer token");
-      expect(request?.headers.get("Content-Type")).toBe("application/json");
-    });
-
-    it("should pass signal to requestFrom", async () => {
-      const expectedData = { ok: true };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-      await fetchJson("/api/users", { method: "GET" }, signal);
-
-      const request = mockFetch.mock.lastCall?.[0];
-      expect(request?.signal).toBe(signal);
-    });
-
-    it("should handle typed responses", async () => {
-      interface User {
-        id: string;
-        name: string;
-        email: string;
-      }
-
-      const expectedData: User = {
-        id: "1",
-        name: "test",
-        email: "test@example.com",
-      };
-
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-      const result = await fetchJson<User>(
-        "/api/users/1",
-        { method: "GET" },
-        signal,
-      );
-
-      expect(result.id).toBe("1");
-      expect(result.name).toBe("test");
-      expect(result.email).toBe("test@example.com");
-    });
-  });
-
-  describe("Error handling", () => {
-    it("should throw on network errors", () => {
-      const mockFetch = mock(() => {
-        return Promise.reject(new Error("Network error"));
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-
-      expect(() => fetchJson("/api/users", { method: "GET" }, signal)).toThrow(
-        "Network error",
-      );
-    });
-
-    it("should throw on JSON parse errors", () => {
-      const mockFetch = mock(() => {
-        return Promise.resolve(new Response("invalid json", { status: 200 }));
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-
-      expect(() =>
-        fetchJson("/api/users", { method: "GET" }, signal),
-      ).toThrow();
-    });
-
-    it("should throw on HTTP errors", () => {
-      const mockFetch = mock(() => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const signal = new AbortController().signal;
-
-      expect(() =>
-        fetchJson("/api/users/999", { method: "GET" }, signal),
-      ).toThrow();
-    });
-  });
-});
 
 // ============================================
-// useFetchJson tests
+// copyFetchRequestInit tests (added with devalue body change)
 // ============================================
 
-describe("useFetchJson", () => {
-  describe("Initial state", () => {
-    it("should return correct shape", () => {
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1" }), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("/api/users", { method: "GET" }),
-      );
-
-      expect(result.current).toHaveProperty("data");
-      expect(result.current).toHaveProperty("loading");
-      expect(result.current).toHaveProperty("error");
-      expect(result.current).toHaveProperty("refresh");
-      expect(typeof result.current.refresh).toBe("function");
-
-      unmount();
-    });
-
-    it("should start with loading state", () => {
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: "1" }), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("/api/users", { method: "GET" }),
-      );
-
-      expect(result.current.loading).toBe(true);
-      expect(result.current.data).toBeNull();
-      expect(result.current.error).toBeNull();
-
-      unmount();
-    });
+describe("copyFetchRequestInit", () => {
+  it("should copy scalar fields", () => {
+    const init = {
+      method: "POST",
+      cache: "no-cache" as RequestCache,
+      credentials: "include" as RequestCredentials,
+      objectBody: { name: "test" },
+    };
+    const copy = copyFetchRequestInit(init);
+    expect(copy).toMatchObject(init);
+    expect(copy).not.toBe(init);
   });
 
-  describe("Successful requests", () => {
-    it("should fetch data and update state", async () => {
-      const expectedData = { id: "1", name: "test" };
-      const mockFetch = mock(async (_request: Request) => {
-        return new Response(JSON.stringify(expectedData), { status: 200 });
-      });
+  it("should clone headers so mutations do not leak to the caller", () => {
+    const objectHeaders = { Authorization: "Bearer token" };
+    const copyObject = copyFetchRequestInit({ headers: objectHeaders });
+    expect(copyObject.headers).toEqual(objectHeaders);
+    (copyObject.headers as Record<string, string>)["Accept"] = "text/html";
+    expect(objectHeaders).not.toHaveProperty("Accept");
 
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("/api/users", { method: "GET" }),
-      );
-
-      // Wait for fetch to complete
-      await Bun.sleep(100);
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.data).toEqual(expectedData);
-      expect(result.current.error).toBeNull();
-
-      unmount();
-    });
-
-    it("should make correct request", async () => {
-      const expectedData = { id: "1" };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { unmount } = renderHook(() =>
-        useFetchJson("/api/users", {
-          method: "POST",
-          objectBody: { name: "test" },
-          headers: { Authorization: "Bearer token" },
-        }),
-      );
-
-      await Bun.sleep(50);
-
-      expect(mockFetch.mock.calls.length).toBe(1);
-
-      const request = mockFetch.mock.lastCall?.[0];
-      expect(request?.method).toBe("POST");
-      expect(request?.headers.get("Authorization")).toBe("Bearer token");
-      expect(request?.headers.get("Content-Type")).toBe("application/json");
-
-      unmount();
-    });
-
-    it("should handle typed responses", async () => {
-      interface User {
-        id: string;
-        name: string;
-      }
-
-      const expectedData: User = { id: "1", name: "test" };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson<User>("/api/users/1", { method: "GET" }),
-      );
-
-      await Bun.sleep(50);
-
-      expect(result.current.data).toEqual(expectedData);
-      expect(result.current.data?.id).toBe("1");
-      expect(result.current.data?.name).toBe("test");
-
-      unmount();
-    });
+    const arrayHeaders: [string, string][] = [["Authorization", "Bearer"]];
+    const copyArray = copyFetchRequestInit({ headers: arrayHeaders });
+    expect(copyArray.headers).toEqual(arrayHeaders);
+    (copyArray.headers as [string, string][]).push(["Accept", "text/html"]);
+    expect(arrayHeaders).toHaveLength(1);
   });
 
-  describe("Error handling", () => {
-    it("should handle fetch errors", async () => {
-      const mockFetch = mock(() => {
-        return Promise.reject(new Error("Network error"));
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      // Suppress console error
-      const consoleSpy = mock(() => {});
-      const originalError = console.error;
-      console.error = consoleSpy;
-
-      try {
-        const { result, unmount } = renderHook(() =>
-          useFetchJson("/api/users", { method: "GET" }),
-        );
-
-        await Bun.sleep(100);
-
-        expect(result.current.loading).toBe(false);
-        expect(result.current.error).toBeInstanceOf(Error);
-        expect(result.current.data).toBeNull();
-
-        unmount();
-      } finally {
-        console.error = originalError;
-      }
-    });
-
-    it("should handle JSON parse errors", async () => {
-      const mockFetch = mock(() => {
-        return Promise.resolve(new Response("invalid json", { status: 200 }));
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      // Suppress console error
-      const consoleSpy = mock(() => {});
-      const originalError = console.error;
-      console.error = consoleSpy;
-
-      try {
-        const { result, unmount } = renderHook(() =>
-          useFetchJson("/api/users", { method: "GET" }),
-        );
-
-        await Bun.sleep(100);
-
-        expect(result.current.loading).toBe(false);
-        expect(result.current.error).toBeInstanceOf(Error);
-
-        unmount();
-      } finally {
-        console.error = originalError;
-      }
-    });
-  });
-
-  describe("Refresh functionality", () => {
-    it("should allow refetching data", async () => {
-      const callCount = { count: 0 };
-      const mockFetch = mock((_request: Request) => {
-        callCount.count++;
-        return Promise.resolve(
-          new Response(JSON.stringify({ id: String(callCount.count) }), {
-            status: 200,
-          }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("/api/users", { method: "GET" }),
-      );
-
-      // Wait for initial fetch
-      await Bun.sleep(50);
-
-      expect(callCount.count).toBe(1);
-      expect(result.current.data).toEqual({ id: "1" });
-
-      // Trigger refresh
-      await result.current.refresh();
-      // Wait for refresh to complete
-      await Bun.sleep(50);
-
-      expect(callCount.count).toBe(2);
-      expect(result.current.data).toEqual({ id: "2" });
-
-      unmount();
-    });
-
-    it("should return data from refresh call", async () => {
-      const expectedData = { id: "refreshed" };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("/api/users", { method: "GET" }),
-      );
-
-      await Bun.sleep(50);
-
-      const refreshResult = await result.current.refresh();
-      expect(refreshResult).toEqual(expectedData);
-
-      unmount();
-    });
-  });
-
-  describe("Abort behavior", () => {
-    it("should abort request on unmount", async () => {
-      let receivedSignal: AbortSignal | null = null as AbortSignal | null;
-
-      const mockFetch = mock((request: Request) => {
-        receivedSignal = request.signal;
-        return new Promise(() => {}); // Never resolves
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { unmount } = renderHook(() =>
-        useFetchJson("/api/users", { method: "GET" }),
-      );
-
-      await Bun.sleep(20);
-
-      unmount();
-
-      expect(receivedSignal?.aborted).toBe(true);
-    });
-  });
-
-  describe("Integration with requestFrom", () => {
-    it("should use requestFrom for request creation", async () => {
-      const expectedData = { id: "1" };
-      const mockFetch = mock((request: Request) => {
-        // Verify request was created by requestFrom
-        expect(request).toBeInstanceOf(Request);
-        expect(request.url).toContain("/api/users");
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("/api/users", {
-          method: "GET",
-          objectBody: { id: "123" },
-        }),
-      );
-
-      await Bun.sleep(50);
-
-      expect(result.current.data).toEqual(expectedData);
-
-      const request = mockFetch.mock.lastCall?.[0];
-      const url = new URL(request!.url);
-      expect(url.searchParams.get("id")).toBe("123");
-
-      unmount();
-    });
-
-    it("should handle relative URLs", async () => {
-      const expectedData = { ok: true };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("users", { method: "GET" }),
-      );
-
-      await Bun.sleep(50);
-
-      expect(result.current.data).toEqual(expectedData);
-
-      const request = mockFetch.mock.lastCall?.[0];
-      expect(request?.url).toBe("http://localhost:3000/users");
-
-      unmount();
-    });
-
-    it("should handle absolute URLs", async () => {
-      const expectedData = { ok: true };
-      const mockFetch = mock((_request: Request) => {
-        return Promise.resolve(
-          new Response(JSON.stringify(expectedData), { status: 200 }),
-        );
-      });
-
-      // @ts-ignore
-      globalThis.fetch = mockFetch;
-
-      const { result, unmount } = renderHook(() =>
-        useFetchJson("https://api.example.com/users", { method: "GET" }),
-      );
-
-      await Bun.sleep(50);
-
-      expect(result.current.data).toEqual(expectedData);
-
-      const request = mockFetch.mock.lastCall?.[0];
-      expect(request?.url).toBe("https://api.example.com/users");
-
-      unmount();
-    });
+  it("should default missing headers to an empty object", () => {
+    expect(copyFetchRequestInit({}).headers).toEqual({});
   });
 });

@@ -21,22 +21,21 @@ import {
   type RouteHandlers,
   type ServerImplementation,
 } from "./src/core/types";
-import { UtilsContext } from "./src/core/context";
+import { UtilsContext, UtilsContextData } from "./src/core/context";
 import { NoxtDevServer, NoxtProdServer } from "./src/core/server";
 
-import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-  SearchParamSchema,
-} from "./src/api";
+import { discoverAPIs, generateAPIFile } from "./src/api";
+import type { APIEndpoint, ApiFunction } from "./src/api";
 import {
   discoverAssets,
   generateAssetUtils,
   type AssetEntry,
   type AssetFunction,
 } from "./src/assets";
+import type {
+  SearchParamSchema,
+  InferDefinitions,
+} from "./src/core/superstruct";
 import {
   Island,
   discoverIslands,
@@ -54,19 +53,20 @@ import {
   type PreactPage,
 } from "./src/preact";
 import { generateServiceWorker } from "./src/pwa";
+import { SSRRoute, discoverSSRRoutes, generateSSRFile } from "./src/ssr";
+import type { SSRFunction, SSRUrlFunction } from "./src/ssr";
 import { generateStaticPages } from "./src/static";
 
 export {
   discoverAPIs,
   generateAPIFile,
-  query,
-  mutation,
   discoverAssets,
   generateAssetUtils,
   discoverIslands,
   prerenderIslands,
   Island,
   UtilsContext,
+  UtilsContextData,
   discoverMarkdownPages,
   prerenderMarkdownPages,
   discoverPreactPages,
@@ -74,16 +74,19 @@ export {
   generateRouteMap,
   generateRouteUtils,
   generateServiceWorker,
+  SSRRoute,
+  discoverSSRRoutes,
+  generateSSRFile,
   generateStaticPages,
   BuildPipeline,
   NoxtDevServer,
   NoxtProdServer,
 };
 export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
   APIEndpoint,
+  ApiFunction,
   SearchParamSchema,
+  InferDefinitions,
   AssetEntry,
   AssetFunction,
   IslandEntry,
@@ -92,5 +95,7 @@ export type {
   PreactPage,
   RouteDefinition,
   RouteHandlers,
+  SSRFunction,
+  SSRUrlFunction,
   ServerImplementation,
 };

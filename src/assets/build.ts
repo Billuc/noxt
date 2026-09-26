@@ -47,7 +47,7 @@ export async function generateAssetUtils({
 }: {
   assets: AssetEntry[];
   base?: string;
-}): Promise<{ asset: AssetFunction }> {
+}): Promise<{ asset: AssetFunction<any> }> {
   const assetIds = assets.map((a) => a.url);
 
   let code = generateAssetUtilsCode(assetIds);
@@ -63,7 +63,7 @@ export async function generateAssetUtils({
 function prepareAssetFunction(
   assetIds: string[],
   base?: string,
-): AssetFunction {
+): AssetFunction<any> {
   function asset<AssetId extends string>(id: AssetId): string {
     if (!assetIds.includes(id)) {
       throw new Error(`Unknown asset with ID '${id}'`);

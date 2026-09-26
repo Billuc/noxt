@@ -1,4 +1,4 @@
-import { query } from "noxt";
+import { query } from "noxt/api";
 import * as s from "superstruct";
 
 // GET /api/admin/stats — nested route (src/api/admin/stats.ts -> /api/admin/stats).

@@ -13,30 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  **/
-import * as s from "superstruct";
-import * as devalue from "devalue";
-import {
-  copyFetchRequestInit,
-  FetchError,
-  requestFrom,
-  useAsync,
-  type FetchRequestInit,
-} from "./fetch";
-import { useMemo } from "preact/hooks";
+import { buildUrlWithQuery } from "../core/url";
 import type {
-  ApiEndpointDefinitions,
-  ApiDefinitions,
-  ApiEndpoints,
-  Route,
-  Method,
-  EndpointCaller,
   CallerInput,
-  ApiFunction,
-} from "../api/types";
+  Method,
+  Route,
+  SSRDefinitions,
+  SSRFunction,
+  SSRRouteDefinitions,
+  SSRRoutes,
+  SSRUrlFunction,
+} from "../ssr/types";
+import { copyFetchRequestInit, FetchError, requestFrom } from "./fetch";
 
-export function makeApiFn<TDefinitions extends ApiDefinitions>(
+export function makeSSRFn<TDefinitions extends SSRDefinitions>(
   base?: string,
-): ApiFunction<TDefinitions> {
+): SSRFunction<TDefinitions> {
   return <
     TRoute extends Route<TDefinitions>,
     TMethod extends Method<TDefinitions, TRoute>,
@@ -62,9 +54,9 @@ export function makeApiFn<TDefinitions extends ApiDefinitions>(
         newOptions.headers = {};
       }
       if (newOptions.headers instanceof Array) {
-        newOptions.headers.push(["Accept", "application/x-devalue"]);
+        newOptions.headers.push(["Accept", "text/html"]);
       } else {
-        newOptions.headers["Accept"] = "application/x-devalue";
+        newOptions.headers["Accept"] = "text/html";
       }
 
       const request = requestFrom(url, newOptions, signal);
@@ -74,38 +66,37 @@ export function makeApiFn<TDefinitions extends ApiDefinitions>(
         throw new FetchError(response);
       }
 
-      const data = await response.text();
-      return devalue.parse(data) as s.Infer<
-        NonNullable<ApiDefinitions[TRoute][TMethod]>["output"]
-      >;
+      const htmlData = await response.text();
+      return htmlData;
     };
   };
 }
 
-export function useApi<
-  TDefinitions extends ApiDefinitions,
-  TRoute extends Route<TDefinitions>,
-  TMethod extends Method<TDefinitions, TRoute>,
->(
-  endpointCaller: EndpointCaller<TDefinitions, TRoute, TMethod>,
-  input: CallerInput<TDefinitions, TRoute, TMethod>,
-  options?: FetchRequestInit,
-) {
-  const key = useMemo(() => JSON.stringify([input, options]), [input, options]);
-  const memoizedData = useMemo(() => ({ input, options }), [key]);
+export function makeSSRUrlFn<TDefinitions extends SSRDefinitions>(
+  base?: string,
+): SSRUrlFunction<TDefinitions> {
+  return <
+    TRoute extends Route<TDefinitions>,
+    TMethod extends Method<TDefinitions, TRoute>,
+  >(
+    route: TRoute,
+    method: TMethod,
+    input: CallerInput<TDefinitions, TRoute, TMethod>,
+  ) => {
+    const url = (base ?? "") + route;
+    const query = method === "GET" ? input : undefined;
 
-  return useAsync(memoizedData, ({ input, options }, signal) =>
-    endpointCaller(input, options, signal),
-  );
+    return buildUrlWithQuery(url, query);
+  };
 }
 
-export function getApiHandlers<
-  TDefinitions extends ApiEndpointDefinitions,
+export function getSSRHandlers<
+  TDefinitions extends SSRRouteDefinitions,
   TBase extends string = "",
->(apiMap: TDefinitions, base?: TBase): ApiEndpoints<TDefinitions, TBase> {
+>(ssrMap: TDefinitions, base?: TBase): SSRRoutes<TDefinitions, TBase> {
   const routes: any = {};
 
-  for (const [route, routeData] of Object.entries(apiMap)) {
+  for (const [route, routeData] of Object.entries(ssrMap)) {
     const handlers: any = {};
     for (const [method, endpoint] of Object.entries(routeData)) {
       handlers[method as keyof typeof handlers] = endpoint.handler;
