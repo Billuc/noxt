@@ -18,7 +18,6 @@ import {
   useRef,
   useCallback,
   useEffect,
-  useMemo,
 } from "preact/hooks";
 import { toBody, toSearchParam } from "../core/url";
 
@@ -188,32 +187,4 @@ export function useAsync<TInput = any, TResult = any>(
   }, []);
 
   return { data, loading, error, refresh };
-}
-
-export async function fetchJson<TResult = any>(
-  url: string,
-  options: FetchRequestInit,
-  signal: AbortSignal,
-): Promise<TResult> {
-  const request = requestFrom(url, options, signal);
-  const response = await fetch(request);
-
-  if (!response.ok) {
-    throw new FetchError(response);
-  }
-
-  const data = (await response.json()) as TResult;
-  return data;
-}
-
-export function useFetchJson<TResult = any>(
-  url: string,
-  options: FetchRequestInit,
-): UseDataFetchReturn<TResult> {
-  const key = useMemo(() => JSON.stringify([url, options]), [url, options]);
-  const input = useMemo(() => ({ url, options }), [key]);
-
-  return useAsync(input, ({ url, options }, signal) =>
-    fetchJson(url, options, signal),
-  );
 }

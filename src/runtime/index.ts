@@ -18,9 +18,7 @@ export {
   type HttpMethod,
   requestFrom,
   useAsync,
-  useFetchJson,
   FetchError,
-  fetchJson,
 } from "./fetch";
 export { useApi, getApiHandlers, makeApiFn } from "./api";
 export { UtilsContext } from "../core/context";

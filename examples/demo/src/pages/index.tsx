@@ -74,7 +74,7 @@ export default function Home() {
           </section>
 
           <section>
-            <h2>Guestbook (useFetchJson GET + mutation POST)</h2>
+            <h2>Guestbook (query GET + mutation POST)</h2>
             <Island component={Guestbook} props={{}} />
           </section>
         </main>

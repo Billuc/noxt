@@ -21,18 +21,20 @@
  *   - `src/runtime/fetch.ts`: `requestFrom(url, initWithBody, signal)` builds a
  *     `Request` where `url` is resolved via `new URL(url, window.location.origin)`
  *     if not absolute; `objectBody` for GET is appended as `searchParams` (arrays
- *     as repeated keys, values stringified), for non-GET as `JSON.stringify` with
- *     `Content-Type: application/json`; remaining `FetchRequestInit` fields
- *     (`headers`, `cache`, `credentials`, etc.) are forwarded. `FetchError` wraps
- *     non-ok `Response`. `useAsync(input, asyncFn)` (preact/hooks) manages
- *     `data/loading/error/refresh` with `AbortController`, `mountedRef` guards,
- *     and `useEffect` triggering `refresh` on input change. `fetchJson` calls
- *     `requestFrom` + `fetch` and throws `FetchError` if `!ok` else `response.json()`.
- *     `useFetchJson(url, options)` memoizes by `JSON.stringify([url, options])`.
+ *     as repeated keys, values stringified), for non-GET as devalue (`toBody`)
+ *     with `Content-Type: application/x-devalue`; remaining `FetchRequestInit`
+ *     fields (`headers`, `cache`, `credentials`, etc.) are forwarded.
+ *     `copyFetchRequestInit` clones init (headers included) so callers are never
+ *     mutated. `FetchError` wraps non-ok `Response`. `useAsync(input, asyncFn)`
+ *     (preact/hooks) manages `data/loading/error/refresh` with `AbortController`,
+ *     `mountedRef` guards, and `useEffect` triggering `refresh` on input change.
+ *     Raw third-party JSON goes through `useAsync` directly; there is no
+ *     untyped JSON helper by design (API payloads are devalue-encoded).
  *   - `src/runtime/api.ts`: `makeApiFn<TDefs>(base)` typed client; `(route, method, fetcher=fetch)`
  *     returns `EndpointCaller` capturing `route/method/base`, merging headers/options
  *     (warns if options.method mismatched), building `FetchRequestInit { method, objectBody: input }`,
- *     calling `requestFrom` + `fetcher` and `response.json()`. `useApi` wraps an
+ *     calling `requestFrom` + `fetcher`, throwing `FetchError` if `!ok`, and
+ *     `devalue.parse`ing the body. `useApi` wraps an
  *     `EndpointCaller` with `useMemo` + `useAsync`. `getApiHandlers(map, base)`
  *     converts `ApiEndpointDefinitions` to `ApiEndpoints` by extracting `endpoint.handler`
  *     and prefixing routes with `base`.
@@ -52,8 +54,6 @@
  *   - `FetchError` message is `Error ${status}: ${statusText}` with `.response`.
  *   - `useAsync` loading/error transitions, abort on unmount or `refresh()`, ignores
  *     `AbortError`, and `refresh()` re-invokes `asyncFn` with latest inputRef.
- *   - `fetchJson` throws on `!ok`, returns parsed JSON otherwise; `useFetchJson`
- *     memoizes correctly.
  *   - `makeApiFn` GET vs mutation body handling, base prefix, header merging, method
  *     mismatch warning, fetcher injection.
  *   - `useApi` hooks correctly delegate to `useAsync` with memoized input.

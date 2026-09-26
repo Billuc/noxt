@@ -32,7 +32,7 @@ PORT=3001 bun run serve            # custom port (reuse the same NOXT_BASE as th
 | Client `page()`/`asset()` in islands | `ThemeToggle` on `/` |
 | `client:only` island | `Clock` on `/` |
 | `useApi` + query types (string/array/number/boolean) | `SearchPosts` on `/` and `/blog` |
-| `useFetchJson` GET + mutation POST | `Guestbook` on `/` |
+| `useApi` GET + mutation POST | `Guestbook` on `/` |
 | Query endpoint + 400 on bad params | `GET /api/posts`, try `/api/posts?limit=abc` |
 | Mutation endpoint + 400, 201 status | `POST /api/guestbook` |
 | Handler throw → 500 | `GET /api/crash` |
