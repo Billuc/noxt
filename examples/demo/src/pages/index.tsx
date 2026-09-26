@@ -6,6 +6,7 @@ import ThemeToggle from "../islands/ThemeToggle";
 import Clock from "../islands/Clock";
 import SearchPosts from "../islands/SearchPosts";
 import Guestbook from "../islands/Guestbook";
+import SsrFragments from "../islands/SsrFragments";
 import { useUtilsContext } from "../runtime/utils";
 
 export default function Home() {
@@ -76,6 +77,11 @@ export default function Home() {
           <section>
             <h2>Guestbook (query GET + mutation POST)</h2>
             <Island component={Guestbook} props={{}} />
+          </section>
+
+          <section>
+            <h2>SSR fragments (ssr + ssrUrl)</h2>
+            <Island component={SsrFragments} props={{}} />
           </section>
         </main>
         <script

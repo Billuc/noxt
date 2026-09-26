@@ -7,14 +7,33 @@ import { lookup } from "mrmime";
 
 class AbortError extends Error {}
 
+async function tryImport<T extends any = any>(
+  filepath: Path,
+  isDev: boolean,
+): Promise<T | null> {
+  try {
+    let importPath = filepath.absolute;
+    if (isDev) {
+      importPath += "?t=" + performance.now();
+    }
+    return (await import(importPath)) as T;
+  } catch {
+    return null;
+  }
+}
+
 async function importRoutes(isDev: boolean): Promise<RouteHandlers<any>> {
-  let apiFile = Path.fromCwd(".cache/api.ts").absolute;
-  if (isDev) {
-    apiFile += "?t=" + performance.now();
+  let handlers: RouteHandlers<any> = {};
+
+  const apis = await tryImport(Path.fromCwd(".cache/api.ts"), isDev);
+  if (apis) {
+    handlers = { ...handlers, ...apis.handlers };
   }
 
-  const apis = await import(apiFile);
-  const handlers: RouteHandlers<any> = apis.handlers;
+  const ssr = await tryImport(Path.fromCwd(".cache/ssr.ts"), isDev);
+  if (ssr) {
+    handlers = { ...handlers, ...ssr.handlers };
+  }
 
   const routesFile = Path.fromCwd(".cache/routes.json").absolute;
   const routesStr = await readFile(routesFile);
