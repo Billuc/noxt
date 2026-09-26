@@ -11,12 +11,12 @@ function assertStructMatch(
   expect(received.type).toEqual(expected.type);
   // For literal null, check schema value
   if (expected.type === "literal") {
-    expect((received as any).schema).toEqual((expected as any).schema);
+    expect(received.schema).toEqual(expected.schema);
     return;
   }
   // For object/type, compare keys
-  const recvSchema = (received as any).schema;
-  const expSchema = (expected as any).schema;
+  const recvSchema = received.schema;
+  const expSchema = expected.schema;
   if (
     recvSchema &&
     expSchema &&
@@ -36,9 +36,7 @@ function assertStructMatch(
   }
   // For array, compare item type
   if (received.type === "array" && expected.type === "array") {
-    expect((received as any).schema.type).toEqual(
-      (expected as any).schema.type,
-    );
+    expect(received.schema.type).toEqual(expected.schema.type);
   }
 }
 
@@ -48,7 +46,7 @@ describe("QueryEndpointBuilder", () => {
       const builder = query();
       expect(builder).toBeDefined();
       assertStructMatch(builder._input, s.object({}));
-      assertStructMatch(builder._output, s.literal(null) as any);
+      assertStructMatch(builder._output, s.literal(null));
     });
   });
 
@@ -185,8 +183,8 @@ describe("MutationEndpointBuilder", () => {
     it("should create a builder with default null input and null output", () => {
       const builder = mutation();
       expect(builder).toBeDefined();
-      assertStructMatch(builder._input, s.literal(null) as any);
-      assertStructMatch(builder._output, s.literal(null) as any);
+      assertStructMatch(builder._input, s.literal(null));
+      assertStructMatch(builder._output, s.literal(null));
     });
   });
 

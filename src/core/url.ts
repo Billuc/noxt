@@ -41,7 +41,7 @@ export function toSearchParam(input: QueryParams): URLSearchParams {
   const result: URLSearchParams = new URLSearchParams();
 
   for (const [k, v] of Object.entries(input)) {
-    for (const val in toSearchParamValue(v)) {
+    for (const val of toSearchParamValue(v)) {
       result.append(k, val);
     }
   }
@@ -57,8 +57,6 @@ function toSearchParamValue(
   }
 
   switch (typeof value) {
-    case "bigint":
-      return [value.toString()];
     case "boolean":
       return [value ? "true" : "false"];
     case "number":

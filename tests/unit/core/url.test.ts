@@ -69,29 +69,32 @@ describe("createClientAssetFunction", () => {
 
 describe("toSearchParam", () => {
   it("should encode string/number/boolean values", () => {
-    expect(toSearchParam({ name: "John", age: 25, active: true })).toEqual({
-      name: ["John"],
-      age: ["25"],
-      active: ["true"],
-    });
+    const params = toSearchParam({ name: "John", age: 25, active: true });
+    expect(params).toBeInstanceOf(URLSearchParams);
+    expect(params.get("name")).toBe("John");
+    expect(params.get("age")).toBe("25");
+    expect(params.get("active")).toBe("true");
   });
 
-  it("should flatten arrays including nested arrays", () => {
-    expect(toSearchParam({ tags: ["a", "b"], scores: [1, 2] })).toEqual({
-      tags: ["a", "b"],
-      scores: ["1", "2"],
-    });
-    expect(toSearchParam({ nested: [[1, 2], [3]] })).toEqual({
-      nested: ["1", "2", "3"],
-    });
+  it("should flatten arrays", () => {
+    expect(
+      toSearchParam({ tags: ["a", "b"], scores: [1, 2] }).getAll("tags"),
+    ).toEqual(["a", "b"]);
+    expect(
+      toSearchParam({ tags: ["a", "b"], scores: [1, 2] }).getAll("scores"),
+    ).toEqual(["1", "2"]);
   });
 
-  it("should map null/undefined/objects to empty arrays", () => {
-    expect(toSearchParam({ a: null, b: undefined, c: { x: 1 } })).toEqual({
-      a: [],
-      b: [],
-      c: [],
-    });
+  it("should map undefined to empty arrays", () => {
+    const params = toSearchParam({ a: undefined });
+    expect(params.get("a")).toBeNull();
+    expect(params.toString()).toBe("");
+  });
+
+  it("should omit unsupported values but keep supported ones", () => {
+    const params = toSearchParam({ q: "x", skip: undefined });
+    expect(params.get("q")).toBe("x");
+    expect(params.get("skip")).toBeNull();
   });
 });
 

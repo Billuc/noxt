@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
 import * as s from "superstruct";
+import * as devalue from "devalue";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
 import { makeApiFn, useApi, getApiHandlers } from "../../../src/runtime/api";
@@ -71,7 +72,7 @@ describe("makeApiFn", () => {
   it("should prepend base URL to endpoint URL", async () => {
     const customFetcher = mock((_request: Request) => {
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "1", name: "test" }), {
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
         }),
       );
@@ -88,14 +89,14 @@ describe("makeApiFn", () => {
   it("should be consistent across instances for GET query params", async () => {
     const fetcherA = mock((_request: Request) => {
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "1", name: "test" }), {
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
         }),
       );
     });
     const fetcherB = mock((_request: Request) => {
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "1", name: "test" }), {
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
         }),
       );
@@ -118,7 +119,7 @@ describe("makeApiFn", () => {
     const customFetcher = mock((_request: Request) => {
       return Promise.resolve(
         new Response(
-          JSON.stringify({
+          devalue.stringify({
             id: "1",
             name: "test",
             email: "test@example.com",
@@ -149,7 +150,7 @@ describe("makeApiFn", () => {
   it("should forward extra fetch options and signal", async () => {
     const customFetcher = mock((_request: Request) => {
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "1", name: "test" }), {
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
         }),
       );
@@ -172,7 +173,7 @@ describe("makeApiFn", () => {
   it("should default base to empty string when omitted", async () => {
     const customFetcher = mock((_request: Request) => {
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "1", name: "test" }), {
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
         }),
       );
@@ -183,6 +184,54 @@ describe("makeApiFn", () => {
 
     expect(customFetcher.mock.lastCall?.[0].url).toBe(
       "http://localhost:3000/users?id=1",
+    );
+  });
+
+  it("should send Accept: application/x-devalue and parse devalue bodies", async () => {
+    const customFetcher = mock((_request: Request) => {
+      return Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      );
+    });
+
+    const api = makeApiFn<TestApi>("");
+    const result = await api("/users", "GET", customFetcher)({ id: "1" });
+
+    expect(result).toEqual({ id: "1", name: "test" });
+    expect(customFetcher.mock.lastCall?.[0].headers.get("Accept")).toBe(
+      "application/x-devalue",
+    );
+  });
+
+  it("should throw FetchError on non-ok responses", async () => {
+    const customFetcher = mock((_request: Request) =>
+      Promise.resolve(new Response("nope", { status: 500 })),
+    );
+
+    const api = makeApiFn<TestApi>("");
+    expect(api("/users", "GET", customFetcher)({ id: "1" })).rejects.toThrow(
+      "Error 500",
+    );
+  });
+
+  it("should not mutate the caller-provided options object", async () => {
+    const customFetcher = mock((_request: Request) =>
+      Promise.resolve(
+        new Response(devalue.stringify({ id: "1", name: "test" }), {
+          status: 200,
+        }),
+      ),
+    );
+
+    const api = makeApiFn<TestApi>("");
+    const options = { headers: { Authorization: "Bearer token" } };
+    await api("/users", "GET", customFetcher)({ id: "1" }, options);
+
+    expect(options.headers).toEqual({ Authorization: "Bearer token" });
+    expect(customFetcher.mock.lastCall?.[0].headers.get("Authorization")).toBe(
+      "Bearer token",
     );
   });
 });
@@ -197,7 +246,7 @@ describe("useApi", () => {
       Promise.resolve({ id: "1", name: "test" });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     expect(result.current).toHaveProperty("data");
@@ -214,7 +263,7 @@ describe("useApi", () => {
       Promise.resolve({ id: "1", name: "test" });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     expect(result.current.loading).toBe(true);
@@ -230,7 +279,7 @@ describe("useApi", () => {
     });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "123" }),
+      useApi(endpointCaller, { id: "123" }),
     );
 
     // Wait for the async fetch to complete
@@ -252,9 +301,9 @@ describe("useApi", () => {
       },
     );
 
-    const { result, unmount } = renderHook(() =>
+    const { unmount } = renderHook(() =>
       useApi(
-        endpointCaller as any,
+        endpointCaller,
         { id: "123" },
         { headers: { Authorization: "Bearer token" } },
       ),
@@ -278,7 +327,7 @@ describe("useApi", () => {
     const endpointCaller = () => Promise.resolve(expectedData);
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     // Wait for the async fetch to complete - needs extra time
@@ -296,7 +345,7 @@ describe("useApi", () => {
     const endpointCaller = () => Promise.reject(testError);
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     // Wait for the async fetch to complete
@@ -320,7 +369,7 @@ describe("useApi", () => {
     });
 
     const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
+      useApi(endpointCaller, { id: "1" }),
     );
 
     // Wait for initial fetch
@@ -350,9 +399,7 @@ describe("useApi", () => {
       },
     );
 
-    const { result, unmount } = renderHook(() =>
-      useApi(endpointCaller as any, { id: "1" }),
-    );
+    const { unmount } = renderHook(() => useApi(endpointCaller, { id: "1" }));
 
     // Wait a bit for the fetch to start
     await Bun.sleep(20);
@@ -373,7 +420,7 @@ describe("useApi", () => {
 
     const customFetcher = mock((request: Request) =>
       Promise.resolve(
-        new Response(JSON.stringify(expectedData), { status: 200 }),
+        new Response(devalue.stringify(expectedData), { status: 200 }),
       ),
     );
 
@@ -403,14 +450,14 @@ describe("useApi", () => {
       // Return different responses based on the endpoint
       if (method === "GET" && url.pathname.includes("/users")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ id: "1", name: "test user" }), {
+          new Response(devalue.stringify({ id: "1", name: "test user" }), {
             status: 200,
           }),
         );
       } else if (method === "POST" && url.pathname === "/users") {
         return Promise.resolve(
           new Response(
-            JSON.stringify({
+            devalue.stringify({
               id: "1",
               name: "new user",
               email: "new@example.com",
@@ -420,7 +467,7 @@ describe("useApi", () => {
         );
       }
       return Promise.resolve(
-        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+        new Response(devalue.stringify({ ok: true }), { status: 200 }),
       );
     });
 

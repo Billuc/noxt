@@ -17,7 +17,7 @@ import * as devalue from "devalue";
 import * as s from "superstruct";
 import type { RouteDefinition } from "./types";
 
-type SearchParamValue = number | boolean | string;
+type SearchParamValue = number | boolean | string | undefined;
 
 export type SearchParams = {
   [k: string]: SearchParamValue | SearchParamValue[] | undefined;

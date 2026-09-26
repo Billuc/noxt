@@ -59,7 +59,7 @@ export class BuildPipeline<TContext extends {}> {
   }
 }
 
-export type QueryParamValue = string | number | boolean | bigint;
+export type QueryParamValue = string | number | boolean | undefined;
 export interface QueryParams {
   [k: string]: QueryParamValue | QueryParamValue[];
 }

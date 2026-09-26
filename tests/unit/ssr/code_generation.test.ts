@@ -12,7 +12,7 @@ function entry(
   return {
     method: method as any,
     route,
-    input: s.object({}) as any,
+    input: s.object({}),
     file: Path.fromRelative(filePath),
   };
 }

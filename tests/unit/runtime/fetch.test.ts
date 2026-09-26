@@ -17,7 +17,9 @@
 import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
+import * as devalue from "devalue";
 import {
+  copyFetchRequestInit,
   requestFrom,
   useAsync,
   fetchJson,
@@ -151,55 +153,57 @@ describe("requestFrom", () => {
   });
 
   describe("objectBody handling for non-GET requests", () => {
-    it("should set Content-Type header to application/json for POST", () => {
+    it("should set Content-Type header to application/x-devalue for POST", () => {
       const request = requestFrom("/users", {
         method: "POST",
         objectBody: { name: "test" },
       });
-      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request.headers.get("Content-Type")).toBe(
+        "application/x-devalue",
+      );
     });
 
-    it("should stringify objectBody to JSON for POST", async () => {
+    it("should stringify objectBody with devalue for POST", async () => {
       const request = requestFrom("/users", {
         method: "POST",
         objectBody: { name: "test", email: "test@example.com" },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ name: "test", email: "test@example.com" });
     });
 
-    it("should stringify objectBody to JSON for PUT", async () => {
+    it("should stringify objectBody with devalue for PUT", async () => {
       const request = requestFrom("/users/1", {
         method: "PUT",
         objectBody: { name: "updated" },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ name: "updated" });
     });
 
-    it("should stringify objectBody to JSON for DELETE", async () => {
+    it("should stringify objectBody with devalue for DELETE", async () => {
       const request = requestFrom("/users/1", {
         method: "DELETE",
         objectBody: { force: true },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ force: true });
     });
 
-    it("should stringify objectBody to JSON for PATCH", async () => {
+    it("should stringify objectBody with devalue for PATCH", async () => {
       const request = requestFrom("/users/1", {
         method: "PATCH",
         objectBody: { name: "patched" },
       });
 
       const bodyText = await request.text();
-      const body = JSON.parse(bodyText);
+      const body = devalue.parse(bodyText);
       expect(body).toEqual({ name: "patched" });
     });
   });
@@ -225,7 +229,9 @@ describe("requestFrom", () => {
       });
 
       expect(request.headers.get("Authorization")).toBe("Bearer token");
-      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request.headers.get("Content-Type")).toBe(
+        "application/x-devalue",
+      );
     });
   });
 
@@ -259,7 +265,7 @@ describe("requestFrom", () => {
       });
 
       const bodyText = await request.text();
-      expect(bodyText).toBe("{}");
+      expect(devalue.parse(bodyText)).toEqual({});
     });
 
     it("should handle URL with existing query parameters", () => {
@@ -645,7 +651,9 @@ describe("fetchJson", () => {
       const request = mockFetch.mock.lastCall?.[0];
       expect(request?.method).toBe("POST");
       expect(request?.headers.get("Authorization")).toBe("Bearer token");
-      expect(request?.headers.get("Content-Type")).toBe("application/json");
+      expect(request?.headers.get("Content-Type")).toBe(
+        "application/x-devalue",
+      );
     });
 
     it("should pass signal to requestFrom", async () => {
@@ -852,7 +860,9 @@ describe("useFetchJson", () => {
       const request = mockFetch.mock.lastCall?.[0];
       expect(request?.method).toBe("POST");
       expect(request?.headers.get("Authorization")).toBe("Bearer token");
-      expect(request?.headers.get("Content-Type")).toBe("application/json");
+      expect(request?.headers.get("Content-Type")).toBe(
+        "application/x-devalue",
+      );
 
       unmount();
     });
@@ -1114,5 +1124,41 @@ describe("useFetchJson", () => {
 
       unmount();
     });
+  });
+});
+
+// ============================================
+// copyFetchRequestInit tests (added with devalue body change)
+// ============================================
+
+describe("copyFetchRequestInit", () => {
+  it("should copy scalar fields", () => {
+    const init = {
+      method: "POST",
+      cache: "no-cache" as RequestCache,
+      credentials: "include" as RequestCredentials,
+      objectBody: { name: "test" },
+    };
+    const copy = copyFetchRequestInit(init);
+    expect(copy).toMatchObject(init);
+    expect(copy).not.toBe(init);
+  });
+
+  it("should clone headers so mutations do not leak to the caller", () => {
+    const objectHeaders = { Authorization: "Bearer token" };
+    const copyObject = copyFetchRequestInit({ headers: objectHeaders });
+    expect(copyObject.headers).toEqual(objectHeaders);
+    (copyObject.headers as Record<string, string>)["Accept"] = "text/html";
+    expect(objectHeaders).not.toHaveProperty("Accept");
+
+    const arrayHeaders: [string, string][] = [["Authorization", "Bearer"]];
+    const copyArray = copyFetchRequestInit({ headers: arrayHeaders });
+    expect(copyArray.headers).toEqual(arrayHeaders);
+    (copyArray.headers as [string, string][]).push(["Accept", "text/html"]);
+    expect(arrayHeaders).toHaveLength(1);
+  });
+
+  it("should default missing headers to an empty object", () => {
+    expect(copyFetchRequestInit({}).headers).toEqual({});
   });
 });

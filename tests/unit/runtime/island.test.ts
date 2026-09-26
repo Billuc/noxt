@@ -151,7 +151,7 @@ describe("renderIsland", () => {
     const fetcher = mock((request: Request) => {
       seenUrl = request.url;
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "1", name: "x" })),
+        new Response(devalue.stringify({ id: "1", name: "x" })),
       );
     });
     const TestComponent = () => {
@@ -205,5 +205,30 @@ describe("renderIsland", () => {
 
     expect(seen.length).toBe(2);
     expect(seen[0]).toBe(seen[1]);
+  });
+
+  it("should expose ssr/ssrUrl prefixed with the base", async () => {
+    let seenUrl = "";
+    const fetcher = mock((request: Request) => {
+      seenUrl = request.url;
+      return Promise.resolve(new Response("<div>hi</div>"));
+    });
+    let seenSsrUrl = "";
+    const TestComponent = () => {
+      const { ssr, ssrUrl } = useContext(UtilsContext);
+      seenSsrUrl = ssrUrl("/frag", "GET", { q: "x" });
+      void ssr("/frag", "GET", fetcher)({ q: "x" });
+      return h("div", {}, "done");
+    };
+    const hash = "ssr-base";
+
+    const el = document.createElement("div");
+    el.setAttribute("data-island", hash);
+    document.body.appendChild(el);
+
+    renderIsland(TestComponent, hash, "/base");
+    await Bun.sleep(20);
+    expect(seenUrl).toContain("/base/frag?q=x");
+    expect(seenSsrUrl).toBe("/base/frag?q=x");
   });
 });

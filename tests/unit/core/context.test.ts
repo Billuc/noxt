@@ -16,8 +16,10 @@ import { renderToHtmlString } from "../../../src/core/render";
 import { Path } from "../../../src/core/fs";
 import type { IslandEntry } from "../../../src/islands";
 import { makeApiFn } from "../../../src/runtime/api";
+import { makeSSRFn, makeSSRUrlFn } from "../../../src/runtime/ssr";
 import type { PageFunction } from "../../../src/core/types";
 import type { AssetFunction } from "../../../src/assets/types";
+import * as devalue from "devalue";
 
 function fakeIsland(name: string): FunctionComponent<any> {
   const fn = () => null;
@@ -40,6 +42,13 @@ const testApiDefs = {
   },
 } as const;
 type TestApi = typeof testApiDefs;
+
+const testSsrDefs = {
+  "/frag": {
+    GET: { input: s.object({ q: s.string() }) },
+  },
+} as const;
+type TestSsr = typeof testSsrDefs;
 
 type TestPage = "/about" | "/contact";
 type TestAsset = "/img.png" | "/style.css";
@@ -113,14 +122,22 @@ describe("UtilsContextData api", () => {
     expect(typeof data.api).toBe("function");
   });
 
+  it("should expose ssr and ssrUrl functions by default", () => {
+    const data = UtilsContextData.from({});
+    expect(typeof data.ssr).toBe("function");
+    expect(typeof data.ssrUrl).toBe("function");
+  });
+
   it("should prefix api calls with the given base", async () => {
-    const data = new UtilsContextData<TestApi, TestPage, TestAsset>(
+    const data = new UtilsContextData<TestApi, TestSsr, TestPage, TestAsset>(
       makeApiFn<TestApi>("http://localhost:3000/base"),
+      makeSSRFn<TestSsr>("http://localhost:3000/base"),
       testPage,
       testAsset,
+      makeSSRUrlFn<TestSsr>("http://localhost:3000/base"),
     );
     const fetcher = mock((_request: Request) =>
-      Promise.resolve(new Response(JSON.stringify({ ok: true }))),
+      Promise.resolve(new Response(devalue.stringify({ ok: true }))),
     );
 
     const result = await data.api("/api/test", "GET", fetcher)({ q: "x" });
@@ -136,12 +153,30 @@ describe("UtilsContextData api", () => {
       asset: testAsset,
     });
     const fetcher = mock((_request: Request) =>
-      Promise.resolve(new Response(JSON.stringify({}))),
+      Promise.resolve(new Response(devalue.stringify({}))),
     );
 
     await data.api("/r", "GET", fetcher)({ a: "b" });
 
     expect(fetcher.mock.lastCall?.[0].url).toContain("/docs/r?a=b");
+  });
+
+  it("should build ssr and ssrUrl from the base in from()", async () => {
+    const data = UtilsContextData.from<TestPage, TestAsset>({
+      base: "http://localhost:3000/docs",
+      page: testPage,
+      asset: testAsset,
+    });
+    const fetcher = mock((_request: Request) =>
+      Promise.resolve(new Response("<div>hi</div>")),
+    );
+
+    const html = await data.ssr("/frag", "GET", fetcher)({ q: "x" });
+    expect(html).toBe("<div>hi</div>");
+    expect(fetcher.mock.lastCall?.[0].url).toContain("/docs/frag?q=x");
+    expect(data.ssrUrl("/frag", "GET", { q: "x" })).toBe(
+      "http://localhost:3000/docs/frag?q=x",
+    );
   });
 });
 

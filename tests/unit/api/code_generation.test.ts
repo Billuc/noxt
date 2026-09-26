@@ -9,8 +9,8 @@ function createEntry(
   method: string,
   route: string,
   filePath: string,
-  input: any = s.literal(null) as any,
-  output: any = s.literal(null) as any,
+  input: any = s.literal(null),
+  output: any = s.literal(null),
 ): APIEndpointEntry<any, any> {
   return {
     method: method as any,
