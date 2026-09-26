@@ -34,7 +34,8 @@
       "default": "./index.ts"
     },
     "./runtime": "./src/runtime/index.ts",
-    "./api": "./src/api/index.ts"
+    "./api": "./src/api/index.ts",
+    "./ssr": "./src/ssr/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

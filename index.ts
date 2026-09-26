@@ -24,12 +24,8 @@ import {
 import { UtilsContext, UtilsContextData } from "./src/core/context";
 import { NoxtDevServer, NoxtProdServer } from "./src/core/server";
 
-import { discoverAPIs, generateAPIFile, query, mutation } from "./src/api";
-import type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
-  APIEndpoint,
-} from "./src/api";
+import { discoverAPIs, generateAPIFile } from "./src/api";
+import type { APIEndpoint, ApiFunction } from "./src/api";
 import {
   discoverAssets,
   generateAssetUtils,
@@ -57,13 +53,13 @@ import {
   type PreactPage,
 } from "./src/preact";
 import { generateServiceWorker } from "./src/pwa";
+import { SSRRoute, discoverSSRRoutes, generateSSRFile } from "./src/ssr";
+import type { SSRFunction, SSRUrlFunction } from "./src/ssr";
 import { generateStaticPages } from "./src/static";
 
 export {
   discoverAPIs,
   generateAPIFile,
-  query,
-  mutation,
   discoverAssets,
   generateAssetUtils,
   discoverIslands,
@@ -78,15 +74,17 @@ export {
   generateRouteMap,
   generateRouteUtils,
   generateServiceWorker,
+  SSRRoute,
+  discoverSSRRoutes,
+  generateSSRFile,
   generateStaticPages,
   BuildPipeline,
   NoxtDevServer,
   NoxtProdServer,
 };
 export type {
-  IQueryEndpointBuilder,
-  IMutationEndpointBuilder,
   APIEndpoint,
+  ApiFunction,
   SearchParamSchema,
   InferDefinitions,
   AssetEntry,
@@ -97,5 +95,7 @@ export type {
   PreactPage,
   RouteDefinition,
   RouteHandlers,
+  SSRFunction,
+  SSRUrlFunction,
   ServerImplementation,
 };

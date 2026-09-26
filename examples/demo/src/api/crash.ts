@@ -1,4 +1,4 @@
-import { query } from "noxt";
+import { query } from "noxt/api";
 import * as s from "superstruct";
 
 // GET /api/crash — always throws, exercising the 500 Internal Server Error path.

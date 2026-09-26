@@ -1,4 +1,4 @@
-import { mutation, query } from "noxt";
+import { mutation, query } from "noxt/api";
 import * as s from "superstruct";
 
 const Entry = s.object({
@@ -9,7 +9,12 @@ const Entry = s.object({
 });
 
 const entries: s.Infer<typeof Entry>[] = [
-  { id: 1, name: "Ada", message: "First signature!", at: new Date().toISOString() },
+  {
+    id: 1,
+    name: "Ada",
+    message: "First signature!",
+    at: new Date().toISOString(),
+  },
 ];
 
 // GET /api/guestbook?limit= — query endpoint on the same file as POST,

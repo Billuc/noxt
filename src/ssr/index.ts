@@ -20,6 +20,7 @@ import type {
   IMutationRouteBuilder,
   SSRDefinitions,
   SSRFunction,
+  SSRUrlFunction,
 } from "./types";
 import { SSRRoute } from "./types";
 
@@ -29,4 +30,5 @@ export type {
   IMutationRouteBuilder,
   SSRDefinitions,
   SSRFunction,
+  SSRUrlFunction,
 };

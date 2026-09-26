@@ -19,12 +19,14 @@ export {
   requestFrom,
   useAsync,
   useFetchJson,
+  FetchError,
+  fetchJson,
 } from "./fetch";
 export { useApi, getApiHandlers, makeApiFn } from "./api";
 export { UtilsContext } from "../core/context";
 export type { PageFunction } from "../core/types";
 export type { AssetFunction } from "../assets/types";
-export { getSSRHandlers } from "./ssr";
+export { getSSRHandlers, makeSSRFn, makeSSRUrlFn } from "./ssr";
 
 export { sharedSignal } from "./signal";
 export type { Signal } from "@preact/signals";
