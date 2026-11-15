@@ -85,7 +85,7 @@ async function bundleIslands(
     outdir: path.resolve(ISLANDS_CACHE_DIR),
     minify: !devMode,
     sourcemap: devMode,
-    splitting: false, // !devMode, // TODO : splitting
+    splitting: !devMode,
     jsxImportSource: "preact",
     jsx: "automatic",
     jsxDev: devMode,
@@ -108,11 +108,19 @@ async function bundleIslands(
 
   for (const output in result.metafile.outputs) {
     const inputs = result.metafile.outputs[output]?.inputs ?? {};
+    const imports = result.metafile.outputs[output]?.imports ?? [];
+
     for (const input in inputs) {
       const entry =
         entriesMap[standardizePath(path.resolve(process.cwd(), input))];
       if (!entry) continue;
       entry.files.push(Path.fromRelative(output));
+
+      for (const imported of imports) {
+        if (imported.external) continue;
+
+        entry.files.push(Path.fromRelative(imported.path));
+      }
     }
   }
 

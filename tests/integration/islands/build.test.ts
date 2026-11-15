@@ -106,6 +106,32 @@ export default function Component123() { return h("div", null, "123"); }`,
   );
 }
 
+async function setupTestProjectWithSharedModule() {
+  await mkdir(ISLANDS_DIR, { recursive: true });
+
+  const sharedDir = path.join(TEST_DIR, "src", "shared");
+  await mkdir(sharedDir, { recursive: true });
+  await writeFile(
+    path.join(sharedDir, "shared.ts"),
+    `export const shared = (text: string) => "Shared: " + text;
+`,
+  );
+  await writeFile(
+    path.join(ISLANDS_DIR, "First.tsx"),
+    `import { h } from "preact";
+import { shared } from "../shared/shared";
+export default function First() { return h("div", null, shared("first")); }
+`,
+  );
+  await writeFile(
+    path.join(ISLANDS_DIR, "Second.tsx"),
+    `import { h } from "preact";
+import { shared } from "../shared/shared";
+export default function Second() { return h("div", null, shared("second")); }
+`,
+  );
+}
+
 async function cleanupTestProject() {
   await rm(TEST_DIR, { recursive: true, force: true });
 }
@@ -298,6 +324,30 @@ describe("islands/build", () => {
           expect(exists(file.absolute)).resolves.toBeTrue();
         }
       }
+    });
+
+    it("should split islands sharing a module into chunks and list them per island", async () => {
+      await resetTestProject(setupTestProjectWithSharedModule);
+      const { islandFiles: discovered } = await discoverIslands();
+      const { islands: rendered } = await prerenderIslands({
+        islandFiles: discovered,
+      });
+
+      expect(rendered.length).toBe(2);
+      for (const entry of rendered) {
+        const names = entry.files.map((f) => path.basename(f.absolute));
+
+        const islandFile = `${entry.component.name}.${entry.hash}.js`;
+        expect(names).toContain(islandFile);
+
+        const chunkFiles = names.filter((n) => /^chunk-.+\.js$/.test(n));
+        expect(chunkFiles.length).toBe(1);
+      }
+
+      const cacheFiles = await readdir(
+        path.join(TEST_DIR, ".cache", "_islands"),
+      );
+      expect(cacheFiles.some((n) => /^chunk-.+\.js$/.test(n))).toBe(true);
     });
 
     it("should prerender a single island correctly", async () => {
