@@ -11,22 +11,16 @@ import {
   writeFile,
   Path,
 } from "../core/fs";
+import { importModule } from "../core/module";
 import { isDev } from "../core/env";
 import { generateScriptForIsland } from "./code_generation";
 import { standardizePath } from "./utils";
 
 export async function discoverIslands(): Promise<{ islandFiles: Path[] }> {
-  let islandFiles: Path[];
-  try {
-    islandFiles = await getFilesMatchingGlob(
-      "**/*.{tsx,ts,jsx,js}",
-      path.resolve(ISLANDS_DIR),
-    );
-  } catch {
-    console.log("No islands directory found !");
-    return { islandFiles: [] };
-  }
-
+  const islandFiles = await getFilesMatchingGlob(
+    "**/*.{tsx,ts,jsx,js}",
+    path.resolve(ISLANDS_DIR),
+  );
   return { islandFiles };
 }
 
@@ -40,12 +34,14 @@ export async function prerenderIslands({
   const prerendered: PrerenderedIslandEntry[] = [];
 
   for (const file of islandFiles) {
-    const mod = await import(file.absolute);
+    const mod = await importModule(file.absolute, ["default"]);
+    if (!mod) continue;
+
     const Island = mod.default as FunctionComponent<any>; // TODO: better assertion
 
     if (!Island) {
       console.warn(
-        `Island file ${file.relativeToCwd()} has no default export, skipping`,
+        `Island module "${file.absolute}" has no usable default export. Skipping island.`,
       );
       continue;
     }

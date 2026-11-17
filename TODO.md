@@ -5,7 +5,6 @@ Ideas of things that could be implemented:
 - ~~dev server~~
 - docs
 - ~~Bring back splitting in islands~~
-- Incremental building ? No regeneration if hash match
 - Better error messages and recommendations
 - HMR
 - Move to jest and JSDOM and @testing-library/preact (or maybe preact directly)

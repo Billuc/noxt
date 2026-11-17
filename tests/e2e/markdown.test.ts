@@ -20,7 +20,7 @@
  * Feature (src/markdown/*):
  *   Markdown pages are `*.md` files under `src/pages/` discovered by
  *   `discoverMarkdownPages` (src/markdown/build.ts) via glob `** /*.md` under
- *   `src/pages`; missing pages directory logs `No pages directory found !` and
+ *   `src/pages`; a missing pages directory is reported and returns an empty list.
  *   returns []. `prerenderMarkdownPages({ markdownFiles, base, islands, asset, page })`
  *   iterates files, derives `url = getRouteName(file.relativeTo(PAGES_DIR))`
  *   (src/core/utils.ts: strips extension, handles `index` → `/`), logs
@@ -32,7 +32,7 @@
  *   `renderMarkdownToHtml` (src/markdown/render.ts) which `await getLayout(frontmatter)`
  *   (src/markdown/layout.ts: if `frontmatter.layout` absent returns `DefaultMarkdownLayout`
  *   (`<html><head/><body>{children}</body></html>`), else `path.resolve(layoutPath)` +
- *   dynamic import of default export, throws `does not have a default layout export` if missing),
+ *   dynamic import of default export, reports the actual exports if missing),
  *   converts body via `micromark`, wraps with `providePageContext({ base, islands, asset, page }, h(Layout, frontmatter, MARKDOWN_PLACEHOLDER))`,
  *   renders via `renderToHtmlString` (src/core/render.ts with errorBoundaries) →
  *   `sanitizePrerendered` (prepends `<!DOCTYPE html>` if starts with `<html>` else

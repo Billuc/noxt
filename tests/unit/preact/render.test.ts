@@ -75,6 +75,17 @@ describe("renderPreactToHtml", () => {
     expect(result).toContain("<div>/base/about /base/img.png</div>");
   });
 
+  it("should explain how to register an unknown island component", async () => {
+    const UnregisteredIsland = () => null;
+    await expect(
+      renderPreactToHtml(() =>
+        h(Island, { component: UnregisteredIsland, props: {} }),
+      ),
+    ).rejects.toThrow(
+      "Place island components in src/islands, then make sure discoverIslands() and prerenderIslands() are called",
+    );
+  });
+
   it("should throw when using page utils without a provided page function", async () => {
     const Component = () => {
       const { page } = useContext(UtilsContext);

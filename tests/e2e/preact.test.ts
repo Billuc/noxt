@@ -20,12 +20,13 @@
  * Feature (src/preact/*, src/core/*):
  *   Preact pages are `.tsx|ts|jsx|js` files under `src/pages/` discovered by
  *   `discoverPreactPages` (src/preact/build.ts) via glob `** /*.{tsx,ts,jsx,js}`
- *   under `src/pages`; missing directory logs `No pages directory found !` and
+ *   under `src/pages`; a missing directory is reported and returns an empty list.
  *   returns []. `prerenderPreactPages({ preactFiles, base, islands, asset, page })`
  *   iterates files, derives `url = getRouteName(file.relativeTo(PAGES_DIR))`
  *   (src/core/utils.ts), logs `Prerendering page [url]`, and calls `prerenderPreact`.
  *   That function imports `mod.default` as `FunctionComponent`, throws
- *   `File ${pagePath} has no default export !` if absent, hashes `pagePath` via
+ *   a missing default export reports the source path and actual exports, hashes
+ *   `pagePath` via
  *   `crypto.hash("sha256", pagePath, "base64url")`, writes `.cache/<ComponentName>.<hash>.html`
  *   (using `displayName ?? name`), and calls `renderPreactToHtml(Component, base, islands, asset, page)`
  *   (src/preact/render.ts) which does `providePageContext({ base, islands, asset, page }, h(Component, {}))`

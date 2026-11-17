@@ -18,9 +18,9 @@ import {
   SSR_CACHE_FILE,
   SSR_DIR,
   getFilesMatchingGlob,
-  Path,
   writeFile,
 } from "../core/fs";
+import { importModule } from "../core/module";
 import { generateSSRUtilsCode } from "./code_generation";
 import { type SSRRouteEntry, SSRRoute } from "./types";
 import { HTTP_METHODS } from "../core/types";
@@ -29,20 +29,15 @@ import path from "node:path";
 export async function discoverSSRRoutes(): Promise<{
   ssrRouteEntries: SSRRouteEntry<any>[];
 }> {
-  let pageFiles: Path[];
-  try {
-    pageFiles = await getFilesMatchingGlob(
-      "**/*.{ts,js}",
-      path.resolve(SSR_DIR),
-    );
-  } catch {
-    console.log("No api directory found !");
-    return { ssrRouteEntries: [] };
-  }
-
+  const pageFiles = await getFilesMatchingGlob(
+    "**/*.{ts,js}",
+    path.resolve(SSR_DIR),
+  );
   const entries: SSRRouteEntry<any>[] = [];
   for (const file of pageFiles) {
-    const exports = await import(file.absolute);
+    const exports = await importModule(file.absolute, [...HTTP_METHODS]);
+    if (!exports) continue;
+
     const ssrRoute = getRouteName(file.relativeTo("src"));
 
     for (const method of HTTP_METHODS) {

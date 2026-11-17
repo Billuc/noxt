@@ -59,11 +59,11 @@ class QueryRouteBuilder<
           const htmlBody = await renderToHtmlString(h(() => result, {}));
           return new Response(htmlBody, response);
         } catch (err) {
-          console.error(err);
+          console.error("SSR query handler failed:", err);
           return new Response("Internal Server Error", { status: 500 });
         }
       } catch (err) {
-        console.error(err);
+        console.error("Invalid SSR query input:", err);
         return new Response("Bad argument", { status: 400 });
       }
     });
@@ -98,10 +98,12 @@ class MutationRouteBuilder<TInput> implements IMutationRouteBuilder<TInput> {
           const result = await fn({ input: inputData, request, response });
           const htmlBody = await renderToHtmlString(h(() => result, {}));
           return new Response(htmlBody, response);
-        } catch {
+        } catch (err) {
+          console.error("SSR mutation handler failed:", err);
           return new Response("Internal Server Error", { status: 500 });
         }
-      } catch {
+      } catch (err) {
+        console.error("Invalid SSR mutation input:", err);
         return new Response("Bad argument", { status: 400 });
       }
     });

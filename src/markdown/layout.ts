@@ -29,10 +29,17 @@ export async function getLayout(
   }
 
   layoutPath = path.resolve(layoutPath);
-  const layoutExports = await import(layoutPath);
+  let layoutExports: Record<string, unknown>;
+  try {
+    layoutExports = await import(layoutPath);
+  } catch (error) {
+    throw new Error(`Failed to load Markdown layout module "${layoutPath}".`, {
+      cause: error,
+    });
+  }
   if (!layoutExports || !layoutExports["default"]) {
     throw new Error(
-      `File ${layoutPath} does not have a default layout export !`,
+      `Markdown layout module "${layoutPath}" has no default export. Actual exports: ${Object.keys(layoutExports).join(", ") || "(none)"}.`,
     );
   }
 

@@ -35,8 +35,8 @@ export function Island<T>(props: Props<T>) {
   const entry = islandMap.get(Component);
   if (!entry) {
     throw new Error(
-      `Component "${Component.displayName ?? Component.name}" has not been prerendered as an island. ` +
-        "Make sure prerenderIslands() is called before prerenderPages().",
+      `Component "${Component.displayName ?? Component.name}" is not registered as an island. ` +
+        "Place island components in src/islands, then make sure discoverIslands() and prerenderIslands() are called before prerendering pages.",
     );
   }
 

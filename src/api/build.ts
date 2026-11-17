@@ -18,9 +18,9 @@ import {
   API_CACHE_FILE,
   API_DIR,
   getFilesMatchingGlob,
-  Path,
   writeFile,
 } from "../core/fs";
+import { importModule } from "../core/module";
 import { generateApiUtilsCode } from "./code_generation";
 import { type APIEndpointEntry, APIEndpoint } from "./types";
 import { HTTP_METHODS } from "../core/types";
@@ -29,20 +29,15 @@ import path from "node:path";
 export async function discoverAPIs(): Promise<{
   endpointEntries: APIEndpointEntry<any, any>[];
 }> {
-  let pageFiles: Path[];
-  try {
-    pageFiles = await getFilesMatchingGlob(
-      "**/*.{ts,js}",
-      path.resolve(API_DIR),
-    );
-  } catch {
-    console.log("No api directory found !");
-    return { endpointEntries: [] };
-  }
-
+  const pageFiles = await getFilesMatchingGlob(
+    "**/*.{ts,js}",
+    path.resolve(API_DIR),
+  );
   const entries: APIEndpointEntry<any, any>[] = [];
   for (const file of pageFiles) {
-    const exports = await import(file.absolute);
+    const exports = await importModule(file.absolute, [...HTTP_METHODS]);
+    if (!exports) continue;
+
     const apiRoute = getRouteName(file.relativeTo("src"));
 
     for (const method of HTTP_METHODS) {

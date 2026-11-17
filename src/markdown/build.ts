@@ -34,14 +34,10 @@ import type { PageFunction } from "../core/types";
 export async function discoverMarkdownPages(): Promise<{
   markdownFiles: Path[];
 }> {
-  let pageFiles: Path[];
-  try {
-    pageFiles = await getFilesMatchingGlob("**/*.md", path.resolve(PAGES_DIR));
-  } catch {
-    console.log("No pages directory found !");
-    return { markdownFiles: [] };
-  }
-
+  const pageFiles = await getFilesMatchingGlob(
+    "**/*.md",
+    path.resolve(PAGES_DIR),
+  );
   return { markdownFiles: pageFiles };
 }
 
@@ -78,13 +74,10 @@ export async function prerenderMarkdownPages({
         file: prerenderedFile,
       });
     } catch (err) {
-      let errorMessage = `Skipping page ${url} because of error\n`;
-      if (err instanceof Error) {
-        errorMessage += err.stack ?? err.message;
-      } else {
-        errorMessage += String(err);
-      }
-      console.error(errorMessage);
+      console.error(
+        `Skipping page ${url} from "${file.absolute}" because of an error:`,
+      );
+      console.error(err);
       continue;
     }
   }

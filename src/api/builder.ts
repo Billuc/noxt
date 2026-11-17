@@ -72,11 +72,11 @@ class QueryEndpointBuilder<
           const body = toBody(result);
           return new Response(body, response);
         } catch (err) {
-          console.error(err);
+          console.error("API query handler failed:", err);
           return new Response("Internal Server Error", { status: 500 });
         }
       } catch (err) {
-        console.error(err);
+        console.error("Invalid API query input:", err);
         return new Response("Bad argument", { status: 400 });
       }
     });
@@ -126,10 +126,12 @@ class MutationEndpointBuilder<
           const result = await fn({ input: inputData, request, response });
           const responseBody = toBody(result);
           return new Response(responseBody, response);
-        } catch {
+        } catch (err) {
+          console.error("API mutation handler failed:", err);
           return new Response("Internal Server Error", { status: 500 });
         }
-      } catch {
+      } catch (err) {
+        console.error("Invalid API mutation input:", err);
         return new Response("Bad argument", { status: 400 });
       }
     });

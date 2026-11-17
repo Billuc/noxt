@@ -21,19 +21,14 @@ import {
   writeFile,
 } from "../core/fs";
 import { toPublicPath } from "../core/utils";
-import { Path } from "../core/fs";
 import type { AssetEntry, AssetFunction } from "./types";
 import { generateAssetUtilsCode } from "./code_generation";
 
 export async function discoverAssets(): Promise<{ assets: AssetEntry[] }> {
-  let assetFiles: Path[];
-  try {
-    assetFiles = await getFilesMatchingGlob("**/*", path.resolve(ASSETS_DIR));
-  } catch {
-    console.log("No assets folder found");
-    return { assets: [] };
-  }
-
+  const assetFiles = await getFilesMatchingGlob(
+    "**/*",
+    path.resolve(ASSETS_DIR),
+  );
   const assets = assetFiles.map((file) => ({
     url: toPublicPath(file.relativeTo("src")),
     file: file,
