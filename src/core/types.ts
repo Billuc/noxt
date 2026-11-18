@@ -63,7 +63,7 @@ export type QueryParamValue = string | number | boolean | undefined;
 export interface QueryParams {
   [k: string]: QueryParamValue | QueryParamValue[];
 }
-export type PageFunction<PageId extends string> = (
+export type PageFunction<PageId extends string = string> = (
   pageId: PageId,
   query?: QueryParams,
 ) => string;
