@@ -28,20 +28,15 @@
     "examples/demo": {
       "name": "noxt-demo",
       "dependencies": {
-        "@preact/signals": "catalog:",
-        "preact": "catalog:",
-        "superstruct": "catalog:",
+        "@preact/signals": "^2.11.2",
+        "preact": "^10.29.8",
+        "superstruct": "^2.0.2",
       },
       "devDependencies": {
         "@types/bun": "^1.4.0",
         "typescript": "^5.9.3",
       },
     },
-  },
-  "catalog": {
-    "@preact/signals": "^2.11.2",
-    "preact": "^10.29.8",
-    "superstruct": "^2.0.2",
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],

@@ -15,12 +15,7 @@
   "workspaces": {
     "packages": [
       "examples/*"
-    ],
-    "catalog": {
-      "@preact/signals": "^2.11.2",
-      "preact": "^10.29.8",
-      "superstruct": "^2.0.2"
-    }
+    ]
   },
   "files": [
     "index.ts",

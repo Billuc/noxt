@@ -10,9 +10,9 @@
     "postinstall": "bun scripts/link-noxt.ts"
   },
   "dependencies": {
-    "preact": "catalog:",
-    "@preact/signals": "catalog:",
-    "superstruct": "catalog:"
+    "preact": "^10.29.8",
+    "@preact/signals": "^2.11.2",
+    "superstruct": "^2.0.2"
   },
   "devDependencies": {
     "@types/bun": "^1.4.0",
