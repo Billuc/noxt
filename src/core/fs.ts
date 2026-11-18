@@ -100,10 +100,10 @@ export async function getFilesMatchingGlob(
   globPattern: string,
   root: string,
 ): Promise<Path[]> {
-  let globFiles: ReturnType<typeof fs.glob>;
+  let globFiles: AsyncIterable<string>;
   try {
     await fs.stat(root);
-    globFiles = fs.glob(globPattern, { cwd: root });
+    globFiles = fs.glob(globPattern, { cwd: root, withFileTypes: false });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       console.log(`Directory "${root}" does not exist; no files to discover.`);
@@ -121,8 +121,7 @@ export async function getFilesMatchingGlob(
 
   try {
     for await (const file of globFiles) {
-      const relative = file as string;
-      const absolute = path.resolve(root, relative);
+      const absolute = path.resolve(root, file);
       let stats: Awaited<ReturnType<typeof fs.stat>>;
       try {
         stats = await fs.stat(absolute);

@@ -337,12 +337,8 @@ describe("preact/build", () => {
         });
 
         expect(rendered.some((p) => p.url === "/NoDefault")).toBe(false);
-        expect(errorSpy.mock.calls.flat().join(" ")).toContain(
-          `${path.join(PAGES_DIR, "NoDefault.tsx")}`,
-        );
-        expect(errorSpy.mock.calls.flat().join(" ")).toContain("NotDefault");
-        expect(errorSpy.mock.calls.flat().join(" ")).toContain(
-          "must export at least one of: default",
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Module "${path.join(PAGES_DIR, "NoDefault.tsx")}" must export at least one of: default. Actual exports: NotDefault.`,
         );
       } finally {
         errorSpy.mockRestore();
@@ -363,10 +359,8 @@ export default function Named() { return null; }`,
           preactFiles: [Path.fromAbsolute(namedPagePath)],
         });
 
-        expect(warnSpy.mock.calls.flat().join(" ")).toContain(namedPagePath);
-        expect(warnSpy.mock.calls.flat().join(" ")).toContain("helper");
-        expect(warnSpy.mock.calls.flat().join(" ")).toContain(
-          "Intended exports: default",
+        expect(warnSpy).toHaveBeenCalledWith(
+          `Module "${namedPagePath}" has unexpected exports (helper). Intended exports: default.`,
         );
       } finally {
         warnSpy.mockRestore();

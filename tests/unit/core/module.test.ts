@@ -41,8 +41,8 @@ describe("importModule", () => {
 
     try {
       expect(await importModule(modulePath, ["GET", "POST"])).toBeNull();
-      expect(errorSpy.mock.calls.flat().join(" ")).toContain(
-        "Actual exports: helper",
+      expect(errorSpy).toHaveBeenCalledWith(
+        `Module "${modulePath}" must export at least one of: GET, POST. Actual exports: helper.`,
       );
     } finally {
       errorSpy.mockRestore();
