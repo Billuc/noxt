@@ -22,8 +22,9 @@ export async function importModule(
   try {
     moduleExports = await import(modulePath);
   } catch (error) {
-    console.error(`Failed to import module "${modulePath}".`, error);
-    return null;
+    throw new Error(`Failed to import module "${modulePath}".`, {
+      cause: error,
+    });
   }
 
   const actualExports = Object.keys(moduleExports);
@@ -35,6 +36,7 @@ export async function importModule(
       `Module "${modulePath}" must export at least one of: ${intendedExports.join(", ")}. ` +
         `Actual exports: ${actualExports.join(", ") || "(none)"}.`,
     );
+    return null;
   }
 
   const unexpectedExports = actualExports.filter(
@@ -47,5 +49,5 @@ export async function importModule(
     );
   }
 
-  return hasIntendedExport ? moduleExports : null;
+  return moduleExports;
 }

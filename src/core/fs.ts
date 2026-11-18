@@ -121,7 +121,7 @@ export async function getFilesMatchingGlob(
 
   try {
     for await (const file of globFiles) {
-      const relative = typeof file === "string" ? file : file.name;
+      const relative = file as string;
       const absolute = path.resolve(root, relative);
       let stats: Awaited<ReturnType<typeof fs.stat>>;
       try {

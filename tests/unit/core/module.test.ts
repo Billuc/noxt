@@ -26,9 +26,8 @@ describe("importModule", () => {
       const imported = await importModule(modulePath, ["GET", "POST"]);
 
       expect(imported).not.toBeNull();
-      expect(warnSpy.mock.calls.flat().join(" ")).toContain("helper");
-      expect(warnSpy.mock.calls.flat().join(" ")).toContain(
-        "Intended exports: GET, POST",
+      expect(warnSpy).toHaveBeenCalledWith(
+        `Module "${modulePath}" has unexpected exports (helper). Intended exports: GET, POST.`,
       );
     } finally {
       warnSpy.mockRestore();
@@ -50,18 +49,17 @@ describe("importModule", () => {
     }
   });
 
-  it("logs import failures with the module path", async () => {
+  it("throws with the module path and the original error as cause", async () => {
     const modulePath = path.join(TEST_DIR, "does-not-exist.ts");
-    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
 
-    try {
-      expect(await importModule(modulePath, ["default"])).toBeNull();
-      expect(errorSpy.mock.calls.flat().join(" ")).toContain(modulePath);
-      expect(errorSpy.mock.calls.flat().join(" ")).toContain(
-        "Failed to import module",
-      );
-    } finally {
-      errorSpy.mockRestore();
-    }
+    const error = await importModule(modulePath, ["default"]).catch(
+      (err: Error) => err,
+    );
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe(
+      `Failed to import module "${modulePath}".`,
+    );
+    expect((error as Error).cause).toBeDefined();
   });
 });

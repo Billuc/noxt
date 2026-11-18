@@ -39,13 +39,6 @@ export async function prerenderIslands({
 
     const Island = mod.default as FunctionComponent<any>; // TODO: better assertion
 
-    if (!Island) {
-      console.warn(
-        `Island module "${file.absolute}" has no usable default export. Skipping island.`,
-      );
-      continue;
-    }
-
     const hash = crypto.hash("sha256", file.absolute, "base64url");
     const fileName = (Island.displayName ?? Island.name) + "." + hash + ".js";
     const scriptPath = path.resolve(".cache", fileName);

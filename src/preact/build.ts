@@ -92,13 +92,7 @@ async function prerenderPreact(
   const mod = await importModule(pagePath, ["default"]);
   if (!mod) return null;
 
-  const Page = mod.default as FunctionComponent<any> | undefined;
-  if (!Page) {
-    console.error(
-      `Page module "${pagePath}" has no usable default export.`,
-    );
-    return null;
-  }
+  const Page = mod.default as FunctionComponent<any>;
 
   const pageHash = crypto.hash("sha256", pagePath, "base64url");
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";

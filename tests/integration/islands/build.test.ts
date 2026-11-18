@@ -285,10 +285,9 @@ describe("islands/build", () => {
 
         const generatedFiles = await readdir(cacheIslandsDir);
         expect(generatedFiles.some((f) => f.includes("NoDefault"))).toBeFalse();
-        expect(errorSpy.mock.calls.flat().join(" ")).toContain(
-          `${path.join(ISLANDS_DIR, "NoDefault.tsx")}`,
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Module "${path.join(ISLANDS_DIR, "NoDefault.tsx")}" must export at least one of: default. Actual exports: NotDefault.`,
         );
-        expect(errorSpy.mock.calls.flat().join(" ")).toContain("NotDefault");
       } finally {
         errorSpy.mockRestore();
       }
@@ -308,10 +307,8 @@ export default function Named() { return null; }`,
           islandFiles: [Path.fromAbsolute(namedIslandPath)],
         });
 
-        expect(warnSpy.mock.calls.flat().join(" ")).toContain(namedIslandPath);
-        expect(warnSpy.mock.calls.flat().join(" ")).toContain("helper");
-        expect(warnSpy.mock.calls.flat().join(" ")).toContain(
-          "Intended exports: default",
+        expect(warnSpy).toHaveBeenCalledWith(
+          `Module "${namedIslandPath}" has unexpected exports (helper). Intended exports: default.`,
         );
       } finally {
         warnSpy.mockRestore();
