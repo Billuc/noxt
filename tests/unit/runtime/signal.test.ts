@@ -9,7 +9,7 @@ import {
 import { h, render } from "preact";
 import { GlobalWindow } from "happy-dom";
 import { sharedSignal } from "../../../src/runtime/signal";
-import type { Signal } from "@preact/signals-core";
+import type { Signal } from "@preact/signals";
 
 const happyWindow = new GlobalWindow();
 

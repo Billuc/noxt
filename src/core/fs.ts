@@ -81,6 +81,8 @@ export const SSR_DIR = path.join("src", "ssr");
 
 export const DIST_DIR = "dist";
 
+class FileInspectionError extends Error {}
+
 // ─── Path Helpers ────────────────────────────────────────────
 
 /** Builds a path inside .cache. */
@@ -98,15 +100,50 @@ export async function getFilesMatchingGlob(
   globPattern: string,
   root: string,
 ): Promise<Path[]> {
-  const globFiles = fs.glob(globPattern, { cwd: root });
-  const results: Path[] = [];
-
-  for await (const file of globFiles) {
-    const absolute = path.resolve(root, file);
-    const stats = await fs.stat(absolute);
-    if (stats.isDirectory()) continue;
-    results.push(Path.fromAbsolute(absolute));
+  let globFiles: AsyncIterable<string>;
+  try {
+    await fs.stat(root);
+    globFiles = fs.glob(globPattern, { cwd: root, withFileTypes: false });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      console.log(`Directory "${root}" does not exist; no files to discover.`);
+      return [];
+    }
+    const contextualError = new Error(
+      `Failed to list files matching "${globPattern}" in "${root}".`,
+      { cause: error },
+    );
+    console.error(contextualError);
+    throw contextualError;
   }
 
+  const results: Path[] = [];
+
+  try {
+    for await (const file of globFiles) {
+      const absolute = path.resolve(root, file);
+      let stats: Awaited<ReturnType<typeof fs.stat>>;
+      try {
+        stats = await fs.stat(absolute);
+      } catch (error) {
+        const contextualError = new FileInspectionError(
+          `Failed to inspect discovered file "${absolute}".`,
+          { cause: error },
+        );
+        console.error(contextualError);
+        throw contextualError;
+      }
+      if (stats.isDirectory()) continue;
+      results.push(Path.fromAbsolute(absolute));
+    }
+  } catch (error) {
+    if (error instanceof FileInspectionError) throw error;
+    const contextualError = new Error(
+      `Failed to list files matching "${globPattern}" in "${root}".`,
+      { cause: error },
+    );
+    console.error(contextualError);
+    throw contextualError;
+  }
   return results;
 }

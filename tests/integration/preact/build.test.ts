@@ -5,7 +5,7 @@ import {
   discoverPreactPages,
   prerenderPreactPages,
 } from "../../../src/preact/build";
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
 import path from "node:path";
 import {
   mkdir,
@@ -329,11 +329,42 @@ describe("preact/build", () => {
 
     it("should skip pages without default export", async () => {
       const { preactFiles: discovered } = await discoverPreactPages();
-      const { preactPages: rendered } = await prerenderPreactPages({
-        preactFiles: discovered,
-      });
+      const errorSpy = spyOn(console, "error").mockImplementation(() => {});
 
-      expect(rendered.some((p) => p.url === "/NoDefault")).toBe(false);
+      try {
+        const { preactPages: rendered } = await prerenderPreactPages({
+          preactFiles: discovered,
+        });
+
+        expect(rendered.some((p) => p.url === "/NoDefault")).toBe(false);
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Module "${path.join(PAGES_DIR, "NoDefault.tsx")}" must export at least one of: default. Actual exports: NotDefault.`,
+        );
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
+
+    it("should warn when a page has named exports", async () => {
+      const namedPagePath = path.join(PAGES_DIR, "Named.tsx");
+      await writeFile(
+        namedPagePath,
+        `export const helper = true;
+export default function Named() { return null; }`,
+      );
+      const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+
+      try {
+        await prerenderPreactPages({
+          preactFiles: [Path.fromAbsolute(namedPagePath)],
+        });
+
+        expect(warnSpy).toHaveBeenCalledWith(
+          `Module "${namedPagePath}" has unexpected exports (helper). Intended exports: default.`,
+        );
+      } finally {
+        warnSpy.mockRestore();
+      }
     });
 
     it("should generate consistent hashes for the same page", async () => {

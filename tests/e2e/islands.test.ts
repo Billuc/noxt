@@ -20,9 +20,9 @@
  * Feature (src/islands/*, src/runtime/island.ts, src/core/context.ts):
  *   Islands are interactive Preact components under `src/islands/` discovered by
  *   `discoverIslands` (src/islands/build.ts) via glob `** /*.{tsx,ts,jsx,js}` under
- *   `src/islands`; missing directory logs `No islands directory found !` and returns [].
+ *   `src/islands`; a missing directory is reported and returns [].
  *   `prerenderIslands({ islandFiles, base })` imports each file's `default` export as
- *   `FunctionComponent`; if missing, warns `has no default export, skipping` and
+ *   `FunctionComponent`; if missing, warns with the source path and actual exports, then
  *   continues. For each island it computes `hash = crypto.hash("sha256", file.absolute,
  *   "base64url")`, fileName `(<displayName|name>.<hash>.js)`, script path `.cache/<name>.<hash>.js`,
  *   content via `generateScriptForIsland(hash, importPath, base)` (src/islands/code_generation.ts)
@@ -44,7 +44,7 @@
  *
  * What should be tested:
  *   - Discovering islands finds `*.tsx|ts|jsx|js` and ignores other extensions;
- *     missing directory returns empty array without throwing.
+ *     a missing directory is reported and returns an empty array.
  *   - Files without default export are warned and produce no output; valid islands
  *     produce a hash derived from `file.absolute` (deterministic for same path) and
  *     a temporary `.cache/*.js` that is bundled to `.cache/_islands/`.
@@ -53,7 +53,8 @@
  *   - `<Island>` server HTML contains `data-island` hash, `data-props` serialized via
  *     `devalue` (Date, etc. preserved), and module script(s) with `toPublicPath` + base;
  *     `client:only` omits SSR children but still emits script.
- *   - Throwing if component not in `islandMap` with message `has not been prerendered`.
+ *   - Throwing if component is not registered, with guidance to place it in
+ *     `src/islands` and call `discoverIslands()` and `prerenderIslands()`.
  *   - Client `renderIsland` hydrates or renders correctly, provides `UtilsContext`
  *     so islands can call `page()`/`asset()` client-side, and handles multiple
  *     elements with same hash.

@@ -47,7 +47,7 @@
  * What should be tested:
  *   - `discoverAPIs` finds files under `src/api` and only includes exports that
  *     are `APIEndpoint` instances for known `HTTP_METHODS`; non-endpoint exports
- *     are ignored; missing `src/api` logs `No api directory found !` and returns [].
+ *     are ignored; a missing `src/api` directory is reported and returns [].
  *   - Route derivation via `getRouteName` correctly maps `src/api/users.ts` → `/api/users`
  *     and nested `src/api/admin/stats.ts` → `/api/admin/stats`.
  *   - `generateAPIFile` emits `.cache/api.ts` with correct imports, `apiRoutesData`

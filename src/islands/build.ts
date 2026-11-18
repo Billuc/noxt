@@ -11,22 +11,16 @@ import {
   writeFile,
   Path,
 } from "../core/fs";
+import { importModule } from "../core/module";
 import { isDev } from "../core/env";
 import { generateScriptForIsland } from "./code_generation";
 import { standardizePath } from "./utils";
 
 export async function discoverIslands(): Promise<{ islandFiles: Path[] }> {
-  let islandFiles: Path[];
-  try {
-    islandFiles = await getFilesMatchingGlob(
-      "**/*.{tsx,ts,jsx,js}",
-      path.resolve(ISLANDS_DIR),
-    );
-  } catch {
-    console.log("No islands directory found !");
-    return { islandFiles: [] };
-  }
-
+  const islandFiles = await getFilesMatchingGlob(
+    "**/*.{tsx,ts,jsx,js}",
+    path.resolve(ISLANDS_DIR),
+  );
   return { islandFiles };
 }
 
@@ -40,15 +34,17 @@ export async function prerenderIslands({
   const prerendered: PrerenderedIslandEntry[] = [];
 
   for (const file of islandFiles) {
-    const mod = await import(file.absolute);
-    const Island = mod.default as FunctionComponent<any>; // TODO: better assertion
+    const mod = await importModule(file.absolute, ["default"]);
+    if (!mod) continue;
 
-    if (!Island) {
-      console.warn(
-        `Island file ${file.relativeToCwd()} has no default export, skipping`,
+    const rawIsland = mod.default;
+    if (typeof rawIsland !== "function") {
+      console.error(
+        `Island module "${file.absolute}" must default-export a component function, but got ${rawIsland === null ? "null" : typeof rawIsland}. Skipping island.`,
       );
       continue;
     }
+    const Island = rawIsland as FunctionComponent<any>;
 
     const hash = crypto.hash("sha256", file.absolute, "base64url");
     const fileName = (Island.displayName ?? Island.name) + "." + hash + ".js";

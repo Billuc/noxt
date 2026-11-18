@@ -27,6 +27,7 @@ import type {
   SearchParamSchema,
 } from "../core/superstruct";
 import { toBody } from "../core/url";
+import { logRequestError } from "../core/request_errors";
 
 class QueryEndpointBuilder<
   TInput extends SearchParams,
@@ -72,11 +73,11 @@ class QueryEndpointBuilder<
           const body = toBody(result);
           return new Response(body, response);
         } catch (err) {
-          console.error(err);
+          logRequestError("API query handler failed", request, err);
           return new Response("Internal Server Error", { status: 500 });
         }
       } catch (err) {
-        console.error(err);
+        logRequestError("Invalid API query", request, err);
         return new Response("Bad argument", { status: 400 });
       }
     });
@@ -126,10 +127,12 @@ class MutationEndpointBuilder<
           const result = await fn({ input: inputData, request, response });
           const responseBody = toBody(result);
           return new Response(responseBody, response);
-        } catch {
+        } catch (err) {
+          logRequestError("API mutation handler failed", request, err);
           return new Response("Internal Server Error", { status: 500 });
         }
-      } catch {
+      } catch (err) {
+        logRequestError("Invalid API mutation", request, err);
         return new Response("Bad argument", { status: 400 });
       }
     });

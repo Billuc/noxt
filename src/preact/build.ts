@@ -20,6 +20,7 @@ import type { FunctionComponent } from "preact";
 import type { IslandEntry } from "../islands";
 import type { PreactPage } from "./types";
 import { getFilesMatchingGlob, PAGES_DIR, writeFile, Path } from "../core/fs";
+import { importModule } from "../core/module";
 import { renderPreactToHtml } from "./render";
 import type { AssetFunction } from "../assets/types";
 import type { PageFunction } from "../core/types";
@@ -27,17 +28,10 @@ import type { PageFunction } from "../core/types";
 export async function discoverPreactPages(): Promise<{
   preactFiles: Path[];
 }> {
-  let pageFiles: Path[];
-  try {
-    pageFiles = await getFilesMatchingGlob(
-      "**/*.{tsx,ts,jsx,js}",
-      path.resolve(PAGES_DIR),
-    );
-  } catch {
-    console.log("No pages directory found !");
-    return { preactFiles: [] };
-  }
-
+  const pageFiles = await getFilesMatchingGlob(
+    "**/*.{tsx,ts,jsx,js}",
+    path.resolve(PAGES_DIR),
+  );
   return { preactFiles: pageFiles };
 }
 
@@ -61,7 +55,7 @@ export async function prerenderPreactPages({
     console.log(`Prerendering page [${url}]`);
 
     try {
-      let prerenderedFile: Path = await prerenderPreact(
+      const prerenderedFile = await prerenderPreact(
         file.absolute,
         base,
         islands,
@@ -69,18 +63,17 @@ export async function prerenderPreactPages({
         page,
       );
 
+      if (!prerenderedFile) continue;
+
       pages.push({
         url: url,
         file: prerenderedFile,
       });
     } catch (err) {
-      let errorMessage = `Skipping page ${url} because of error\n`;
-      if (err instanceof Error) {
-        errorMessage += err.stack ?? err.message;
-      } else {
-        errorMessage += String(err);
-      }
-      console.error(errorMessage);
+      console.error(
+        `Skipping page ${url} from "${file.absolute}" because of an error:`,
+      );
+      console.error(err);
       continue;
     }
   }
@@ -95,10 +88,18 @@ async function prerenderPreact(
   islands?: IslandEntry[],
   asset?: AssetFunction,
   page?: PageFunction,
-): Promise<Path> {
-  const mod = await import(pagePath);
-  const Page = mod.default as FunctionComponent<any> | undefined;
-  if (!Page) throw new Error(`File ${pagePath} has no default export !`);
+): Promise<Path | null> {
+  const mod = await importModule(pagePath, ["default"]);
+  if (!mod) return null;
+
+  const rawPage = mod.default;
+  if (typeof rawPage !== "function") {
+    console.error(
+      `Page module "${pagePath}" must default-export a component function, but got ${rawPage === null ? "null" : typeof rawPage}.`,
+    );
+    return null;
+  }
+  const Page = rawPage as FunctionComponent<any>;
 
   const pageHash = crypto.hash("sha256", pagePath, "base64url");
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";

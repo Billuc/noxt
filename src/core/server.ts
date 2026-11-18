@@ -1,24 +1,37 @@
 import { readFile, Path } from "./fs";
 import type { NoxtServer, RouteHandlers, ServerImplementation } from "./types";
-import { watch } from "node:fs/promises";
+import { stat, watch } from "node:fs/promises";
 import { debounce } from "./utils";
 import type { FileChangeInfo } from "node:fs/promises";
 import { lookup } from "mrmime";
 
 class AbortError extends Error {}
 
+/** Imports an optional generated module. Returns null only when the file does not exist. */
 async function tryImport<T extends any = any>(
   filepath: Path,
   isDev: boolean,
 ): Promise<T | null> {
   try {
-    let importPath = filepath.absolute;
-    if (isDev) {
-      importPath += "?t=" + performance.now();
-    }
+    await stat(filepath.absolute);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+
+  let importPath = filepath.absolute;
+  if (isDev) {
+    importPath += "?t=" + performance.now();
+  }
+  try {
     return (await import(importPath)) as T;
-  } catch {
-    return null;
+  } catch (error) {
+    const contextualError = new Error(
+      `Failed to load generated routes from "${filepath.absolute}". Check the source files it was generated from.`,
+      { cause: error },
+    );
+    console.error(contextualError);
+    throw contextualError;
   }
 }
 

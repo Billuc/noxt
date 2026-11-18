@@ -242,7 +242,7 @@ describe("useApi", () => {
   });
 
   it("should return useAsync result shape", () => {
-    const endpointCaller = (input: { id: string }) =>
+    const endpointCaller = (_input: { id: string }) =>
       Promise.resolve({ id: "1", name: "test" });
 
     const { result, unmount } = renderHook(() =>
@@ -259,7 +259,7 @@ describe("useApi", () => {
   });
 
   it("should start with loading state", () => {
-    const endpointCaller = (input: { id: string }) =>
+    const endpointCaller = (_input: { id: string }) =>
       Promise.resolve({ id: "1", name: "test" });
 
     const { result, unmount } = renderHook(() =>
@@ -274,11 +274,11 @@ describe("useApi", () => {
   });
 
   it("should pass input to endpoint caller", async () => {
-    const endpointCaller = mock((input: { id: string }) => {
+    const endpointCaller = mock((_input: { id: string }) => {
       return Promise.resolve({ id: "1", name: "test" });
     });
 
-    const { result, unmount } = renderHook(() =>
+    const { unmount } = renderHook(() =>
       useApi(endpointCaller, { id: "123" }),
     );
 
@@ -293,9 +293,9 @@ describe("useApi", () => {
   it("should pass options to endpoint caller including signal", async () => {
     const endpointCaller = mock(
       (
-        input: { id: string },
-        options?: FetchRequestInit,
-        signal?: AbortSignal,
+        _input: { id: string },
+        _options?: FetchRequestInit,
+        _signal?: AbortSignal,
       ) => {
         return Promise.resolve({ id: "1", name: "test" });
       },
@@ -393,7 +393,7 @@ describe("useApi", () => {
     const abortSignals: (AbortSignal | null)[] = [];
 
     const endpointCaller = mock(
-      (input: any, options?: FetchRequestInit, signal?: AbortSignal) => {
+      (_input: any, _options?: FetchRequestInit, signal?: AbortSignal) => {
         abortSignals.push(signal ?? null);
         return new Promise(() => {}); // Never resolves
       },
@@ -418,7 +418,7 @@ describe("useApi", () => {
   it("should integrate with makeApiFn", async () => {
     const expectedData = { id: "1", name: "test user" };
 
-    const customFetcher = mock((request: Request) =>
+    const customFetcher = mock((_request: Request) =>
       Promise.resolve(
         new Response(devalue.stringify(expectedData), { status: 200 }),
       ),

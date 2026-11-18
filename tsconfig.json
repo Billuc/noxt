@@ -29,5 +29,6 @@
     "noPropertyAccessFromIndexSignature": false,
 
     "types": ["bun"]
-  }
+  },
+  "exclude": ["examples", "node_modules"]
 }

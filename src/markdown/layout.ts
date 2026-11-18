@@ -15,6 +15,7 @@
  **/
 import { h, type ComponentChildren, type ComponentType } from "preact";
 import * as path from "node:path";
+import { importModule } from "../core/module";
 
 function DefaultMarkdownLayout({ children }: { children?: ComponentChildren }) {
   return h("html", {}, [h("head", {}, []), h("body", {}, children)]);
@@ -29,13 +30,19 @@ export async function getLayout(
   }
 
   layoutPath = path.resolve(layoutPath);
-  const layoutExports = await import(layoutPath);
-  if (!layoutExports || !layoutExports["default"]) {
+  const layoutExports = await importModule(layoutPath, ["default"]);
+  if (!layoutExports) {
     throw new Error(
-      `File ${layoutPath} does not have a default layout export !`,
+      `Markdown layout module "${layoutPath}" has no default export.`,
     );
   }
 
   const Layout = layoutExports["default"];
+  if (typeof Layout !== "function") {
+    throw new Error(
+      `Markdown layout module "${layoutPath}" must default-export a component function, but got ${Layout === null ? "null" : typeof Layout}.`,
+    );
+  }
+
   return Layout as ComponentType<Record<string, any>>;
 }

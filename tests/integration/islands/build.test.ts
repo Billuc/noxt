@@ -2,7 +2,7 @@
  * Integration tests for src/islands/build.ts
  */
 import { discoverIslands, prerenderIslands } from "../../../src/islands/build";
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
 import path from "node:path";
 import { mkdir, rm, writeFile, exists, readdir } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
@@ -275,14 +275,44 @@ describe("islands/build", () => {
 
     it("should skip files without default export", async () => {
       const { islandFiles } = await discoverIslands();
+      const errorSpy = spyOn(console, "error").mockImplementation(() => {});
 
-      await prerenderIslands({ islandFiles });
+      try {
+        await prerenderIslands({ islandFiles });
 
-      const cacheIslandsDir = path.join(TEST_DIR, ".cache", "_islands");
-      expect(exists(cacheIslandsDir)).resolves.toBeTrue();
+        const cacheIslandsDir = path.join(TEST_DIR, ".cache", "_islands");
+        expect(exists(cacheIslandsDir)).resolves.toBeTrue();
 
-      const generatedFiles = await readdir(cacheIslandsDir);
-      expect(generatedFiles.some((f) => f.includes("NoDefault"))).toBeFalse();
+        const generatedFiles = await readdir(cacheIslandsDir);
+        expect(generatedFiles.some((f) => f.includes("NoDefault"))).toBeFalse();
+        expect(errorSpy).toHaveBeenCalledWith(
+          `Module "${path.join(ISLANDS_DIR, "NoDefault.tsx")}" must export at least one of: default. Actual exports: NotDefault.`,
+        );
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
+
+    it("should warn when an island has named exports", async () => {
+      const namedIslandPath = path.join(ISLANDS_DIR, "Named.tsx");
+      await writeFile(
+        namedIslandPath,
+        `export const helper = true;
+export default function Named() { return null; }`,
+      );
+      const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+
+      try {
+        await prerenderIslands({
+          islandFiles: [Path.fromAbsolute(namedIslandPath)],
+        });
+
+        expect(warnSpy).toHaveBeenCalledWith(
+          `Module "${namedIslandPath}" has unexpected exports (helper). Intended exports: default.`,
+        );
+      } finally {
+        warnSpy.mockRestore();
+      }
     });
 
     it("should generate unique hashes for different components", async () => {
