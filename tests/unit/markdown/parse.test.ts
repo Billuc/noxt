@@ -6,7 +6,7 @@ import { describe, it, expect } from "bun:test";
 
 describe("parseMarkdown", () => {
   it("should return empty frontmatter for markdown without frontmatter", () => {
-    const result = parseMarkdown("# Hello World");
+    const result = parseMarkdown("# Hello World", "test.md");
     expect(result.frontmatter).toEqual({});
     expect(result.content).toBe("# Hello World");
   });
@@ -66,5 +66,11 @@ tags:
       tags: ["tag1", "tag2"]
     });
     expect(result.content).toBe("# Content");
+  });
+
+  it("should throw with the markdown source when frontmatter is invalid YAML", () => {
+    expect(() =>
+      parseMarkdown("---\nlayout: [unclosed\n---\n# Content", "pages/bad.md"),
+    ).toThrow('Invalid YAML frontmatter in Markdown file "pages/bad.md".');
   });
 });

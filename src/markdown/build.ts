@@ -100,7 +100,7 @@ async function prerenderMarkdown(
     path.basename(markdownPath, ".md") + "." + pageHash + ".html";
   const prerenderPath = path.resolve(".cache", fileName);
 
-  const markdownData = parseMarkdown(content);
+  const markdownData = parseMarkdown(content, markdownPath);
 
   const prerenderedPage = await renderMarkdownToHtml(
     markdownData,

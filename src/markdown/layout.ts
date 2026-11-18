@@ -37,5 +37,12 @@ export async function getLayout(
     );
   }
 
-  return layoutExports["default"] as ComponentType<Record<string, any>>;
+  const Layout = layoutExports["default"];
+  if (typeof Layout !== "function") {
+    throw new Error(
+      `Markdown layout module "${layoutPath}" must default-export a component function, but got ${Layout === null ? "null" : typeof Layout}.`,
+    );
+  }
+
+  return Layout as ComponentType<Record<string, any>>;
 }

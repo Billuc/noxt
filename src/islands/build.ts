@@ -37,7 +37,14 @@ export async function prerenderIslands({
     const mod = await importModule(file.absolute, ["default"]);
     if (!mod) continue;
 
-    const Island = mod.default as FunctionComponent<any>; // TODO: better assertion
+    const rawIsland = mod.default;
+    if (typeof rawIsland !== "function") {
+      console.error(
+        `Island module "${file.absolute}" must default-export a component function, but got ${rawIsland === null ? "null" : typeof rawIsland}. Skipping island.`,
+      );
+      continue;
+    }
+    const Island = rawIsland as FunctionComponent<any>;
 
     const hash = crypto.hash("sha256", file.absolute, "base64url");
     const fileName = (Island.displayName ?? Island.name) + "." + hash + ".js";

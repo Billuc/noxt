@@ -41,15 +41,20 @@ export async function discoverAPIs(): Promise<{
     const apiRoute = getRouteName(file.relativeTo("src"));
 
     for (const method of HTTP_METHODS) {
-      if (method in exports && exports[method] instanceof APIEndpoint) {
-        entries.push({
-          method,
-          route: apiRoute,
-          input: exports[method].input,
-          output: exports[method].output,
-          file,
-        });
+      if (!(method in exports)) continue;
+      if (!(exports[method] instanceof APIEndpoint)) {
+        console.error(
+          `API file "${file.absolute}" exports ${method}, but it is not an endpoint. Export ${method} built with query() or mutation() from "noxt/api" to register it. Route skipped.`,
+        );
+        continue;
       }
+      entries.push({
+        method,
+        route: apiRoute,
+        input: exports[method].input,
+        output: exports[method].output,
+        file,
+      });
     }
   }
 

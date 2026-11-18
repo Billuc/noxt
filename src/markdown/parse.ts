@@ -16,17 +16,22 @@
 import * as yaml from "yaml";
 import type { MarkdownData } from "./types";
 
-function parseFrontmatter(frontmatterContent: string): Record<string, any> {
+function parseFrontmatter(
+  frontmatterContent: string,
+  source: string,
+): Record<string, any> {
   try {
     const frontmatterData = yaml.parse(frontmatterContent);
     return frontmatterData instanceof Object ? frontmatterData : {};
-  } catch {
-    return {};
+  } catch (error) {
+    throw new Error(`Invalid YAML frontmatter in Markdown file "${source}".`, {
+      cause: error,
+    });
   }
 }
 
 /** Parses a markdown string into frontmatter data and body content. */
-export function parseMarkdown(markdown: string): MarkdownData {
+export function parseMarkdown(markdown: string, source: string): MarkdownData {
   markdown = markdown.replaceAll("\r\n", "\n");
   if (!markdown.startsWith("---\n")) {
     return {
@@ -47,7 +52,7 @@ export function parseMarkdown(markdown: string): MarkdownData {
   const markdownContent = markdown.slice(frontmatterEnd + 4);
 
   return {
-    frontmatter: parseFrontmatter(frontmatterContent),
+    frontmatter: parseFrontmatter(frontmatterContent, source),
     content: markdownContent,
   };
 }

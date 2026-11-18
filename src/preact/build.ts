@@ -92,7 +92,14 @@ async function prerenderPreact(
   const mod = await importModule(pagePath, ["default"]);
   if (!mod) return null;
 
-  const Page = mod.default as FunctionComponent<any>;
+  const rawPage = mod.default;
+  if (typeof rawPage !== "function") {
+    console.error(
+      `Page module "${pagePath}" must default-export a component function, but got ${rawPage === null ? "null" : typeof rawPage}.`,
+    );
+    return null;
+  }
+  const Page = rawPage as FunctionComponent<any>;
 
   const pageHash = crypto.hash("sha256", pagePath, "base64url");
   const fileName = (Page.displayName ?? Page.name) + "." + pageHash + ".html";

@@ -41,14 +41,19 @@ export async function discoverSSRRoutes(): Promise<{
     const ssrRoute = getRouteName(file.relativeTo("src"));
 
     for (const method of HTTP_METHODS) {
-      if (method in exports && exports[method] instanceof SSRRoute) {
-        entries.push({
-          method,
-          route: ssrRoute,
-          input: exports[method].input,
-          file,
-        });
+      if (!(method in exports)) continue;
+      if (!(exports[method] instanceof SSRRoute)) {
+        console.error(
+          `SSR file "${file.absolute}" exports ${method}, but it is not a route. Export ${method} built with query() or mutation() from "noxt/ssr" to register it. Route skipped.`,
+        );
+        continue;
       }
+      entries.push({
+        method,
+        route: ssrRoute,
+        input: exports[method].input,
+        file,
+      });
     }
   }
 

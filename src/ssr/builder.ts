@@ -29,6 +29,7 @@ import {
 import * as s from "superstruct";
 import { renderToHtmlString } from "../core/render";
 import { h } from "preact";
+import { logRequestError } from "../core/request_errors";
 
 class QueryRouteBuilder<
   TInput extends SearchParams,
@@ -59,11 +60,11 @@ class QueryRouteBuilder<
           const htmlBody = await renderToHtmlString(h(() => result, {}));
           return new Response(htmlBody, response);
         } catch (err) {
-          console.error("SSR query handler failed:", err);
+          logRequestError("SSR query handler failed", request, err);
           return new Response("Internal Server Error", { status: 500 });
         }
       } catch (err) {
-        console.error("Invalid SSR query input:", err);
+        logRequestError("Invalid SSR query", request, err);
         return new Response("Bad argument", { status: 400 });
       }
     });
@@ -99,11 +100,11 @@ class MutationRouteBuilder<TInput> implements IMutationRouteBuilder<TInput> {
           const htmlBody = await renderToHtmlString(h(() => result, {}));
           return new Response(htmlBody, response);
         } catch (err) {
-          console.error("SSR mutation handler failed:", err);
+          logRequestError("SSR mutation handler failed", request, err);
           return new Response("Internal Server Error", { status: 500 });
         }
       } catch (err) {
-        console.error("Invalid SSR mutation input:", err);
+        logRequestError("Invalid SSR mutation", request, err);
         return new Response("Bad argument", { status: 400 });
       }
     });
