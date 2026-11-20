@@ -12,11 +12,6 @@
     "url": "https://github.com/Billuc/noxt/issues"
   },
   "homepage": "https://github.com/Billuc/noxt#readme",
-  "workspaces": {
-    "packages": [
-      "examples/*"
-    ]
-  },
   "files": [
     "index.ts",
     "src/",
