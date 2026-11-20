@@ -25,23 +25,6 @@
         "typescript": "^5.9.3",
       },
     },
-    "examples/demo": {
-      "name": "noxt-demo",
-      "dependencies": {
-        "@preact/signals": "catalog:",
-        "preact": "catalog:",
-        "superstruct": "catalog:",
-      },
-      "devDependencies": {
-        "@types/bun": "^1.4.0",
-        "typescript": "^5.9.3",
-      },
-    },
-  },
-  "catalog": {
-    "@preact/signals": "^2.11.2",
-    "preact": "^10.29.8",
-    "superstruct": "^2.0.2",
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
@@ -295,8 +278,6 @@
     "mrmime": ["mrmime@2.0.1", "", {}, "sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ=="],
 
     "ms": ["ms@2.1.3", "", {}, "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="],
-
-    "noxt-demo": ["noxt-demo@workspace:examples/demo"],
 
     "object-inspect": ["object-inspect@1.13.4", "", {}, "sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew=="],
 

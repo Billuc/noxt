@@ -98,10 +98,7 @@ describe("renderPreactToHtml", () => {
 
   it("should fall back to client-only for islands that throw during prerendering", async () => {
     const ThrowingIsland = () => {
-      if (typeof window === "undefined") {
-        throw new Error("browser-only feature");
-      }
-      return h("div", {}, "client content");
+      throw new Error("browser-only feature");
     };
     const HealthyIsland = () => h("div", {}, "server content");
 
