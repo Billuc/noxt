@@ -1,11 +1,109 @@
 import { readFile, Path } from "./fs";
-import type { NoxtServer, RouteHandlers, ServerImplementation } from "./types";
+import type {
+  NoxtServer,
+  RouteHandler,
+  RouteHandlers,
+  ServerImplementation,
+} from "./types";
 import { stat, watch } from "node:fs/promises";
 import { debounce } from "./utils";
 import type { FileChangeInfo } from "node:fs/promises";
 import { lookup } from "mrmime";
 
 class AbortError extends Error {}
+
+export const HMR_ENDPOINT = "/__noxt_hmr";
+
+const HMR_CLIENT_SCRIPT =
+  '<script>new EventSource("' +
+  HMR_ENDPOINT +
+  '").onmessage=()=>location.reload()</script>';
+
+function injectHmrClient(html: string): string {
+  if (html.includes(HMR_CLIENT_SCRIPT)) return html;
+
+  if (/<\/body\s*>/i.test(html)) {
+    return html.replace(/<\/body\s*>/i, HMR_CLIENT_SCRIPT + "</body>");
+  }
+  return html;
+}
+
+function wrapHtmlHandler(handler: RouteHandler): RouteHandler {
+  return async (request: Request) => {
+    const response = await handler(request);
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().includes("text/html")) {
+      return response;
+    }
+
+    const html = await response.text();
+    const headers = new Headers(response.headers);
+    headers.delete("content-length");
+    return new Response(injectHmrClient(html), {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  };
+}
+
+export class HmrManager {
+  private clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
+  private encoder = new TextEncoder();
+
+  private createEventStream(): ReadableStream<Uint8Array> {
+    let client: ReadableStreamDefaultController<Uint8Array> | undefined;
+
+    return new ReadableStream<Uint8Array>({
+      start: (controller) => {
+        client = controller;
+        this.clients.add(controller);
+        controller.enqueue(this.encoder.encode(": connected\n\n"));
+      },
+      cancel: () => {
+        if (client) this.clients.delete(client);
+      },
+    });
+  }
+
+  public wrapRoutes(routes: RouteHandlers<any>): RouteHandlers<any> {
+    const wrapped: RouteHandlers<any> = {};
+
+    for (const [route, methods] of Object.entries(routes)) {
+      const wrappedMethods: Record<string, RouteHandler> = {};
+      for (const [method, handler] of Object.entries(methods)) {
+        wrappedMethods[method] =
+          method === "GET" ? wrapHtmlHandler(handler) : handler;
+      }
+      wrapped[route] = wrappedMethods;
+    }
+
+    wrapped[HMR_ENDPOINT] = {
+      GET: () =>
+        new Response(this.createEventStream(), {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache, no-transform",
+            Connection: "keep-alive",
+            "X-Accel-Buffering": "no",
+          },
+        }),
+    };
+
+    return wrapped;
+  }
+
+  public broadcastReload(): void {
+    const payload = this.encoder.encode("data: reload\n\n");
+    for (const controller of this.clients) {
+      try {
+        controller.enqueue(payload);
+      } catch {
+        this.clients.delete(controller);
+      }
+    }
+  }
+}
 
 /** Imports an optional generated module. Returns null only when the file does not exist. */
 async function tryImport<T extends any = any>(
@@ -71,6 +169,7 @@ async function importRoutes(isDev: boolean): Promise<RouteHandlers<any>> {
 export class NoxtDevServer implements NoxtServer {
   private abortController: AbortController;
   private server: ServerImplementation | undefined;
+  private hmr = new HmrManager();
 
   constructor(
     private buildCommand: string[],
@@ -89,8 +188,9 @@ export class NoxtDevServer implements NoxtServer {
       );
     }
 
-    const routes = await importRoutes(true);
+    const routes = this.hmr.wrapRoutes(await importRoutes(true));
     this.server = await this.server.reload({ routes });
+    this.hmr.broadcastReload();
   }
 
   private async buildProject(): Promise<void> {
@@ -130,7 +230,7 @@ export class NoxtDevServer implements NoxtServer {
 
   private async startServer() {
     await this.buildProject();
-    const routes = await importRoutes(true);
+    const routes = this.hmr.wrapRoutes(await importRoutes(true));
     this.server = await this.createServer({ routes });
 
     const watcher = watch("src", {
