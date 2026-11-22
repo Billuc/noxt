@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/assets/build.ts
  */
-import { fileURLToPath } from "node:url";
 import { discoverAssets, generateAssetUtils } from "../../../src/assets/build";
 import type { AssetEntry } from "../../../src/assets/types";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -10,7 +9,7 @@ import path from "node:path";
 import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-assets-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-assets-project");
 const ASSETS_DIR = path.join(TEST_DIR, "src", "assets");
 const originalCwd = process.cwd();
 

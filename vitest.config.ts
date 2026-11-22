@@ -5,7 +5,6 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       "tests/e2e/**",
-      "tests/integration/static.test.ts",
     ],
   },
 });

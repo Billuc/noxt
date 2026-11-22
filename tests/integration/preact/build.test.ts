@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/preact/build.ts
  */
-import { fileURLToPath } from "node:url";
 import {
   discoverPreactPages,
   prerenderPreactPages,
@@ -18,7 +17,7 @@ import {
 } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-preact-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-preact-project");
 const PAGES_DIR = path.join(TEST_DIR, "src", "pages");
 const originalCwd = process.cwd();
 

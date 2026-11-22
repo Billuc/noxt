@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/core/build.ts
  */
-import { fileURLToPath } from "node:url";
 import { generateRouteMap, generateRouteUtils } from "../../../src/core/build";
 import { Path } from "../../../src/core/fs";
 import type { RouteData } from "../../../src/core/types";
@@ -13,7 +12,7 @@ import path from "node:path";
 import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import type { FunctionComponent } from "preact";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-core-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-core-project");
 const PAGES_DIR = path.join(TEST_DIR, "src", "pages");
 const CACHE_TEST_DIR = path.join(TEST_DIR, ".cache");
 const originalCwd = process.cwd();

@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/ssr/build.ts
  */
-import { fileURLToPath } from "node:url";
 import { discoverSSRRoutes, generateSSRFile } from "../../../src/ssr/build";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync } from "node:fs";
@@ -10,7 +9,7 @@ import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 import type { SSRRouteEntry } from "../../../src/ssr/types";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-ssr-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-ssr-project");
 const SSR_DIR = path.join(TEST_DIR, "src", "ssr");
 const originalCwd = process.cwd();
 // Fixtures import the builders via the "noxt/ssr" package export,

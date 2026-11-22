@@ -1,4 +1,3 @@
-
 /**
  * Unit tests for src/runtime/render.ts
  */
@@ -36,9 +35,6 @@ import { UtilsContext } from "../../../src/core/context";
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
-
-const sleep = (milliseconds: number) =>
-  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 describe("renderIsland", () => {
   afterEach(() => {
@@ -170,8 +166,9 @@ describe("renderIsland", () => {
     document.body.appendChild(el);
 
     renderIsland(TestComponent, hash, "/base");
-    await sleep(20);
-    expect(seenUrl).toContain("/base/api/users?id=1");
+    await vi.waitFor(() => {
+      expect(seenUrl).toContain("/base/api/users?id=1");
+    });
   });
 
   it("should default the base to an empty string when not provided", () => {
@@ -231,8 +228,9 @@ describe("renderIsland", () => {
     document.body.appendChild(el);
 
     renderIsland(TestComponent, hash, "/base");
-    await sleep(20);
-    expect(seenUrl).toContain("/base/frag?q=x");
-    expect(seenSsrUrl).toBe("/base/frag?q=x");
+    await vi.waitFor(() => {
+      expect(seenUrl).toContain("/base/frag?q=x");
+      expect(seenSsrUrl).toBe("/base/frag?q=x");
+    });
   });
 });

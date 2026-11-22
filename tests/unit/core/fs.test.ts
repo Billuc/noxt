@@ -1,7 +1,6 @@
 /**
  * Unit tests for src/shell/fs.ts
  */
-import { fileURLToPath } from "node:url";
 import {
   writeFile,
   readFile,
@@ -14,7 +13,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { rm, mkdir, readFile as readNodeFile, writeFile as writeNodeFile } from "node:fs/promises";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "test-fs-temp");
+const TEST_DIR = path.join(import.meta.dirname, "..", "..", "test-fs-temp");
 
 async function setupTestDir() {
   await mkdir(TEST_DIR, { recursive: true });

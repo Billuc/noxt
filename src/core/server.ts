@@ -6,6 +6,7 @@ import type {
   ServerImplementation,
 } from "./types";
 import { stat, watch } from "node:fs/promises";
+import { spawn } from "node:child_process";
 import { debounce } from "./utils";
 import type { FileChangeInfo } from "node:fs/promises";
 import { lookup } from "mrmime";
@@ -198,20 +199,22 @@ export class NoxtDevServer implements NoxtServer {
     this.abortController = new AbortController();
 
     console.log("Building...");
-    const buildStep = Bun.spawn({
-      cmd: this.buildCommand,
-      stderr: "inherit",
-      stdout: "inherit",
+    const buildStep = spawn(this.buildCommand[0]!, this.buildCommand.slice(1), {
+      stdio: "inherit",
       signal: this.abortController.signal,
     });
-    const buildCode = await buildStep.exited;
-
-    if (buildStep.signalCode === "SIGTERM") {
-      throw new AbortError("Aborted !");
-    }
-    if (buildCode !== 0) {
-      throw new Error("Build failed !");
-    }
+    await new Promise<void>((resolve, reject) => {
+      buildStep.once("error", reject);
+      buildStep.once("close", (code, signal) => {
+        if (this.abortController.signal.aborted || signal) {
+          reject(new AbortError("Aborted !"));
+        } else if (code !== 0) {
+          reject(new Error("Build failed !"));
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   private async onFileChange(fc: FileChangeInfo<string>) {

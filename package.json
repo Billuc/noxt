@@ -29,7 +29,6 @@
   },
   "devDependencies": {
     "@testing-library/preact": "^3.2.4",
-    "@types/bun": "latest",
     "happy-dom": "^21.0.4",
     "htm": "^3.1.1",
     "vitest": "^4.1.12"

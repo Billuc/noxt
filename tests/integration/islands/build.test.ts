@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/islands/build.ts
  */
-import { fileURLToPath } from "node:url";
 import { discoverIslands, prerenderIslands } from "../../../src/islands/build";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { existsSync } from "node:fs";
@@ -9,7 +8,7 @@ import path from "node:path";
 import { mkdir, rm, writeFile, readdir } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-islands-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-islands-project");
 const ISLANDS_DIR = path.join(TEST_DIR, "src", "islands");
 const originalCwd = process.cwd();
 

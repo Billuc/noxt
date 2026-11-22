@@ -26,9 +26,7 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": false,
-
-    "types": ["bun"]
+    "noPropertyAccessFromIndexSignature": false
   },
   "exclude": ["examples", "node_modules"]
 }

@@ -1,10 +1,9 @@
-import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { importModule } from "../../../src/core/module";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-module-temp");
+const TEST_DIR = path.join(import.meta.dirname, "test-module-temp");
 
 describe("importModule", () => {
   beforeEach(async () => {

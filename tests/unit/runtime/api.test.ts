@@ -1,5 +1,3 @@
-
-
 /**
  * Copyright 2026 Luc BILLAUD
  *
@@ -38,8 +36,6 @@ beforeAll(() => {
     writable: true,
   });
 });
-
-// Note: @testing-library/preact's renderHook uses act() for updates, requiring longer wait times
 
 // Define test API types - keys must be strings in format "METHOD /path"
 const TestApi = {

@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/api/build.ts
  */
-import { fileURLToPath } from "node:url";
 import { discoverAPIs, generateAPIFile } from "../../../src/api/build";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync } from "node:fs";
@@ -10,7 +9,7 @@ import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 import type { APIEndpointEntry } from "../../../src/api/types";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-api-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-api-project");
 const API_DIR = path.join(TEST_DIR, "src", "api");
 const originalCwd = process.cwd();
 

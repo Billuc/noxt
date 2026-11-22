@@ -1,7 +1,6 @@
 /**
  * Integration tests for src/markdown/build.ts
  */
-import { fileURLToPath } from "node:url";
 import {
   discoverMarkdownPages,
   prerenderMarkdownPages,
@@ -18,7 +17,7 @@ import {
 } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-markdown-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-markdown-project");
 const PAGES_DIR = path.join(TEST_DIR, "src", "pages");
 const originalCwd = process.cwd();
 

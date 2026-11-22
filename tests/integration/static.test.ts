@@ -1,78 +1,134 @@
-// import { staticPrerender } from "../../src/static/static";
-// import { describe, it, expect, beforeEach, afterEach } from "vitest";
-// import path from "node:path";
-// import { rm, mkdir, writeFile, readdir, readFile } from "node:fs/promises";
-// import { existsSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  mkdir,
+  rm,
+  writeFile,
+  readFile,
+} from "node:fs/promises";
+import path from "node:path";
+import { generateStaticPages } from "../../src/static/build";
+import { Path } from "../../src/core/fs";
+import type { IslandEntry } from "../../src/islands";
+import type { AssetEntry } from "../../src/assets/types";
 
-// const SANDBOX_DIR = path.resolve(
-//   path.dirname(fileURLToPath(import.meta.url)),
-//   "..",
-//   "..",
-//   "test-static-temp",
-// );
-// const PAGES_DIR = path.join(SANDBOX_DIR, "pages");
-// const DIST_DIR = path.join(SANDBOX_DIR, "dist");
-// const CACHE_DIR = path.join(SANDBOX_DIR, ".cache");
+const TEST_DIR = path.join(import.meta.dirname, "test-static-project");
+const originalCwd = process.cwd();
 
-// async function setupSandbox() {
-//   await rm(SANDBOX_DIR, { recursive: true, force: true });
-//   await mkdir(PAGES_DIR, { recursive: true });
+async function setupTestProject() {
+  await mkdir(path.join(TEST_DIR, "src", "pages"), { recursive: true });
+  await mkdir(path.join(TEST_DIR, ".cache", "_islands"), {
+    recursive: true,
+  });
+  await mkdir(path.join(TEST_DIR, "src", "assets", "images"), {
+    recursive: true,
+  });
+  await writeFile(
+    path.join(TEST_DIR, "src", "pages", "index.html"),
+    "<h1>Home</h1>",
+  );
+  await writeFile(
+    path.join(TEST_DIR, "src", "pages", "about.html"),
+    "<h1>About</h1>",
+  );
+  await writeFile(
+    path.join(TEST_DIR, ".cache", "_islands", "Counter.js"),
+    "counter",
+  );
+  await writeFile(
+    path.join(TEST_DIR, "src", "assets", "images", "logo.svg"),
+    "<svg></svg>",
+  );
+}
 
-//   await writeFile(
-//     path.join(PAGES_DIR, "index.tsx"),
-//     `import { h } from "preact";
-// export default function HomePage() {
-//   return h("h1", {}, "Home");
-// }`,
-//   );
+describe("generateStaticPages", () => {
+  beforeEach(async () => {
+    process.chdir(originalCwd);
+    await rm(TEST_DIR, { recursive: true, force: true });
+    await setupTestProject();
+    process.chdir(TEST_DIR);
+  });
 
-//   await writeFile(
-//     path.join(PAGES_DIR, "about.tsx"),
-//     `import { h } from "preact";
-// export default function AboutPage() {
-//   return h("h1", {}, "About");
-// }`,
-//   );
-// }
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await rm(TEST_DIR, { recursive: true, force: true });
+  });
 
-// async function cleanupSandbox() {
-//   await rm(SANDBOX_DIR, { recursive: true, force: true });
-// }
+  it("copies pages, islands, and assets into dist and creates a manifest", async () => {
+    const island = {
+      hash: "counter",
+      component: () => null,
+      files: [
+        Path.fromAbsolute(
+          path.join(TEST_DIR, ".cache", "_islands", "Counter.js"),
+        ),
+      ],
+    } satisfies IslandEntry;
+    const asset = {
+      url: "/assets/images/logo.svg",
+      file: Path.fromAbsolute(
+        path.join(TEST_DIR, "src", "assets", "images", "logo.svg"),
+      ),
+    } satisfies AssetEntry;
 
-// describe("staticPrerender", () => {
-//   const originalCwd = process.cwd();
+    const { manifest } = await generateStaticPages({
+      pages: [
+        {
+          url: "/",
+          file: Path.fromAbsolute(
+            path.join(TEST_DIR, "src", "pages", "index.html"),
+          ),
+        },
+        {
+          url: "/about",
+          file: Path.fromAbsolute(
+            path.join(TEST_DIR, "src", "pages", "about.html"),
+          ),
+        },
+      ],
+      islands: [island],
+      assets: [asset],
+      base: "/docs",
+    });
 
-//   beforeEach(async () => {
-//     await setupSandbox();
-//     process.chdir(SANDBOX_DIR);
-//   });
+    expect(
+      (await readFile(path.join(TEST_DIR, "dist", "index.html"))).toString(),
+    ).toBe("<h1>Home</h1>");
+    expect(
+      (
+        await readFile(
+          path.join(TEST_DIR, "dist", "about", "index.html"),
+        )
+      ).toString(),
+    ).toBe("<h1>About</h1>");
+    expect(
+      (
+        await readFile(
+          path.join(TEST_DIR, "dist", "_islands", "Counter.js"),
+        )
+      ).toString(),
+    ).toBe("counter");
+    expect(
+      (
+        await readFile(
+          path.join(TEST_DIR, "dist", "assets", "images", "logo.svg"),
+        )
+      ).toString(),
+    ).toBe("<svg></svg>");
 
-//   afterEach(async () => {
-//     process.chdir(originalCwd);
-//     await cleanupSandbox();
-//   });
-
-//   it("should generate dist directory with built files", async () => {
-//     await staticPrerender();
-
-//     expect(existsSync(DIST_DIR)).toBe(true);
-//     const distFiles = await readdir(DIST_DIR);
-//     expect(distFiles.length).toBeGreaterThan(0);
-//   });
-
-//   it("should create .cache directory with prerendered HTML files", async () => {
-//     await staticPrerender();
-
-//     expect(existsSync(CACHE_DIR)).toBe(true);
-//     const cacheFiles = await readdir(CACHE_DIR);
-//     const htmlFiles = cacheFiles.filter((f) => f.endsWith(".html"));
-//     expect(htmlFiles.length).toBe(2);
-//   });
-
-//   it("should output files in dist directory", async () => {
-//     await staticPrerender();
-
-//     const distFiles = await readdir(DIST_DIR);
-//     expect(distFiles.length).toBeGreaterThan(0);
-//   });
-// });
+    expect(manifest).toEqual({
+      "/docs/": path.join("dist", "index.html"),
+      "/docs/about": path.join("dist", "about", "index.html"),
+      "/docs/_islands/Counter.js": path.join(
+        "dist",
+        "_islands",
+        "Counter.js",
+      ),
+      "/docs/assets/images/logo.svg": path.join(
+        "dist",
+        "assets",
+        "images",
+        "logo.svg",
+      ),
+    });
+  });
+});
