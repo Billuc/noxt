@@ -28,3 +28,5 @@ export { getSSRHandlers, makeSSRFn, makeSSRUrlFn } from "./ssr";
 
 export { sharedSignal } from "./signal";
 export type { Signal } from "@preact/signals";
+export { useUtilsContext } from "./context";
+export type { NoxtContextDefinitions } from "./context";

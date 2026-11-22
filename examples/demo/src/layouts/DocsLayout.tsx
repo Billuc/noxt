@@ -1,5 +1,5 @@
 import { h, type ComponentChildren } from "preact";
-import { useUtilsContext } from "../runtime/utils";
+import { useUtilsContext } from "noxt/runtime";
 
 interface DocsLayoutProps {
   title?: string;

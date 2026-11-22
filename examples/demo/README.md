@@ -20,6 +20,25 @@ NOXT_BASE=/demo bun run build      # base-path prefixing
 PORT=3001 bun run serve            # custom port (reuse the same NOXT_BASE as the build)
 ```
 
+Frontend utilities are available directly from `noxt/runtime`:
+
+```ts
+import { useApi, useUtilsContext } from "noxt/runtime";
+
+const { api, ssr, page, asset, ssrUrl } = useUtilsContext();
+const posts = api("/api/posts", "GET");
+```
+
+Generated cache modules augment `useUtilsContext` automatically. TypeScript
+must include dot-directory files explicitly, as the demo does in
+`tsconfig.json`:
+
+```json
+{
+  "include": ["src", ".cache/**/*.ts"]
+}
+```
+
 ## Feature checklist
 
 | Feature | Where |

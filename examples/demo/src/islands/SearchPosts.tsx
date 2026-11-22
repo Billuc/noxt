@@ -1,14 +1,6 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
-import { useApi } from "noxt/runtime";
-import { useUtilsContext } from "../runtime/utils";
-
-interface Post {
-  id: number;
-  title: string;
-  tags: string[];
-  published: boolean;
-}
+import { useApi, useUtilsContext } from "noxt/runtime";
 
 // Exercises every searchParams type: string (q), array (tags),
 // number (limit) and boolean (published), via useApi/useAsync.
@@ -30,7 +22,7 @@ export default function SearchPosts(_: {}) {
   if (tagList.length > 0) input.tags = tagList;
 
   const { data, loading, error, refresh } = useApi(fetchPosts, input);
-  const posts = (data as { posts: Post[] } | null)?.posts ?? [];
+  const posts = data?.posts ?? [];
 
   return (
     <div>

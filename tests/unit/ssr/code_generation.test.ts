@@ -37,6 +37,12 @@ const handlers = getSSRHandlers(ssrRoutesData, "");
 
 type SSRRoutes = InferDefinitions<typeof ssrRoutesData>;
 
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    ssr: SSRRoutes;
+  }
+}
+
 export { type SSRRoutes, handlers };
 `);
   });
@@ -62,6 +68,12 @@ const handlers = getSSRHandlers(ssrRoutesData, "");
 
 type SSRRoutes = InferDefinitions<typeof ssrRoutesData>;
 
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    ssr: SSRRoutes;
+  }
+}
+
 export { type SSRRoutes, handlers };
 `);
   });
@@ -84,6 +96,12 @@ const ssrRoutesData = {
 const handlers = getSSRHandlers(ssrRoutesData, "/base");
 
 type SSRRoutes = InferDefinitions<typeof ssrRoutesData>;
+
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    ssr: SSRRoutes;
+  }
+}
 
 export { type SSRRoutes, handlers };
 `);

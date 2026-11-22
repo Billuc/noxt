@@ -1,7 +1,6 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
-import { FetchError } from "noxt/runtime";
-import { useUtilsContext } from "../runtime/utils";
+import { FetchError, useUtilsContext } from "noxt/runtime";
 
 function toMessage(err: unknown): string {
   if (err instanceof FetchError) {

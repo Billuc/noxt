@@ -7,7 +7,7 @@ import Clock from "../islands/Clock";
 import SearchPosts from "../islands/SearchPosts";
 import Guestbook from "../islands/Guestbook";
 import SsrFragments from "../islands/SsrFragments";
-import { useUtilsContext } from "../runtime/utils";
+import { useUtilsContext } from "noxt/runtime";
 
 export default function Home() {
   const { page, asset } = useUtilsContext();

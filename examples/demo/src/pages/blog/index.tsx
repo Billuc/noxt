@@ -1,7 +1,7 @@
 import { h } from "preact";
 import { Island } from "noxt";
 import SearchPosts from "../../islands/SearchPosts";
-import { useUtilsContext } from "../../runtime/utils";
+import { useUtilsContext } from "noxt/runtime";
 
 export default function Blog() {
   const { page, asset } = useUtilsContext();

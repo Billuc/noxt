@@ -1,14 +1,6 @@
 import { h } from "preact";
 import { useState } from "preact/hooks";
-import { useApi } from "noxt/runtime";
-import { useUtilsContext } from "../runtime/utils";
-
-interface GuestbookEntry {
-  id: number;
-  name: string;
-  message: string;
-  at: string;
-}
+import { useApi, useUtilsContext } from "noxt/runtime";
 
 // GET list and POST via the typed API caller.
 // Empty name/message submits trigger the endpoint's 400 path.
