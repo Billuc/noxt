@@ -97,6 +97,12 @@ const handlers = getSSRHandlers(ssrRoutesData, ${JSON.stringify(base ?? "")});
 
 type SSRRoutes = InferDefinitions<typeof ssrRoutesData>;
 
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    ssr: SSRRoutes;
+  }
+}
+
 export { type SSRRoutes, handlers };
 `;
 }

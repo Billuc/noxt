@@ -38,6 +38,12 @@ const handlers = getApiHandlers(apiRoutesData, "");
 
 type ApiRoutes = InferDefinitions<typeof apiRoutesData>;
 
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    api: ApiRoutes;
+  }
+}
+
 export { type ApiRoutes, handlers };
 `);
     });
@@ -130,6 +136,16 @@ export { type ApiRoutes, handlers };
       const code = generateApiUtilsCode(entries);
 
       expect(code).toContain("export { type ApiRoutes, handlers };");
+    });
+
+    it("should augment the library context definitions", () => {
+      const code = generateApiUtilsCode([
+        createEntry("GET", "/api/test", "./src/api/test.ts"),
+      ]);
+
+      expect(code).toContain(
+        'interface NoxtContextDefinitions {\n    api: ApiRoutes;\n  }',
+      );
     });
   });
 

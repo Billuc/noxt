@@ -1,11 +1,9 @@
 import { h } from "preact";
-import { useContext } from "preact/hooks";
-import { sharedSignal, UtilsContext } from "noxt/runtime";
+import { sharedSignal, useUtilsContext } from "noxt/runtime";
 
 export default function ThemeToggle(_: {}) {
   const theme = sharedSignal<"light" | "dark">("demo:theme", "light");
-  // Proves renderIsland() provides UtilsContext client-side.
-  const { page, asset } = useContext(UtilsContext);
+  const { page, asset } = useUtilsContext();
 
   return (
     <div>

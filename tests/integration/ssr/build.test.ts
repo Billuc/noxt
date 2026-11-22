@@ -428,6 +428,12 @@ const handlers = getSSRHandlers(ssrRoutesData, "");
 
 type SSRRoutes = InferDefinitions<typeof ssrRoutesData>;
 
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    ssr: SSRRoutes;
+  }
+}
+
 export { type SSRRoutes, handlers };
 `);
     });

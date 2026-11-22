@@ -47,6 +47,27 @@ bun run index.ts
 
 The server will start and be ready to handle requests.
 
+### Typed frontend context
+
+Pages and islands can import `useUtilsContext` directly from `noxt/runtime`.
+Generated API, SSR, page, and asset files augment this hook automatically, so a
+project-specific wrapper that imports `.cache` files is unnecessary.
+
+```ts
+import { useUtilsContext } from "noxt/runtime";
+
+const { api, ssr, page, asset, ssrUrl } = useUtilsContext();
+```
+
+Because `.cache` is a dot-directory, include its generated TypeScript modules
+explicitly in the project `tsconfig.json`:
+
+```json
+{
+  "include": ["src", ".cache/**/*.ts"]
+}
+```
+
 ### Creating Pages
 
 Create new page files in the `pages` directory with `.ts` or `.tsx` extensions. Each file automatically becomes a route based on its filename.

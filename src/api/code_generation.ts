@@ -97,6 +97,12 @@ const handlers = getApiHandlers(apiRoutesData, ${JSON.stringify(base ?? "")});
 
 type ApiRoutes = InferDefinitions<typeof apiRoutesData>;
 
+declare module "noxt/runtime" {
+  interface NoxtContextDefinitions {
+    api: ApiRoutes;
+  }
+}
+
 export { type ApiRoutes, handlers };
 `;
 }
