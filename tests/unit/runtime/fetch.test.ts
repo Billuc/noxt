@@ -1,3 +1,4 @@
+
 /**
  * Copyright 2026 Luc BILLAUD
  *
@@ -14,7 +15,7 @@
  *  limitations under the License.
  **/
 
-import { describe, it, expect, beforeAll, afterEach } from "bun:test";
+import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
 import * as devalue from "devalue";
@@ -23,6 +24,9 @@ import {
   requestFrom,
   useAsync,
 } from "../../../src/runtime/fetch";
+
+const sleep = (milliseconds: number) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const happyWindow = new GlobalWindow();
 
@@ -319,12 +323,11 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      // Wait for async to complete - useLayoutEffect + async needs more time
-      await Bun.sleep(100);
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.data).toEqual(expectedData);
-      expect(result.current.error).toBeNull();
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.data).toEqual(expectedData);
+        expect(result.current.error).toBeNull();
+      });
 
       unmount();
     });
@@ -338,9 +341,9 @@ describe("useAsync", () => {
 
       const { unmount } = renderHook(() => useAsync("test-input", asyncFn));
 
-      await Bun.sleep(50);
-
-      expect(receivedInputs).toContain("test-input");
+      await vi.waitFor(() => {
+        expect(receivedInputs).toContain("test-input");
+      });
 
       unmount();
     });
@@ -354,10 +357,10 @@ describe("useAsync", () => {
 
       const { unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(50);
-
-      expect(receivedSignal).toBeInstanceOf(AbortSignal);
-      expect(receivedSignal?.aborted).toBe(false);
+      await vi.waitFor(() => {
+        expect(receivedSignal).toBeInstanceOf(AbortSignal);
+        expect(receivedSignal?.aborted).toBe(false);
+      });
 
       unmount();
     });
@@ -370,12 +373,12 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(50);
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.error).toBeInstanceOf(Error);
-      expect(result.current.error?.message).toBe("Test error");
-      expect(result.current.data).toBeNull();
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.error).toBeInstanceOf(Error);
+        expect(result.current.error?.message).toBe("Test error");
+        expect(result.current.data).toBeNull();
+      });
 
       unmount();
     });
@@ -385,12 +388,12 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(50);
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.error).toBeInstanceOf(Error);
-      expect(result.current.error?.message).toBe("String error");
-      expect(result.current.data).toBeNull();
+      await vi.waitFor(() => {
+        expect(result.current.loading).toBe(false);
+        expect(result.current.error).toBeInstanceOf(Error);
+        expect(result.current.error?.message).toBe("String error");
+        expect(result.current.data).toBeNull();
+      });
 
       unmount();
     });
@@ -407,12 +410,10 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      // Wait for the async to complete
-      await Bun.sleep(100);
-
-      // AbortError should not be stored in state
-      expect(result.current.error).toBeNull();
-      expect(result.current.loading).toBe(false);
+      await vi.waitFor(() => {
+        expect(result.current.error).toBeNull();
+        expect(result.current.loading).toBe(false);
+      });
 
       unmount();
     });
@@ -428,18 +429,15 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      // Wait for initial fetch
-      await Bun.sleep(50);
-
-      expect(result.current.data).toBe("result-1");
+      await vi.waitFor(() => {
+        expect(result.current.data).toBe("result-1");
+      });
       expect(callCount.count).toBe(1);
 
-      // Trigger refresh
       await result.current.refresh();
-      // Wait for refresh to complete
-      await Bun.sleep(50);
-
-      expect(result.current.data).toBe("result-2");
+      await vi.waitFor(() => {
+        expect(result.current.data).toBe("result-2");
+      });
       expect(callCount.count).toBe(2);
 
       unmount();
@@ -460,7 +458,9 @@ describe("useAsync", () => {
         { initialProps: { input: "initial" } },
       );
 
-      await Bun.sleep(50);
+      await vi.waitFor(() => {
+        expect(receivedInputs).toContain("initial");
+      });
 
       // Update input
       rerender({ input: "updated" });
@@ -468,9 +468,9 @@ describe("useAsync", () => {
       // Resolve the promise
       resolveFn!("result");
 
-      await Bun.sleep(100);
-
-      expect(receivedInputs).toContain("updated");
+      await vi.waitFor(() => {
+        expect(receivedInputs).toContain("updated");
+      });
 
       unmount();
     });
@@ -480,7 +480,9 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(50);
+      await vi.waitFor(() => {
+        expect(result.current.data).toBe("refreshed-data");
+      });
 
       const refreshResult = await result.current.refresh();
       expect(refreshResult).toBe("refreshed-data");
@@ -500,10 +502,10 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(50);
-
-      expect(result.current.data).toBe("success");
-      expect(result.current.error).toBeNull();
+      await vi.waitFor(() => {
+        expect(result.current.data).toBe("success");
+        expect(result.current.error).toBeNull();
+      });
 
       // Trigger failing refresh
       shouldFail = true;
@@ -513,10 +515,10 @@ describe("useAsync", () => {
         // Expected to throw
       }
 
-      await Bun.sleep(50);
-
-      expect(result.current.error).toBeInstanceOf(Error);
-      expect(result.current.error?.message).toBe("Refresh error");
+      await vi.waitFor(() => {
+        expect(result.current.error).toBeInstanceOf(Error);
+        expect(result.current.error?.message).toBe("Refresh error");
+      });
 
       unmount();
     });
@@ -536,14 +538,16 @@ describe("useAsync", () => {
 
       const { result, unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(20);
+      await vi.waitFor(() => {
+        expect(abortSignals.length).toBe(1);
+      });
 
       // Trigger refresh (should abort first request)
       result.current.refresh().catch(() => {});
 
-      await Bun.sleep(20);
-
-      expect(abortSignals.length).toBe(2);
+      await vi.waitFor(() => {
+        expect(abortSignals.length).toBe(2);
+      });
       expect(abortSignals[0]?.aborted).toBe(true);
       expect(abortSignals[1]?.aborted).toBe(false);
 
@@ -562,7 +566,9 @@ describe("useAsync", () => {
 
       const { unmount } = renderHook(() => useAsync("test", asyncFn));
 
-      await Bun.sleep(20);
+      await vi.waitFor(() => {
+        expect(receivedSignal).not.toBeNull();
+      });
 
       unmount();
 
@@ -584,7 +590,7 @@ describe("useAsync", () => {
       unmount();
 
       // Wait longer than the promise takes
-      await Bun.sleep(150);
+      await sleep(150);
 
       // State should not have been updated
       expect(result.current.data).toBeNull();

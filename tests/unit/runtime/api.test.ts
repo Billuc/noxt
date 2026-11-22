@@ -1,3 +1,5 @@
+
+
 /**
  * Copyright 2026 Luc BILLAUD
  *
@@ -14,7 +16,7 @@
  *  limitations under the License.
  **/
 
-import { describe, it, expect, beforeAll, afterEach, mock } from "bun:test";
+import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import * as s from "superstruct";
 import * as devalue from "devalue";
 import { renderHook } from "@testing-library/preact";
@@ -70,7 +72,7 @@ describe("makeApiFn", () => {
   });
 
   it("should prepend base URL to endpoint URL", async () => {
-    const customFetcher = mock((_request: Request) => {
+    const customFetcher = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
@@ -87,14 +89,14 @@ describe("makeApiFn", () => {
   });
 
   it("should be consistent across instances for GET query params", async () => {
-    const fetcherA = mock((_request: Request) => {
+    const fetcherA = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
         }),
       );
     });
-    const fetcherB = mock((_request: Request) => {
+    const fetcherB = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
@@ -116,7 +118,7 @@ describe("makeApiFn", () => {
   });
 
   it("should send POST input as JSON body with method", async () => {
-    const customFetcher = mock((_request: Request) => {
+    const customFetcher = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(
           devalue.stringify({
@@ -148,7 +150,7 @@ describe("makeApiFn", () => {
   });
 
   it("should forward extra fetch options and signal", async () => {
-    const customFetcher = mock((_request: Request) => {
+    const customFetcher = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
@@ -171,7 +173,7 @@ describe("makeApiFn", () => {
   });
 
   it("should default base to empty string when omitted", async () => {
-    const customFetcher = mock((_request: Request) => {
+    const customFetcher = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
@@ -188,7 +190,7 @@ describe("makeApiFn", () => {
   });
 
   it("should send Accept: application/x-devalue and parse devalue bodies", async () => {
-    const customFetcher = mock((_request: Request) => {
+    const customFetcher = vi.fn((_request: Request) => {
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
@@ -206,18 +208,18 @@ describe("makeApiFn", () => {
   });
 
   it("should throw FetchError on non-ok responses", async () => {
-    const customFetcher = mock((_request: Request) =>
+    const customFetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("nope", { status: 500 })),
     );
 
     const api = makeApiFn<TestApi>("");
-    expect(api("/users", "GET", customFetcher)({ id: "1" })).rejects.toThrow(
-      "Error 500",
-    );
+    await expect(
+      api("/users", "GET", customFetcher)({ id: "1" }),
+    ).rejects.toThrow("Error 500");
   });
 
   it("should not mutate the caller-provided options object", async () => {
-    const customFetcher = mock((_request: Request) =>
+    const customFetcher = vi.fn((_request: Request) =>
       Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "test" }), {
           status: 200,
@@ -274,7 +276,7 @@ describe("useApi", () => {
   });
 
   it("should pass input to endpoint caller", async () => {
-    const endpointCaller = mock((_input: { id: string }) => {
+    const endpointCaller = vi.fn((_input: { id: string }) => {
       return Promise.resolve({ id: "1", name: "test" });
     });
 
@@ -282,16 +284,15 @@ describe("useApi", () => {
       useApi(endpointCaller, { id: "123" }),
     );
 
-    // Wait for the async fetch to complete
-    await Bun.sleep(50);
-
-    expect(endpointCaller.mock.lastCall?.[0]).toEqual({ id: "123" });
+    await vi.waitFor(() => {
+      expect(endpointCaller.mock.lastCall?.[0]).toEqual({ id: "123" });
+    });
 
     unmount();
   });
 
   it("should pass options to endpoint caller including signal", async () => {
-    const endpointCaller = mock(
+    const endpointCaller = vi.fn(
       (
         _input: { id: string },
         _options?: FetchRequestInit,
@@ -309,14 +310,14 @@ describe("useApi", () => {
       ),
     );
 
-    // Wait for the async fetch to complete
-    await Bun.sleep(50);
-
-    // Should have the headers plus the signal
-    const receivedOptions = endpointCaller.mock.lastCall?.[1];
-    const receivedSignal = endpointCaller.mock.lastCall?.[2];
-    expect(receivedOptions?.headers).toEqual({ Authorization: "Bearer token" });
-    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    await vi.waitFor(() => {
+      const receivedOptions = endpointCaller.mock.lastCall?.[1];
+      const receivedSignal = endpointCaller.mock.lastCall?.[2];
+      expect(receivedOptions?.headers).toEqual({
+        Authorization: "Bearer token",
+      });
+      expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    });
 
     unmount();
   });
@@ -330,12 +331,11 @@ describe("useApi", () => {
       useApi(endpointCaller, { id: "1" }),
     );
 
-    // Wait for the async fetch to complete - needs extra time
-    await Bun.sleep(100);
-
-    expect(result.current.loading).toBe(false);
-    expect(result.current.data).toEqual(expectedData);
-    expect(result.current.error).toBeNull();
+    await vi.waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.data).toEqual(expectedData);
+      expect(result.current.error).toBeNull();
+    });
 
     unmount();
   });
@@ -348,12 +348,11 @@ describe("useApi", () => {
       useApi(endpointCaller, { id: "1" }),
     );
 
-    // Wait for the async fetch to complete
-    await Bun.sleep(50);
-
-    expect(result.current.loading).toBe(false);
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect(result.current.error?.message).toBe("API Error");
+    await vi.waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect(result.current.error?.message).toBe("API Error");
+    });
 
     unmount();
   });
@@ -364,7 +363,7 @@ describe("useApi", () => {
       { id: "2", name: "user2" },
     ];
     let responseIndex = 0;
-    const endpointCaller = mock(() => {
+    const endpointCaller = vi.fn(() => {
       return Promise.resolve(responses[responseIndex++]);
     });
 
@@ -372,19 +371,16 @@ describe("useApi", () => {
       useApi(endpointCaller, { id: "1" }),
     );
 
-    // Wait for initial fetch
-    await Bun.sleep(50);
+    await vi.waitFor(() => {
+      expect(endpointCaller.mock.calls.length).toBe(1);
+      expect(result.current.data).toEqual(responses[0]);
+    });
 
-    expect(endpointCaller.mock.calls.length).toBe(1);
-    expect(result.current.data).toEqual(responses[0]);
-
-    // Refetch
     await result.current.refresh();
-    // Wait for refetch to complete
-    await Bun.sleep(50);
-
-    expect(endpointCaller.mock.calls.length).toBe(2);
-    expect(result.current.data).toEqual(responses[1]);
+    await vi.waitFor(() => {
+      expect(endpointCaller.mock.calls.length).toBe(2);
+      expect(result.current.data).toEqual(responses[1]);
+    });
 
     unmount();
   });
@@ -392,7 +388,7 @@ describe("useApi", () => {
   it("should pass signal to endpoint caller for abort", async () => {
     const abortSignals: (AbortSignal | null)[] = [];
 
-    const endpointCaller = mock(
+    const endpointCaller = vi.fn(
       (_input: any, _options?: FetchRequestInit, signal?: AbortSignal) => {
         abortSignals.push(signal ?? null);
         return new Promise(() => {}); // Never resolves
@@ -401,10 +397,9 @@ describe("useApi", () => {
 
     const { unmount } = renderHook(() => useApi(endpointCaller, { id: "1" }));
 
-    // Wait a bit for the fetch to start
-    await Bun.sleep(20);
-
-    expect(abortSignals.length).toBe(1);
+    await vi.waitFor(() => {
+      expect(abortSignals.length).toBe(1);
+    });
     expect(abortSignals[0]).not.toBeNull();
     expect(abortSignals[0]).toBeInstanceOf(AbortSignal);
     expect(abortSignals[0]?.aborted).toBe(false);
@@ -418,7 +413,7 @@ describe("useApi", () => {
   it("should integrate with makeApiFn", async () => {
     const expectedData = { id: "1", name: "test user" };
 
-    const customFetcher = mock((_request: Request) =>
+    const customFetcher = vi.fn((_request: Request) =>
       Promise.resolve(
         new Response(devalue.stringify(expectedData), { status: 200 }),
       ),
@@ -431,19 +426,18 @@ describe("useApi", () => {
       useApi(getUserCaller, { id: "1" }),
     );
 
-    // Wait for the fetch to complete - needs more time with @testing-library/preact
-    await Bun.sleep(100);
-
-    expect(result.current.loading).toBe(false);
-    expect(result.current.data).toEqual(expectedData);
-    expect(result.current.error).toBeNull();
-    expect(customFetcher.mock.calls.length).toBe(1);
+    await vi.waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.data).toEqual(expectedData);
+      expect(result.current.error).toBeNull();
+      expect(customFetcher.mock.calls.length).toBe(1);
+    });
 
     unmount();
   });
 
   it("should work with different endpoint types", async () => {
-    const customFetcher = mock((request: Request) => {
+    const customFetcher = vi.fn((request: Request) => {
       const url = new URL(request.url);
       const method = request.method;
 

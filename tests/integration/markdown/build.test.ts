@@ -1,23 +1,24 @@
 /**
  * Integration tests for src/markdown/build.ts
  */
+import { fileURLToPath } from "node:url";
 import {
   discoverMarkdownPages,
   prerenderMarkdownPages,
 } from "../../../src/markdown/build";
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import {
   mkdir,
   rm,
   writeFile,
-  exists,
   readdir,
   readFile,
 } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(import.meta.dir, "test-markdown-project");
+const TEST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-markdown-project");
 const PAGES_DIR = path.join(TEST_DIR, "src", "pages");
 const originalCwd = process.cwd();
 
@@ -326,15 +327,15 @@ describe("markdown/build", () => {
       await prerenderMarkdownPages({ markdownFiles: discovered });
 
       const cacheDir = path.join(TEST_DIR, ".cache");
-      expect(await exists(cacheDir)).toBe(true);
+      expect(existsSync(cacheDir)).toBe(true);
 
       const generatedFiles = await readdir(cacheDir);
       expect(
         generatedFiles.some((f) => f.match(/index\..*\.html$/)),
-      ).toBeTrue();
+      ).toBe(true);
       expect(
         generatedFiles.some((f) => f.match(/about\..*\.html$/)),
-      ).toBeTrue();
+      ).toBe(true);
     });
 
     it("should write rendered markdown html content to the cache file", async () => {
@@ -405,7 +406,7 @@ describe("markdown/build", () => {
         markdownFiles: discovered,
       });
       for (const page of rendered) {
-        expect(await exists(page.file.absolute)).toBe(true);
+        expect(existsSync(page.file.absolute)).toBe(true);
       }
     });
 

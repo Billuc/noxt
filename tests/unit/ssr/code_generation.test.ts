@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import * as s from "superstruct";
 import { Path } from "../../../src/core/fs";
 import { generateSSRUtilsCode } from "../../../src/ssr/code_generation";

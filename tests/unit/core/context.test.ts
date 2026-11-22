@@ -1,7 +1,7 @@
 /**
  * Unit tests for src/core/context.ts
  */
-import { describe, it, expect, mock } from "bun:test";
+import { describe, it, expect, vi } from "vitest";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
 import type { FunctionComponent } from "preact";
@@ -136,7 +136,7 @@ describe("UtilsContextData api", () => {
       testAsset,
       makeSSRUrlFn<TestSsr>("http://localhost:3000/base"),
     );
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response(devalue.stringify({ ok: true }))),
     );
 
@@ -152,7 +152,7 @@ describe("UtilsContextData api", () => {
       page: testPage,
       asset: testAsset,
     });
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response(devalue.stringify({}))),
     );
 
@@ -167,7 +167,7 @@ describe("UtilsContextData api", () => {
       page: testPage,
       asset: testAsset,
     });
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<div>hi</div>")),
     );
 

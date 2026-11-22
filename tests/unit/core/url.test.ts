@@ -1,7 +1,7 @@
 /**
  * Unit tests for src/core/url.ts
  */
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import * as devalue from "devalue";
 import {
   buildUrlWithQuery,

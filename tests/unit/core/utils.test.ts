@@ -7,7 +7,7 @@ import {
   toPublicPath,
   sanitizePrerendered,
 } from "../../../src/core/utils";
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import path from "node:path";
 
 describe("getRouteName", () => {

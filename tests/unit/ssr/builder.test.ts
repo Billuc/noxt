@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import * as s from "superstruct";
 import * as devalue from "devalue";
 import { h } from "preact";

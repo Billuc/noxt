@@ -1,3 +1,4 @@
+
 /**
  * Unit tests for src/runtime/render.ts
  */
@@ -32,9 +33,12 @@ Object.defineProperty(globalThis.window, "location", {
 
 import { renderIsland } from "../../../src/runtime/island";
 import { UtilsContext } from "../../../src/core/context";
-import { describe, it, expect, afterEach, mock } from "bun:test";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
+
+const sleep = (milliseconds: number) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 describe("renderIsland", () => {
   afterEach(() => {
@@ -148,7 +152,7 @@ describe("renderIsland", () => {
 
   it("should expose api prefixed with the base", async () => {
     let seenUrl = "";
-    const fetcher = mock((request: Request) => {
+    const fetcher = vi.fn((request: Request) => {
       seenUrl = request.url;
       return Promise.resolve(
         new Response(devalue.stringify({ id: "1", name: "x" })),
@@ -166,7 +170,7 @@ describe("renderIsland", () => {
     document.body.appendChild(el);
 
     renderIsland(TestComponent, hash, "/base");
-    await Bun.sleep(20);
+    await sleep(20);
     expect(seenUrl).toContain("/base/api/users?id=1");
   });
 
@@ -209,7 +213,7 @@ describe("renderIsland", () => {
 
   it("should expose ssr/ssrUrl prefixed with the base", async () => {
     let seenUrl = "";
-    const fetcher = mock((request: Request) => {
+    const fetcher = vi.fn((request: Request) => {
       seenUrl = request.url;
       return Promise.resolve(new Response("<div>hi</div>"));
     });
@@ -227,7 +231,7 @@ describe("renderIsland", () => {
     document.body.appendChild(el);
 
     renderIsland(TestComponent, hash, "/base");
-    await Bun.sleep(20);
+    await sleep(20);
     expect(seenUrl).toContain("/base/frag?q=x");
     expect(seenSsrUrl).toBe("/base/frag?q=x");
   });

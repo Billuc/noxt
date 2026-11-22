@@ -14,7 +14,7 @@
  *  limitations under the License.
  **/
 import { generateScriptForIsland } from "../../../src/islands/code_generation";
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 
 describe("generateScriptForIsland", () => {
   it("should generate script with correct import path and hash", () => {

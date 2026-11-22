@@ -1,11 +1,11 @@
 // import { staticPrerender } from "../../src/static/static";
-// import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+// import { describe, it, expect, beforeEach, afterEach } from "vitest";
 // import path from "node:path";
 // import { rm, mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 // import { existsSync } from "node:fs";
 
 // const SANDBOX_DIR = path.resolve(
-//   import.meta.dir,
+//   path.dirname(fileURLToPath(import.meta.url)),
 //   "..",
 //   "..",
 //   "test-static-temp",
