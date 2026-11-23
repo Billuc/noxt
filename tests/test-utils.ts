@@ -244,6 +244,11 @@ function normalizeUndefinedProperties(value: unknown): unknown {
     return value;
   }
 
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) {
+    return value;
+  }
+
   return Object.fromEntries(
     Object.entries(value)
       .filter(([, entry]) => entry !== undefined)
