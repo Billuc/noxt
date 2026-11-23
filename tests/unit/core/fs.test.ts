@@ -8,7 +8,7 @@ import {
   removeFolder,
   getFilesMatchingGlob,
 } from "../../../src/core/fs";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "../../test-utils.ts";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { rm, mkdir, readFile as readNodeFile, writeFile as writeNodeFile } from "node:fs/promises";

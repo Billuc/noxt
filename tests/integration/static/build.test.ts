@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "../../test-utils.ts";
 import {
   mkdir,
   rm,
@@ -6,10 +6,10 @@ import {
   readFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { generateStaticPages } from "../../src/static/build";
-import { Path } from "../../src/core/fs";
-import type { IslandEntry } from "../../src/islands";
-import type { AssetEntry } from "../../src/assets/types";
+import { generateStaticPages } from "../../../src/static/build";
+import { Path } from "../../../src/core/fs";
+import type { IslandEntry } from "../../../src/islands";
+import type { AssetEntry } from "../../../src/assets/types";
 
 const TEST_DIR = path.join(import.meta.dirname, "test-static-project");
 const originalCwd = process.cwd();

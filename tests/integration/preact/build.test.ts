@@ -5,7 +5,7 @@ import {
   discoverPreactPages,
   prerenderPreactPages,
 } from "../../../src/preact/build";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "../../test-utils.ts";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import {

@@ -1,7 +1,7 @@
 /**
  * Unit tests for src/core/context.ts
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "../../test-utils.ts";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
 import type { FunctionComponent } from "preact";

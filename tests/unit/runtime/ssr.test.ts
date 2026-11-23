@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "../../test-utils.ts";
 import * as s from "superstruct";
 import * as devalue from "devalue";
 import { GlobalWindow } from "happy-dom";

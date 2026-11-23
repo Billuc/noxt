@@ -14,7 +14,7 @@
  *  limitations under the License.
  **/
 
-import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, vi } from "../../test-utils.ts";
 import * as s from "superstruct";
 import * as devalue from "devalue";
 import { renderHook } from "@testing-library/preact";

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "../../test-utils.ts";
 import * as s from "superstruct";
 import { Path } from "../../../src/core/fs";
 import { generateSSRUtilsCode } from "../../../src/ssr/code_generation";

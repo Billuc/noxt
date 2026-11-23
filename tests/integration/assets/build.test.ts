@@ -3,7 +3,7 @@
  */
 import { discoverAssets, generateAssetUtils } from "../../../src/assets/build";
 import type { AssetEntry } from "../../../src/assets/types";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "../../test-utils.ts";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { mkdir, rm, writeFile, readFile } from "node:fs/promises";

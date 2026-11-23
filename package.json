@@ -31,7 +31,7 @@
     "@testing-library/preact": "^3.2.4",
     "happy-dom": "^21.0.4",
     "htm": "^3.1.1",
-    "vitest": "^4.1.12"
+    "tsx": "^4.23.15"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
@@ -48,8 +48,8 @@
     "yaml": "^2.9.1"
   },
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "tsx --test \"tests/unit/*/*.test.ts\" \"tests/integration/*/*.test.ts\"",
+    "test:watch": "tsx --test --watch \"tests/unit/*/*.test.ts\" \"tests/integration/*/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   }
 }

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "../../test-utils.ts";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { importModule } from "../../../src/core/module";

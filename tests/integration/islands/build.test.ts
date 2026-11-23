@@ -2,7 +2,7 @@
  * Integration tests for src/islands/build.ts
  */
 import { discoverIslands, prerenderIslands } from "../../../src/islands/build";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "../../test-utils.ts";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { mkdir, rm, writeFile, readdir } from "node:fs/promises";

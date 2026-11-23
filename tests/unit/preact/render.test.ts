@@ -3,7 +3,7 @@
  */
 import { renderPreactToHtml } from "../../../src/preact/render";
 import { Island } from "../../../src/islands";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "../../test-utils.ts";
 import { h, Fragment } from "preact";
 import { UtilsContext } from "../../../src/core/context";
 import { useContext } from "preact/hooks";

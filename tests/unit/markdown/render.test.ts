@@ -2,7 +2,7 @@
  * Unit tests for src/markdown/render.ts
  */
 import { renderMarkdownToHtml } from "../../../src/markdown/render";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "../../test-utils.ts";
 
 describe("renderMarkdownToHtml", () => {
   it("should render markdown content with default layout", async () => {

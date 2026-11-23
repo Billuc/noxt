@@ -1,5 +1,5 @@
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from "../../test-utils.ts";
 import { h, render } from "preact";
 import { GlobalWindow } from "happy-dom";
 import { sharedSignal } from "../../../src/runtime/signal";

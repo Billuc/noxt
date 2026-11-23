@@ -2,7 +2,7 @@
  * Unit tests for src/core/code_generator.ts
  */
 import { generateAssetUtilsCode } from "../../../src/assets/code_generation";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "../../test-utils.ts";
 
 describe("generateAssetUtilsCode", () => {
   it("should generate code with a single asset", () => {

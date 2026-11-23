@@ -15,7 +15,7 @@
  *  limitations under the License.
  **/
 
-import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, vi } from "../../test-utils.ts";
 import { renderHook } from "@testing-library/preact";
 import { GlobalWindow } from "happy-dom";
 import * as devalue from "devalue";

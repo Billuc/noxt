@@ -32,7 +32,7 @@ Object.defineProperty(globalThis.window, "location", {
 
 import { renderIsland } from "../../../src/runtime/island";
 import { UtilsContext } from "../../../src/core/context";
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi } from "../../test-utils.ts";
 import { h } from "preact";
 import { useContext } from "preact/hooks";
 

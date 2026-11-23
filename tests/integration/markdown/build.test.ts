@@ -5,7 +5,7 @@ import {
   discoverMarkdownPages,
   prerenderMarkdownPages,
 } from "../../../src/markdown/build";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "../../test-utils.ts";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import {
