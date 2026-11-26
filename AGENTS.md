@@ -19,12 +19,12 @@ Noxt is a TypeScript web framework with prerendering and Preact islands. Source 
 
 ## Common commands
 
-- `npm test` - Run the full test suite.
+- `npm run test` - Run the full test suite.
 - `tsc --noEmit` - Run the strict TypeScript type check.
 - `bun run index.ts` - Start the development server.
 - `bun run build --target=bun --outdir=dist index.ts` - Create a production bundle.
 
-Run targeted tests during development (for example, `npm test -- tests/unit/core/url.test.ts`) and run `npm test` before completing a change.
+Run targeted tests during development (for example, `npm run test -- tests/unit/core/url.test.ts`) and run `npm run test` before completing a change.
 
 ## Repository structure
 
@@ -51,5 +51,5 @@ Before finishing:
 
 1. Run `tsc --noEmit`.
 2. Run relevant targeted tests.
-3. Run `npm test` for substantive framework or cross-module changes.
+3. Run `npm run test` for substantive framework or cross-module changes.
 4. Inspect `git diff` and ensure no generated build artifacts or unrelated files are included.
