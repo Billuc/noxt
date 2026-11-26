@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, mock } from "bun:test";
+import { describe, it, expect, beforeAll, vi } from "../../test-utils.ts";
 import * as s from "superstruct";
 import * as devalue from "devalue";
 import { GlobalWindow } from "happy-dom";
@@ -102,7 +102,7 @@ describe("makeSSRFn", () => {
   });
 
   it("should prepend base and encode GET input as query", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<div>hi</div>")),
     );
 
@@ -117,7 +117,7 @@ describe("makeSSRFn", () => {
   });
 
   it("should send Accept: text/html", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<p/>")),
     );
 
@@ -128,7 +128,7 @@ describe("makeSSRFn", () => {
   });
 
   it("should send POST input as devalue body", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<p>ok</p>")),
     );
 
@@ -143,7 +143,7 @@ describe("makeSSRFn", () => {
   });
 
   it("should forward extra fetch options and signal", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<p/>")),
     );
 
@@ -158,11 +158,13 @@ describe("makeSSRFn", () => {
     const req: Request = fetcher.mock.lastCall?.[0]!;
     expect(req.headers.get("Authorization")).toBe("Bearer t");
     expect(req.headers.get("Accept")).toBe("text/html");
-    expect(req.signal).toBe(controller.signal);
+    expect(req.signal.aborted).toBe(false);
+    controller.abort();
+    expect(req.signal.aborted).toBe(true);
   });
 
   it("should throw FetchError on non-ok responses", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("nope", { status: 500 })),
     );
 
@@ -173,7 +175,7 @@ describe("makeSSRFn", () => {
   });
 
   it("should not mutate the caller-provided options object", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<p/>")),
     );
 
@@ -185,7 +187,7 @@ describe("makeSSRFn", () => {
   });
 
   it("should default base to empty string when omitted", async () => {
-    const fetcher = mock((_request: Request) =>
+    const fetcher = vi.fn((_request: Request) =>
       Promise.resolve(new Response("<p/>")),
     );
 

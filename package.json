@@ -28,10 +28,10 @@
     "./ssr": "./src/ssr/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "happy-dom": "^20.14.5",
     "@testing-library/preact": "^3.2.4",
-    "htm": "^3.1.1"
+    "happy-dom": "^21.0.4",
+    "htm": "^3.1.1",
+    "tsx": "^4.23.15"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
@@ -46,5 +46,10 @@
     "preact-render-to-string": "^6.7.0",
     "superstruct": "^2.0.2",
     "yaml": "^2.9.1"
+  },
+  "scripts": {
+    "test": "tsx --test \"tests/unit/*/*.test.ts\" \"tests/integration/*/*.test.ts\"",
+    "test:watch": "tsx --test --watch \"tests/unit/*/*.test.ts\" \"tests/integration/*/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   }
 }

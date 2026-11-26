@@ -11,7 +11,7 @@ Noxt is a TypeScript web framework with prerendering and Preact islands. Source 
 
 ## Setup
 
-- Install dependencies with `bun install`.
+- Install dependencies with `npm install`.
 - Bun remains available for local setup and commands, but Noxt is no longer based on Bun.
 - Use npm and Node for CI and Node-compatible tooling.
 - Do not introduce pnpm-specific files.
@@ -19,12 +19,12 @@ Noxt is a TypeScript web framework with prerendering and Preact islands. Source 
 
 ## Common commands
 
-- `bun test` - Run the full test suite.
+- `npm run test` - Run the full test suite.
 - `tsc --noEmit` - Run the strict TypeScript type check.
 - `bun run index.ts` - Start the development server.
 - `bun run build --target=bun --outdir=dist index.ts` - Create a production bundle.
 
-Run targeted tests during development (for example, `bun test tests/unit/core/url.test.ts`) and run `bun test` before completing a change.
+Run targeted tests during development (for example, `npm run test -- tests/unit/core/url.test.ts`) and run `npm run test` before completing a change.
 
 ## Repository structure
 
@@ -51,5 +51,5 @@ Before finishing:
 
 1. Run `tsc --noEmit`.
 2. Run relevant targeted tests.
-3. Run `bun test` for substantive framework or cross-module changes.
+3. Run `npm run test` for substantive framework or cross-module changes.
 4. Inspect `git diff` and ensure no generated build artifacts or unrelated files are included.

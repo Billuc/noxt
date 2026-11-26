@@ -2,7 +2,7 @@
  * Unit tests for src/markdown/parse.ts
  */
 import { parseMarkdown } from "../../../src/markdown/parse";
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 
 describe("parseMarkdown", () => {
   it("should return empty frontmatter for markdown without frontmatter", () => {

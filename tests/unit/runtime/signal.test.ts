@@ -1,11 +1,5 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  beforeAll,
-} from "bun:test";
+
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from "../../test-utils.ts";
 import { h, render } from "preact";
 import { GlobalWindow } from "happy-dom";
 import { sharedSignal } from "../../../src/runtime/signal";
@@ -90,12 +84,14 @@ describe("cross-island sharing", () => {
     expect(display.textContent).toBe("count: 5");
 
     document.getElementById("increment")!.click();
-    await Bun.sleep(0);
-    expect(display.textContent).toBe("count: 6");
+    await vi.waitFor(() => {
+      expect(display.textContent).toBe("count: 6");
+    });
 
     counter.value = 10;
-    await Bun.sleep(0);
-    expect(display.textContent).toBe("count: 10");
+    await vi.waitFor(() => {
+      expect(display.textContent).toBe("count: 10");
+    });
 
     containerA.remove();
     containerB.remove();
@@ -134,8 +130,9 @@ describe("cross-island sharing", () => {
     expect(document.getElementById("val")!.textContent).toBe("v: 0");
 
     document.getElementById("inc")!.click();
-    await Bun.sleep(0);
-    expect(document.getElementById("val")!.textContent).toBe("v: 1");
+    await vi.waitFor(() => {
+      expect(document.getElementById("val")!.textContent).toBe("v: 1");
+    });
 
     containerA.remove();
     containerB.remove();

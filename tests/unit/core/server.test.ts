@@ -1,7 +1,8 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "../../test-utils.ts";
 import {
   HMR_ENDPOINT,
   HmrManager,
+  NoxtDevServer,
 } from "../../../src/core/server";
 
 describe("HmrManager", () => {
@@ -78,3 +79,32 @@ describe("HmrManager", () => {
   });
 });
 
+describe("NoxtDevServer", () => {
+  it("reports an aborted build with a build-specific error", async () => {
+    const server = new NoxtDevServer(
+      [process.execPath, "-e", "setTimeout(() => {}, 30000)"],
+      async () => {
+        throw new Error("Server creation should not be reached");
+      },
+    );
+    const buildProject = (
+      server as unknown as { buildProject: () => Promise<void> }
+    ).buildProject.bind(server);
+    const build = buildProject();
+    const abortController = (
+      server as unknown as { abortController: AbortController }
+    ).abortController;
+
+    abortController.abort();
+
+    let error: unknown;
+    try {
+      await build;
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error instanceof Error).toBe(true);
+    expect((error as Error).name).toBe("BuildAbortError");
+  });
+});

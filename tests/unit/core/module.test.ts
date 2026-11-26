@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "../../test-utils.ts";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { importModule } from "../../../src/core/module";
 
-const TEST_DIR = path.join(import.meta.dir, "test-module-temp");
+const TEST_DIR = path.join(import.meta.dirname, "test-module-temp");
 
 describe("importModule", () => {
   beforeEach(async () => {
@@ -20,7 +20,7 @@ describe("importModule", () => {
       modulePath,
       "export const GET = true;\nexport const helper = true;\n",
     );
-    const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     try {
       const imported = await importModule(modulePath, ["GET", "POST"]);
@@ -37,7 +37,7 @@ describe("importModule", () => {
   it("logs an error and returns null when no intended export is present", async () => {
     const modulePath = path.join(TEST_DIR, "missing-export.ts");
     await writeFile(modulePath, "export const helper = true;\n");
-    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     try {
       expect(await importModule(modulePath, ["GET", "POST"])).toBeNull();

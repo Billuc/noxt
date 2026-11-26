@@ -2,7 +2,7 @@
  * Unit tests for src/pwa/code_generation.ts
  */
 import { generateServiceWorkerCode } from "../../../src/pwa/code_generation";
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 
 describe("generateServiceWorkerCode", () => {
   it("should generate service worker code with URLs from manifest", () => {

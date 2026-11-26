@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 import { searchParams, body } from "../../../src/core/superstruct";
 import * as s from "superstruct";
 import * as devalue from "devalue";

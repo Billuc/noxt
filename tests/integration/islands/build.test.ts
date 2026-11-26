@@ -2,12 +2,13 @@
  * Integration tests for src/islands/build.ts
  */
 import { discoverIslands, prerenderIslands } from "../../../src/islands/build";
-import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, vi } from "../../test-utils.ts";
+import { existsSync } from "node:fs";
 import path from "node:path";
-import { mkdir, rm, writeFile, exists, readdir } from "node:fs/promises";
+import { mkdir, rm, writeFile, readdir } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(import.meta.dir, "test-islands-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-islands-project");
 const ISLANDS_DIR = path.join(TEST_DIR, "src", "islands");
 const originalCwd = process.cwd();
 
@@ -254,9 +255,9 @@ describe("islands/build", () => {
         expect(entry).toHaveProperty("component");
         expect(entry).toHaveProperty("hash");
         expect(entry).toHaveProperty("files");
-        expect(entry.component).toBeFunction();
-        expect(entry.hash).toBeString();
-        expect(entry.files).toBeArray();
+        expect(entry.component).toBeTypeOf("function");
+        expect(entry.hash).toBeTypeOf("string");
+        expect(entry.files).toBeInstanceOf(Array);
       }
     });
 
@@ -266,25 +267,25 @@ describe("islands/build", () => {
       await prerenderIslands({ islandFiles: discovered });
 
       const cacheIslandsDir = path.join(TEST_DIR, ".cache", "_islands");
-      expect(exists(cacheIslandsDir)).resolves.toBeTrue();
+      expect(existsSync(cacheIslandsDir)).toBe(true);
 
       const generatedFiles = await readdir(cacheIslandsDir);
-      expect(generatedFiles.some((f) => f.includes("Greeting"))).toBeTrue();
-      expect(generatedFiles.some((f) => f.includes("Counter"))).toBeTrue();
+      expect(generatedFiles.some((f) => f.includes("Greeting"))).toBe(true);
+      expect(generatedFiles.some((f) => f.includes("Counter"))).toBe(true);
     });
 
     it("should skip files without default export", async () => {
       const { islandFiles } = await discoverIslands();
-      const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       try {
         await prerenderIslands({ islandFiles });
 
         const cacheIslandsDir = path.join(TEST_DIR, ".cache", "_islands");
-        expect(exists(cacheIslandsDir)).resolves.toBeTrue();
+        expect(existsSync(cacheIslandsDir)).toBe(true);
 
         const generatedFiles = await readdir(cacheIslandsDir);
-        expect(generatedFiles.some((f) => f.includes("NoDefault"))).toBeFalse();
+        expect(generatedFiles.some((f) => f.includes("NoDefault"))).toBe(false);
         expect(errorSpy).toHaveBeenCalledWith(
           `Module "${path.join(ISLANDS_DIR, "NoDefault.tsx")}" must export at least one of: default. Actual exports: NotDefault.`,
         );
@@ -300,7 +301,7 @@ describe("islands/build", () => {
         `export const helper = true;
 export default function Named() { return null; }`,
       );
-      const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       try {
         await prerenderIslands({
@@ -351,7 +352,7 @@ export default function Named() { return null; }`,
       });
       for (const entry of rendered) {
         for (const file of entry.files) {
-          expect(exists(file.absolute)).resolves.toBeTrue();
+          expect(existsSync(file.absolute)).toBe(true);
         }
       }
     });

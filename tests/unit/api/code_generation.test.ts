@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 import { generateApiUtilsCode } from "../../../src/api/code_generation";
 import type { APIEndpointEntry } from "../../../src/api/types";
 import * as s from "superstruct";

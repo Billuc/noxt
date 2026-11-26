@@ -6,12 +6,13 @@ import { Path } from "../../../src/core/fs";
 import type { RouteData } from "../../../src/core/types";
 import type { IslandEntry } from "../../../src/islands";
 import type { AssetEntry } from "../../../src/assets/types";
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "../../test-utils.ts";
+import { existsSync } from "node:fs";
 import path from "node:path";
-import { mkdir, rm, writeFile, exists, readFile } from "node:fs/promises";
+import { mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import type { FunctionComponent } from "preact";
 
-const TEST_DIR = path.join(import.meta.dir, "test-core-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-core-project");
 const PAGES_DIR = path.join(TEST_DIR, "src", "pages");
 const CACHE_TEST_DIR = path.join(TEST_DIR, ".cache");
 const originalCwd = process.cwd();
@@ -63,7 +64,7 @@ describe("core/build", () => {
     it("should write an empty manifest when no entries are provided", async () => {
       const { routeMapFile } = await generateRouteMap({});
 
-      expect(await exists(routeMapFile.absolute)).toBe(true);
+      expect(existsSync(routeMapFile.absolute)).toBe(true);
       expect(routeMapFile.absolute).toMatch(/\.cache[\\/]routes\.json$/);
       expect(await readFile(routeMapFile.absolute, "utf-8")).toBe("{}");
     });
@@ -233,7 +234,7 @@ describe("core/build", () => {
         ],
       });
 
-      expect(await exists(utilsFile)).toBe(true);
+      expect(existsSync(utilsFile)).toBe(true);
       const content = await readFile(utilsFile, "utf-8");
       expect(content).toContain('type RouteId = "/" | "/about";');
     });
@@ -245,7 +246,7 @@ describe("core/build", () => {
         pageFiles: [],
       });
 
-      expect(await exists(utilsFile)).toBe(true);
+      expect(existsSync(utilsFile)).toBe(true);
       const content = await readFile(utilsFile, "utf-8");
       expect(content).toContain("type RouteId = never;");
     });

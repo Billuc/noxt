@@ -5,19 +5,19 @@ import {
   discoverPreactPages,
   prerenderPreactPages,
 } from "../../../src/preact/build";
-import { describe, it, expect, beforeEach, afterEach, spyOn } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, vi } from "../../test-utils.ts";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import {
   mkdir,
   rm,
   writeFile,
-  exists,
   readdir,
   readFile,
 } from "node:fs/promises";
 import { Path } from "../../../src/core/fs";
 
-const TEST_DIR = path.join(import.meta.dir, "test-preact-project");
+const TEST_DIR = path.join(import.meta.dirname, "test-preact-project");
 const PAGES_DIR = path.join(TEST_DIR, "src", "pages");
 const originalCwd = process.cwd();
 
@@ -301,13 +301,13 @@ describe("preact/build", () => {
       await prerenderPreactPages({ preactFiles: discovered });
 
       const cacheDir = path.join(TEST_DIR, ".cache");
-      expect(await exists(cacheDir)).toBe(true);
+      expect(existsSync(cacheDir)).toBe(true);
 
       const generatedFiles = await readdir(cacheDir);
-      expect(generatedFiles.some((f) => f.match(/Home\..*\.html$/))).toBeTrue();
+      expect(generatedFiles.some((f) => f.match(/Home\..*\.html$/))).toBe(true);
       expect(
         generatedFiles.some((f) => f.match(/About\..*\.html$/)),
-      ).toBeTrue();
+      ).toBe(true);
     });
 
     it("should write rendered html content to the cache file", async () => {
@@ -329,7 +329,7 @@ describe("preact/build", () => {
 
     it("should skip pages without default export", async () => {
       const { preactFiles: discovered } = await discoverPreactPages();
-      const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       try {
         const { preactPages: rendered } = await prerenderPreactPages({
@@ -352,7 +352,7 @@ describe("preact/build", () => {
         `export const helper = true;
 export default function Named() { return null; }`,
       );
-      const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       try {
         await prerenderPreactPages({
@@ -395,7 +395,7 @@ export default function Named() { return null; }`,
         preactFiles: discovered,
       });
       for (const page of rendered) {
-        expect(await exists(page.file.absolute)).toBe(true);
+        expect(existsSync(page.file.absolute)).toBe(true);
       }
     });
 

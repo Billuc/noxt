@@ -34,7 +34,7 @@ Full documentation is available in the [docs/](docs/) directory:
 To install dependencies:
 
 ```bash
-bun install
+npm install
 ```
 
 ### Running Noxt
@@ -120,11 +120,11 @@ const HelloIsland = await prepareIsland(Hello);
 
 ## Commands
 
-- `bun install` — Install dependencies.
+- `npm install` — Install dependencies.
 - `bun run index.ts` — Start the development server.
 - `bun build --target=bun --outdir=dist index.ts` — Bundle the project for production.
 - `cd dist && bun run index.js` — Preview the bundled project.
-- `bun test` — Run tests.
+- `npm test` — Run tests.
 - `rm -rf .cache dist` — Clean build artifacts.
 
 ## Bundle Size

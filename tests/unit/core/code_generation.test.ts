@@ -2,7 +2,7 @@
  * Unit tests for src/core/code_generator.ts
  */
 import { generateLinkUtilsCode } from "../../../src/core/code_generation";
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 
 describe("generateLinkUtilsCode", () => {
   it("should generate code with a single route", () => {

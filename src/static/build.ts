@@ -58,7 +58,9 @@ export async function generateStaticPages({
       const islandRelPath = file.relativeTo(ISLANDS_CACHE_DIR);
       let outputPath = distPath("_islands", islandRelPath);
       await copyFile(file.absolute, outputPath);
-      manifest[toPublicPath(outputPath, base ?? "")] = outputPath;
+      manifest[
+        toPublicPath(path.join("_islands", islandRelPath), base ?? "")
+      ] = outputPath;
     }
   }
 

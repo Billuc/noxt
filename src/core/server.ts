@@ -6,11 +6,17 @@ import type {
   ServerImplementation,
 } from "./types";
 import { stat, watch } from "node:fs/promises";
+import { spawn } from "node:child_process";
 import { debounce } from "./utils";
 import type { FileChangeInfo } from "node:fs/promises";
 import { lookup } from "mrmime";
 
-class AbortError extends Error {}
+class BuildAbortError extends Error {
+  constructor() {
+    super("Aborted !");
+    this.name = "BuildAbortError";
+  }
+}
 
 export const HMR_ENDPOINT = "/__noxt_hmr";
 
@@ -196,22 +202,31 @@ export class NoxtDevServer implements NoxtServer {
   private async buildProject(): Promise<void> {
     this.abortController.abort();
     this.abortController = new AbortController();
+    const abortController = this.abortController;
 
     console.log("Building...");
-    const buildStep = Bun.spawn({
-      cmd: this.buildCommand,
-      stderr: "inherit",
-      stdout: "inherit",
-      signal: this.abortController.signal,
+    const buildStep = spawn(this.buildCommand[0]!, this.buildCommand.slice(1), {
+      stdio: "inherit",
+      signal: abortController.signal,
     });
-    const buildCode = await buildStep.exited;
-
-    if (buildStep.signalCode === "SIGTERM") {
-      throw new AbortError("Aborted !");
-    }
-    if (buildCode !== 0) {
-      throw new Error("Build failed !");
-    }
+    await new Promise<void>((resolve, reject) => {
+      buildStep.once("error", (error) => {
+        if (abortController.signal.aborted) {
+          reject(new BuildAbortError());
+        } else {
+          reject(error);
+        }
+      });
+      buildStep.once("close", (code, signal) => {
+        if (abortController.signal.aborted || signal) {
+          reject(new BuildAbortError());
+        } else if (code !== 0) {
+          reject(new Error("Build failed !"));
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   private async onFileChange(fc: FileChangeInfo<string>) {
@@ -222,7 +237,7 @@ export class NoxtDevServer implements NoxtServer {
     try {
       await this.buildProject();
     } catch (err) {
-      if (!(err instanceof AbortError)) throw err;
+      if (!(err instanceof BuildAbortError)) throw err;
       return;
     }
     await this.restartServer();

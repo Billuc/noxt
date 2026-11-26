@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 import { query, mutation } from "../../../src/api/builder";
 import * as s from "superstruct";
 import * as devalue from "devalue";

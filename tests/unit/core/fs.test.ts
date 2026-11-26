@@ -8,12 +8,12 @@ import {
   removeFolder,
   getFilesMatchingGlob,
 } from "../../../src/core/fs";
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "../../test-utils.ts";
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { rm, mkdir } from "node:fs/promises";
+import { rm, mkdir, readFile as readNodeFile, writeFile as writeNodeFile } from "node:fs/promises";
 
-const TEST_DIR = path.join(import.meta.dir, "..", "..", "test-fs-temp");
+const TEST_DIR = path.join(import.meta.dirname, "..", "..", "test-fs-temp");
 
 async function setupTestDir() {
   await mkdir(TEST_DIR, { recursive: true });
@@ -40,7 +40,7 @@ describe("fs module", () => {
 
       await writeFile(filePath, content);
 
-      const result = await Bun.file(filePath).text();
+      const result = await readNodeFile(filePath, "utf8");
       expect(result).toBe(content);
     });
 
@@ -50,7 +50,7 @@ describe("fs module", () => {
 
       await writeFile(filePath, content);
 
-      const result = await Bun.file(filePath).text();
+      const result = await readNodeFile(filePath, "utf8");
       expect(result).toBe(content);
     });
 
@@ -62,7 +62,7 @@ describe("fs module", () => {
       await writeFile(filePath, content1);
       await writeFile(filePath, content2);
 
-      const result = await Bun.file(filePath).text();
+      const result = await readNodeFile(filePath, "utf8");
       expect(result).toBe(content2);
     });
   });
@@ -71,7 +71,7 @@ describe("fs module", () => {
     it("should read content from a file", async () => {
       const filePath = path.join(TEST_DIR, "test.txt");
       const content = "Hello Read";
-      await Bun.write(filePath, content);
+      await writeNodeFile(filePath, content);
 
       const result = await readFile(filePath);
       expect(result).toBe(content);
@@ -79,7 +79,7 @@ describe("fs module", () => {
 
     it("should return empty string for empty file", async () => {
       const filePath = path.join(TEST_DIR, "empty.txt");
-      await Bun.write(filePath, "");
+      await writeNodeFile(filePath, "");
 
       const result = await readFile(filePath);
       expect(result).toBe("");
@@ -103,25 +103,25 @@ describe("fs module", () => {
       const sourcePath = path.join(TEST_DIR, "source.txt");
       const destPath = path.join(TEST_DIR, "dest.txt");
       const content = "Copy test content";
-      await Bun.write(sourcePath, content);
+      await writeNodeFile(sourcePath, content);
 
       await copyFile(sourcePath, destPath);
 
-      const result = await Bun.file(destPath).text();
+      const result = await readNodeFile(destPath, "utf8");
       expect(result).toBe(content);
-      const sourceResult = await Bun.file(sourcePath).text();
+      const sourceResult = await readNodeFile(sourcePath, "utf8");
       expect(sourceResult).toBe(content);
     });
 
     it("should overwrite destination if it already exists", async () => {
       const sourcePath = path.join(TEST_DIR, "source.txt");
       const destPath = path.join(TEST_DIR, "dest.txt");
-      await Bun.write(sourcePath, "New content");
-      await Bun.write(destPath, "Old content");
+      await writeNodeFile(sourcePath, "New content");
+      await writeNodeFile(destPath, "Old content");
 
       await copyFile(sourcePath, destPath);
 
-      const result = await Bun.file(destPath).text();
+      const result = await readNodeFile(destPath, "utf8");
       expect(result).toBe("New content");
     });
 
@@ -130,11 +130,11 @@ describe("fs module", () => {
       const destDir = path.join(TEST_DIR, "subdir");
       const destPath = path.join(destDir, "copied.txt");
       const content = "Cross-directory copy";
-      await Bun.write(sourcePath, content);
+      await writeNodeFile(sourcePath, content);
 
       await copyFile(sourcePath, destPath);
 
-      const result = await Bun.file(destPath).text();
+      const result = await readNodeFile(destPath, "utf8");
       expect(result).toBe(content);
     });
 
@@ -142,11 +142,11 @@ describe("fs module", () => {
       const sourcePath = path.join(TEST_DIR, "source.bin");
       const destPath = path.join(TEST_DIR, "dest.bin");
       const content = "0".repeat(1024);
-      await Bun.write(sourcePath, content);
+      await writeNodeFile(sourcePath, content);
 
       await copyFile(sourcePath, destPath);
 
-      const result = await Bun.file(destPath).text();
+      const result = await readNodeFile(destPath, "utf8");
       expect(result).toBe(content);
     });
   });
@@ -164,8 +164,8 @@ describe("fs module", () => {
     it("should remove a directory with files recursively", async () => {
       const dirPath = path.join(TEST_DIR, "dir-with-files");
       await mkdir(dirPath);
-      await Bun.write(path.join(dirPath, "file1.txt"), "content1");
-      await Bun.write(path.join(dirPath, "file2.txt"), "content2");
+      await writeNodeFile(path.join(dirPath, "file1.txt"), "content1");
+      await writeNodeFile(path.join(dirPath, "file2.txt"), "content2");
 
       await removeFolder(dirPath);
 
@@ -175,7 +175,7 @@ describe("fs module", () => {
     it("should remove nested directories", async () => {
       const dirPath = path.join(TEST_DIR, "nested");
       await mkdir(path.join(dirPath, "level1", "level2"), { recursive: true });
-      await Bun.write(
+      await writeNodeFile(
         path.join(dirPath, "level1", "level2", "file.txt"),
         "nested",
       );
@@ -188,17 +188,17 @@ describe("fs module", () => {
     it("should not throw if directory does not exist", async () => {
       const nonExistentPath = path.join(TEST_DIR, "does-not-exist");
 
-      expect(removeFolder(nonExistentPath)).resolves.toBe(undefined);
+      await expect(removeFolder(nonExistentPath)).resolves.toBe(undefined);
     });
   });
 
   describe("getFilesMatchingGlob", () => {
     it("should return files matching a glob pattern", async () => {
       await mkdir(path.join(TEST_DIR, "subdir"), { recursive: true });
-      await Bun.write(path.join(TEST_DIR, "file1.txt"), "");
-      await Bun.write(path.join(TEST_DIR, "file2.txt"), "");
-      await Bun.write(path.join(TEST_DIR, "file.log"), "");
-      await Bun.write(path.join(TEST_DIR, "subdir", "file3.txt"), "");
+      await writeNodeFile(path.join(TEST_DIR, "file1.txt"), "");
+      await writeNodeFile(path.join(TEST_DIR, "file2.txt"), "");
+      await writeNodeFile(path.join(TEST_DIR, "file.log"), "");
+      await writeNodeFile(path.join(TEST_DIR, "subdir", "file3.txt"), "");
 
       const results = await getFilesMatchingGlob("**/*.txt", TEST_DIR);
 
@@ -210,7 +210,7 @@ describe("fs module", () => {
     });
 
     it("should return absolute paths", async () => {
-      await Bun.write(path.join(TEST_DIR, "test.txt"), "");
+      await writeNodeFile(path.join(TEST_DIR, "test.txt"), "");
 
       const results = await getFilesMatchingGlob("*.txt", TEST_DIR);
 
@@ -219,7 +219,7 @@ describe("fs module", () => {
     });
 
     it("should return Path objects with absolute path", async () => {
-      await Bun.write(path.join(TEST_DIR, "test.txt"), "");
+      await writeNodeFile(path.join(TEST_DIR, "test.txt"), "");
 
       const results = await getFilesMatchingGlob("*.txt", TEST_DIR);
 
@@ -236,7 +236,7 @@ describe("fs module", () => {
 
     it("should handle nested glob patterns", async () => {
       await mkdir(path.join(TEST_DIR, "a", "b", "c"), { recursive: true });
-      await Bun.write(path.join(TEST_DIR, "a", "b", "c", "deep.txt"), "");
+      await writeNodeFile(path.join(TEST_DIR, "a", "b", "c", "deep.txt"), "");
 
       const results = await getFilesMatchingGlob("a/**/*.txt", TEST_DIR);
 

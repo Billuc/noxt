@@ -3,21 +3,23 @@
  */
 import { renderPreactToHtml } from "../../../src/preact/render";
 import { Island } from "../../../src/islands";
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "../../test-utils.ts";
 import { h, Fragment } from "preact";
 import { UtilsContext } from "../../../src/core/context";
 import { useContext } from "preact/hooks";
+
+const removeWhitespace = (value: string) => value.replace(/\s/g, "");
 
 describe("renderPreactToHtml", () => {
   it("should render a simple component to full HTML with DOCTYPE", async () => {
     const Component = () =>
       h("html", {}, [h("body", {}, h("h1", {}, "Hello World"))]);
     const result = await renderPreactToHtml(Component);
-    expect(result).toEqualIgnoringWhitespace(
-      `<!DOCTYPE html>
+    expect(removeWhitespace(result)).toBe(
+      removeWhitespace(`<!DOCTYPE html>
         <html>
           <body><h1>Hello World</h1></body>
-        </html>`,
+        </html>`),
     );
   });
 
@@ -26,8 +28,8 @@ describe("renderPreactToHtml", () => {
     const Parent = () => h("div", {}, [h("h1", {}, "Parent"), h(Child, {})]);
     const Layout = () => h("html", {}, [h("body", {}, h(Parent, {}))]);
     const result = await renderPreactToHtml(Layout);
-    expect(result).toEqualIgnoringWhitespace(
-      `<!DOCTYPE html>
+    expect(removeWhitespace(result)).toBe(
+      removeWhitespace(`<!DOCTYPE html>
         <html>
           <body>
             <div>
@@ -35,20 +37,20 @@ describe("renderPreactToHtml", () => {
               <span>Child</span>
             </div>
           </body>
-        </html>`,
+        </html>`),
     );
   });
 
   it("should render a component that returns null", async () => {
     const Component = () => null;
     const result = await renderPreactToHtml(Component);
-    expect(result).toEqualIgnoringWhitespace(``);
+    expect(removeWhitespace(result)).toBe(removeWhitespace(``));
   });
 
   it("should render a component that returns a string", async () => {
     const Component = () => "<foo>bar</foo>";
     const result = await renderPreactToHtml(Component);
-    expect(result).toEqualIgnoringWhitespace(`<foo>bar</foo>`);
+    expect(removeWhitespace(result)).toBe(removeWhitespace(`<foo>bar</foo>`));
   });
 
   it("should render a component with props", async () => {

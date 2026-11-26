@@ -21,7 +21,12 @@ export function generateScriptForIsland(
   importPath: string,
   base?: string,
 ): string {
-  const renderScriptPath = path.join(__dirname, "..", "runtime", "island.ts");
+  const renderScriptPath = path.join(
+    import.meta.dirname,
+    "..",
+    "runtime",
+    "island.ts",
+  );
 
   return `
     import { renderIsland } from ${JSON.stringify(renderScriptPath)};
